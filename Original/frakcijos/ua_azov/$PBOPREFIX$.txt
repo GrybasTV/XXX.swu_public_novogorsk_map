@@ -1,0 +1,4 @@
+//<'ua_azov.pbo' properties via Mikero's dos tools, dll version 9.98>
+prefix=ua_azov;
+//PboType=Arma Addon;
+//</properties>
