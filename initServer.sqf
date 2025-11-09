@@ -127,4 +127,20 @@ z1 addCuratorEditableObjects [allplayers+playableUnits]; //all players and playa
 ["Initialize"] call BIS_fnc_dynamicGroups; // Initializes the Dynamic Groups framework
 ["Zeus loaded"] remoteExec ["systemChat", 0, false];
 
+//Prestige Strategic AI Balance sistema - dinaminis AI boost pagal strateginius sektorius
+[] spawn wrm_fnc_V2strategicAiBalance;
+
+//UAV Cleanup on Player Disconnect - išvalo žaidėjo dronus kai jis atsijungia
+addMissionEventHandler ["PlayerDisconnected", {
+	params ["_id", "_uid", "_name", "_jip", "_owner", "_idstr"];
+
+	//Cleanup WEST dronai
+	[_uid, sideW] call wrm_fnc_V2uavCleanup;
+
+	//Cleanup EAST dronai
+	[_uid, sideE] call wrm_fnc_V2uavCleanup;
+
+	systemChat format ["[UAV CLEANUP] Player %1 (%2) disconnected - cleaned up UAVs", _name, _uid];
+}];
+
 if ("autoStart" call BIS_fnc_getParamValue != 0)then{[("autoStart" call BIS_fnc_getParamValue)] execVM "warmachine\autoStart.sqf"};

@@ -1,19 +1,19 @@
 /*
 	Author: IvosH
-	
+
 	Description:
 		Create local marker for the vehicle at the respawn position
-	
+
 	Parameter(s):
 		0: STRING, marker name
 		1: STRING, marker type
 		2: ARRAY, position
 	Returns:
 		nothing
-		
+
 	Dependencies:
 		V2startServer.sqf
-		
+
 	Execution:
 		[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 */

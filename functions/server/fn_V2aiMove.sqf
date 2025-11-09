@@ -198,22 +198,122 @@ if ((getMarkerColor resAE!="")&&(getMarkerColor resBE!="")&&(getMarkerColor resC
 then {_secAE pushBackUnique (selectRandom [posBaseW1,posBaseW2]);};
 
 //move groups west
+//MODIFICATION: Optimizuota batch sistema - grupuojame remoteExec iškvietimus pagal groupOwner
+//Taip pat pridėtas error handling ir maksimalus grupių skaičius per iteraciją
 _secS=[];
+private _moveBatchW = []; //Batch sistema: [[owner, [grupių masyvas su pozicijomis]], ...]
+private _maxGroupsPerIteration = 50; //Maksimalus grupių skaičius per iteraciją
+private _groupCount = 0;
+
 {
-	if(count _secS<1)then{_secS=_sec0+_secDW+_secE+_posPE+_posGE+_secAW+_secW;}; //refill sectors array
-	_sec=_secS select 0;
-	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
-	if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	//Patikrinti maksimalų grupių skaičių
+	if(_groupCount >= _maxGroupsPerIteration)exitWith{};
+	
+	//Patikrinti, kad grupė vis dar egzistuoja ir turi leader'į
+	if(!isNull _x && !isNull leader _x)then{
+		if(count _secS<1)then{_secS=_sec0+_secDW+_secE+_posPE+_posGE+_secAW+_secW;}; //refill sectors array
+		_sec=_secS select 0;
+		
+		//Apskaičiuoti poziciją
+		private _targetPos = [((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))];
+		
+		//Gauti groupOwner
+		private _owner = groupOwner _x;
+		
+		//Rasti arba sukurti batch masyvą šiam owner'iui
+		private _batchIndex = -1;
+		{
+			if(_x select 0 == _owner)exitWith{_batchIndex = _forEachIndex;};
+		} forEach _moveBatchW;
+		
+		if(_batchIndex == -1)then{
+			_moveBatchW pushBack [_owner, []];
+			_batchIndex = (count _moveBatchW) - 1;
+		};
+		
+		private _batch = _moveBatchW select _batchIndex select 1;
+		_batch pushBack [_x, _targetPos];
+		_moveBatchW set [_batchIndex, [_owner, _batch]];
+		
+		if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+		_groupCount = _groupCount + 1;
+	};
 } forEach _grpsW;
 
-//move groups east
-_secS=[];
+//Vykdyti batch'us pagal groupOwner
 {
-	if(count _secS<1)then{_secS=_sec0+_secDE+_secW+_posPW+_posGW+_secAE+_secE;}; //refill sectors array
-	_sec=_secS select 0;
-	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
-	if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	private _owner = _x select 0;
+	private _batch = _x select 1;
+	
+	//Vykdyti visus move komandas vienu batch'u
+	{
+		private _grp = _x select 0;
+		private _pos = _x select 1;
+		
+		//Error handling: patikrinti, kad grupė vis dar egzistuoja
+		if(!isNull _grp && !isNull leader _grp)then{
+			[_grp, _pos] remoteExec ["move", _owner, false];
+		};
+	} forEach _batch;
+} forEach _moveBatchW;
+
+//move groups east
+//MODIFICATION: Optimizuota batch sistema - grupuojame remoteExec iškvietimus pagal groupOwner
+_secS=[];
+private _moveBatchE = []; //Batch sistema: [[owner, [grupių masyvas su pozicijomis]], ...]
+_groupCount = 0;
+
+{
+	//Patikrinti maksimalų grupių skaičių
+	if(_groupCount >= _maxGroupsPerIteration)exitWith{};
+	
+	//Patikrinti, kad grupė vis dar egzistuoja ir turi leader'į
+	if(!isNull _x && !isNull leader _x)then{
+		if(count _secS<1)then{_secS=_sec0+_secDE+_secW+_posPW+_posGW+_secAE+_secE;}; //refill sectors array
+		_sec=_secS select 0;
+		
+		//Apskaičiuoti poziciją
+		private _targetPos = [((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))];
+		
+		//Gauti groupOwner
+		private _owner = groupOwner _x;
+		
+		//Rasti arba sukurti batch masyvą šiam owner'iui
+		private _batchIndex = -1;
+		{
+			if(_x select 0 == _owner)exitWith{_batchIndex = _forEachIndex;};
+		} forEach _moveBatchE;
+		
+		if(_batchIndex == -1)then{
+			_moveBatchE pushBack [_owner, []];
+			_batchIndex = (count _moveBatchE) - 1;
+		};
+		
+		private _batch = _moveBatchE select _batchIndex select 1;
+		_batch pushBack [_x, _targetPos];
+		_moveBatchE set [_batchIndex, [_owner, _batch]];
+		
+		if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+		_groupCount = _groupCount + 1;
+	};
 } forEach _grpsE;
+
+//Vykdyti batch'us pagal groupOwner
+{
+	private _owner = _x select 0;
+	private _batch = _x select 1;
+	
+	//Vykdyti visus move komandas vienu batch'u
+	{
+		private _grp = _x select 0;
+		private _pos = _x select 1;
+		
+		//Error handling: patikrinti, kad grupė vis dar egzistuoja
+		if(!isNull _grp && !isNull leader _grp)then{
+			[_grp, _pos] remoteExec ["move", _owner, false];
+		};
+	} forEach _batch;
+} forEach _moveBatchE;
 
 if(DBG)then
 {

@@ -49,32 +49,33 @@ call
 		aiVehW setDamage 1;
 
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW1=true;
-			while {_eBW1} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBW1 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBW1=false;
 				{
@@ -84,8 +85,12 @@ call
 						if (_unit distance posBaseW1 < 250) then {_eBW1=true;};
 					};
 				}  forEach allUnits;
-				if (_eBW1) then {sleep 30;};
+				if (_eBW1) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
 			_vSel = selectRandom CarArW;
 			
@@ -126,31 +131,32 @@ call
 		aiArmW setDamage 1;
 
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW2=true;
-			while {_eBW2} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBW2=false;
 				{
@@ -160,11 +166,20 @@ call
 						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
 					};
 				}  forEach allUnits;
-				if (_eBW2) then {sleep 30;};
+				if (_eBW2) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
-			_vSel = selectRandom (ArmorW1+ArmorW2);
-			
+			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioW kontroliuoja tikimybę
+			_vSel = if (random 1 < armorSpawnRatioW) then {
+				selectRandom ArmorW1  // Armor 1 (lengva technika)
+			} else {
+				selectRandom ArmorW2  // Armor 2 (sunki technika)
+			};
+
 			//Sukurti transporto priemonę su tinkamu crew
 			aiArmW = [_vSel, posW2, sideW, crewW, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
 			
@@ -202,31 +217,32 @@ call
 		aiArmW2 setDamage 1;
 
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW2=true;
-			while {_eBW2} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBW2=false;
 				{
@@ -236,8 +252,12 @@ call
 						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
 					};
 				}  forEach allUnits;
-				if (_eBW2) then {sleep 30;};
+				if (_eBW2) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
 			_vSel = selectRandom (ArmorW1+ArmorW2);
 			
@@ -276,25 +296,22 @@ call
 		{if(alive _x)then{_x setDamage 1;};} forEach pltW;
 		
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==2) then
 		{
@@ -340,31 +357,32 @@ call
 		aiVehE setDamage 1;
 		
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE1=true;
-			while {_eBE1} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBE1 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE1=false;
 				{
@@ -374,8 +392,12 @@ call
 						if (_unit distance posBaseE1 < 250) then {_eBE1=true;};
 					};
 				}  forEach allUnits;
-				if (_eBE1) then {sleep 30;};
+				if (_eBE1) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
 			_vSel = selectRandom CarArE;
 			
@@ -416,31 +438,32 @@ call
 		aiArmE setDamage 1;
 		
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE2=true;
-			while {_eBE2} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE2=false;
 				{
@@ -450,11 +473,20 @@ call
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
 				}  forEach allUnits;
-				if (_eBE2) then {sleep 30;};
+				if (_eBE2) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
-			_vSel = selectRandom (ArmorE1+ArmorE2);
-			
+			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioE kontroliuoja tikimybę
+			_vSel = if (random 1 < armorSpawnRatioE) then {
+				selectRandom ArmorE1  // Armor 1 (lengva technika)
+			} else {
+				selectRandom ArmorE2  // Armor 2 (sunki technika)
+			};
+
 			//Sukurti transporto priemonę su tinkamu crew
 			aiArmE = [_vSel, posE2, sideE, crewE, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
 			
@@ -492,31 +524,32 @@ call
 		aiArmE2 setDamage 1;
 		
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
+			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE2=true;
-			while {_eBE2} do 
+			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
+			private _maxIterations = 10; //Maksimalus iteracijų skaičius
+			private _iterations = 0;
+			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE2=false;
 				{
@@ -526,11 +559,20 @@ call
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
 				}  forEach allUnits;
-				if (_eBE2) then {sleep 30;};
+				if (_eBE2) then {
+					sleep 30;
+					_iterations = _iterations + 1;
+				};
 			};
+			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
 			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
-			_vSel = selectRandom (ArmorE1+ArmorE2);
-			
+			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioE kontroliuoja tikimybę
+			_vSel = if (random 1 < armorSpawnRatioE) then {
+				selectRandom ArmorE1  // Armor 1 (lengva technika)
+			} else {
+				selectRandom ArmorE2  // Armor 2 (sunki technika)
+			};
+
 			//Sukurti transporto priemonę su tinkamu crew
 			aiArmE2 = [_vSel, posE2, sideE, crewE, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
 			
@@ -566,25 +608,22 @@ call
 		{if(alive _x)then{_x setDamage 1;};} forEach pltE;
 		
 		//count players
+		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			while {_t} do
+			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
+			while {_t && time < _timeout} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
+			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		call
-		{
-			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
-			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
-			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
-			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
-			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
-		};
+		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
+		//Originali logika čia pašalinta - dabar viskas centralizuota
 			
 		if(coop==0 || coop==1) then
 		{

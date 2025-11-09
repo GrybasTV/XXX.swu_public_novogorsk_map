@@ -9,3 +9,6 @@ if (!isNil "rTime") then {
 	setPlayerRespawnTime 100;
 };
 removeAllActions player;
+
+//UAV Cleanup - išvalyti žaidėjo dronus iš masyvų kai žaidėjas miršta
+[getPlayerUID player, side player] call wrm_fnc_V2uavCleanup;

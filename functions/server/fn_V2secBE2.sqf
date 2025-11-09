@@ -33,7 +33,8 @@ while {!secBE2} do
 };
 publicvariable "secBE2";
 
-["mBaseE"] remoteExec ["deleteMarkerLocal", 0, true]; //delete local marker
+//Pašalinti lokalius marker'ius TIK tada, kai sektorius sukurtas ir aktyvus
+["mBaseE"] remoteExec ["deleteMarkerLocal", 0, true]; //delete local marker (leidžia išvengti seno markerio „užšalimo“)
 deleteMarker resBaseE;
 _nme=format ['E: %1',nameBE2];
 _des=format ['Capture/Defend %1 base',nameBE2];

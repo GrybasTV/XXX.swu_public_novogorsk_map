@@ -73,7 +73,9 @@ titleFadeOut 3;
 
 waitUntil {!isNull player}; //JIP
 waitUntil {player == player}; //Ensure player is local and fully initialized
+waitUntil {!alive player}; //orig: laukti kol senas vienetas nužudomas prieš perkelimą
 waitUntil {progress > 1}; //mission is created and started 
+waitUntil {alive player}; //tikras žaidėjo personažas jau respawnintas ir turi pusę
 
 //REVIVE
 if(revOn==0)then{[player] call bis_fnc_disableRevive;};

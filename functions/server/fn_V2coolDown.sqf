@@ -142,20 +142,20 @@ call
 		{
 			_uavData = uavSquadW select _index;
 			uavSquadW set [_index, [_playerUID, objNull, _cooldownTime]];
-			publicvariable "uavSquadW";
+			publicvariable "uavSquadW"; //Sinchronizuoti pradžią
 
-			//Cooldown loop
+			//Cooldown loop - OPTIMALIZACIJA: nenaudoti publicVariable loop'e
 			while {(uavSquadW select _index) select 2 > 0} do
 			{
 				sleep 10;
 				_currentCooldown = (uavSquadW select _index) select 2;
 				uavSquadW set [_index, [_playerUID, objNull, _currentCooldown - 10]];
-				publicvariable "uavSquadW";
+				//Čia nekviečiame publicVariable - mažiname network overhead
 			};
 
 			//Cooldown baigtas
 			uavSquadW set [_index, [_playerUID, objNull, 0]];
-			publicvariable "uavSquadW";
+			publicvariable "uavSquadW"; //Sinchronizuoti pabaigą
 			[format ["[UAV COOLDOWN] Cooldown finished for WEST player %1", _playerUID]] remoteExec ["systemChat", 0, false];
 		} else {
 			["[UAV COOLDOWN] ERROR: Could not find WEST player entry for cooldown"] remoteExec ["systemChat", 0, false];
@@ -181,20 +181,20 @@ call
 		{
 			_uavData = uavSquadE select _index;
 			uavSquadE set [_index, [_playerUID, objNull, _cooldownTime]];
-			publicvariable "uavSquadE";
+			publicvariable "uavSquadE"; //Sinchronizuoti pradžią
 
-			//Cooldown loop
+			//Cooldown loop - OPTIMALIZACIJA: nenaudoti publicVariable loop'e
 			while {(uavSquadE select _index) select 2 > 0} do
 			{
 				sleep 10;
 				_currentCooldown = (uavSquadE select _index) select 2;
 				uavSquadE set [_index, [_playerUID, objNull, _currentCooldown - 10]];
-				publicvariable "uavSquadE";
+				//Čia nekviečiame publicVariable - mažiname network overhead
 			};
 
 			//Cooldown baigtas
 			uavSquadE set [_index, [_playerUID, objNull, 0]];
-			publicvariable "uavSquadE";
+			publicvariable "uavSquadE"; //Sinchronizuoti pabaigą
 			[format ["[UAV COOLDOWN] Cooldown finished for EAST player %1", _playerUID]] remoteExec ["systemChat", 0, false];
 		} else {
 			["[UAV COOLDOWN] ERROR: Could not find EAST player entry for cooldown"] remoteExec ["systemChat", 0, false];
