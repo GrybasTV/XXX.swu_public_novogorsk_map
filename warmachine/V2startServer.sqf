@@ -734,8 +734,8 @@ if(missType==3)then
 					//titleText reikalauja masyvo [text, type, duration], ne tik stringo
 					//remoteExec su titleText perduoda masyvą kaip argumentą, ne kaip masyvą masyve
 					[format ["VEHICLE RESPAWNED %1 respawned at Grid %2", _vehName, _gridPos], "PLAIN", 3] remoteExec ["titleText", 0, false];
-				};
 			};
+		};
 		},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 		removeFromRemainsCollector [_veh];
 	};
@@ -794,8 +794,8 @@ if(missType==3)then
 					//titleText reikalauja masyvo [text, type, duration], ne tik stringo
 					//remoteExec su titleText perduoda masyvą kaip argumentą, ne kaip masyvą masyve
 					[format ["VEHICLE RESPAWNED %1 respawned at Grid %2", _vehName, _gridPos], "PLAIN", 3] remoteExec ["titleText", 0, false];
-				};
 			};
+		};
 		},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 		removeFromRemainsCollector [_veh];
 	};
@@ -891,8 +891,8 @@ call
 					//titleText reikalauja masyvo [text, type, duration], ne tik stringo
 					//remoteExec su titleText perduoda masyvą kaip argumentą, ne kaip masyvą masyve
 					[format ["VEHICLE RESPAWNED %1 respawned at Grid %2", _vehName, _gridPos], "PLAIN", 3] remoteExec ["titleText", 0, false];
-				};
 			};
+		};
 		},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 		removeFromRemainsCollector [_veh];
 	} forEach _ress;
@@ -1037,8 +1037,8 @@ if (count _hW>0) then
 					//titleText reikalauja masyvo [text, type, duration], ne tik stringo
 					//remoteExec su titleText perduoda masyvą kaip argumentą, ne kaip masyvą masyve
 					[format ["VEHICLE RESPAWNED %1 respawned at Grid %2", _vehName, _gridPos], "PLAIN", 3] remoteExec ["titleText", 0, false];
-				};
 			};
+		};
 		},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 		removeFromRemainsCollector [_veh];
 	} forEach _ress;

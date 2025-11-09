@@ -33,9 +33,14 @@ _post = _corpse getRelPos [20,random 360];
 _grp = group _corpse;
 _unit = objNull;
 
-if (_corpse isKindOf "Man") then 
+if (_corpse isKindOf "Man") then
 {
-	sleep 100; //100 (respawn delay)
+	// Respawn delay pagal žaidimo fazę
+	if(progress <= 1) then {
+		sleep 0; // Žaidimo pradžioje - akimirksniu respawn (setup fazė)
+	} else {
+		sleep 100; // Normalus žaidimas - 100s delay
+	};
 
 	_unit = _grp createUnit [_type, _post, [], 10, "NONE"];
 	[_unit,_corpse] spawn wrm_fnc_V2respawnEH;
@@ -49,8 +54,17 @@ if (_corpse isKindOf "Man") then
 	if(DBG)then{systemchat "Zeus soldier respawned";};
 }else
 {
-	if(progress>1)then{sleep arTime;}else{sleep 100;}; //arTime (respawn delay)
-	
+	// Vehicle respawn delay pagal žaidimo fazę
+	if(progress <= 1) then {
+		sleep 0; // Žaidimo pradžioje - akimirksniu respawn (setup fazė)
+	} else {
+		if(!isNil "arTime") then {
+			sleep arTime; // Naudoti arTime jei apibrėžtas
+		} else {
+			sleep 100; // Fallback į 100s
+		};
+	};
+
 	_unit=[_post, 0, _type, _grp] call BIS_fnc_spawnVehicle;
 	_unit=(_unit select 0);
 

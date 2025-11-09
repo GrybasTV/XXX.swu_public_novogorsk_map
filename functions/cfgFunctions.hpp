@@ -39,6 +39,10 @@ class wrm
 		class V2ticketBleed {};
 		class V2unhideVeh {};
 		class V2syncSupportProviders {}; //Sinhronizuoja CAS support provider'ius su teisingais lėktuvais visiems klientams (JIP)
+		class V2strategicAiBalance {}; //Prestige Strategic AI Balance sistema - dinaminis AI boost pagal strateginius sektorius
+		class V2prestigeSquadManager {}; //Dinaminis squad management Prestige AI sistemai
+		class V2uavCleanup {}; //UAV cleanup funkcija - išvalo žaidėjo dronus iš masyvų
+		class V2eventHandlerCleanup {}; //Event handler cleanup sistema - pašalina MPKilled handler'ius ir stebi memory leak'us
 	};
 	class client
 	{

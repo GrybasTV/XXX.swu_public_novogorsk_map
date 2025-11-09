@@ -346,7 +346,7 @@ class Params
 		texts[]={"",""};
 		default = 0;
 	};
-	class asp14 //AI Respawn Delay System
+	class asp19 //AI Respawn Delay System
 	{
 		title = "   - AI RESPAWN DELAY SYSTEM";
 		texts[] = {"Enabled - Different delays for AI types","Disabled - All AI respawn instantly"};
@@ -367,6 +367,17 @@ class Params
 		};
 		values[] = {0,1,2,3,4,5};
 		default = 5; // 100% - same as player
+	};
+	class asp18 //Prestige Strategic AI Balance
+	{
+		title = "   - PRESTIGE ENGAGEMENT BOOST - AI adapts to strategic sectors for better gameplay";
+		texts[] =
+		{
+			"Disabled - No strategic AI adaptation",
+			"Enabled - AI adapts to strategic sectors for better gameplay"
+		};
+		values[] = {0,1};
+		default = 1; // Enabled by default
 	};
 	class asp16 //Combat Groups Respawn Delay
 	{
