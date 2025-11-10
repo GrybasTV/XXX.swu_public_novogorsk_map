@@ -32,6 +32,8 @@ enableDynamicSimulationSystem true;
 //Global enable
 setDynamicSimulationEnabledGlobal true;
 
+if(DBG)then{diag_log "[DS] Dynamic Simulation system enabled successfully"};
+
 //Distances by type
 setDynamicSimulationDistance "Group", 1200;
 setDynamicSimulationDistance "Vehicle", 1800;
