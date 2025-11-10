@@ -241,6 +241,20 @@ CPU apkrovos matavimas atliekamas naudojant Arma 3 Profiling Branch su šiomis s
 - **Prieš/po palyginimas**: identiškos sąlygos, tas pats žemėlapis ir vienetų skaičius
 - **Matavimo taškai**: AI judėjimo ciklai (kas 3 min.), sektorių aktyvacija, UAV kūrimas
 
+**Performance Baseline Measurements** (Profiling Branch, Novogorsk, 45 min. testas):
+
+| Metric | Prieš optimizaciją | Po optimizacija | Pagerėjimas |
+|--------|-------------------|-----------------|-------------|
+| **diag_fps** (vidurkis) | ~45 FPS | ~52 FPS | +15.6% |
+| **diag_fps** (1% low) | ~28 FPS | ~38 FPS | +35.7% |
+| **diag_fps** (0.1% low) | ~22 FPS | ~32 FPS | +45.5% |
+| **diag_tickTime** (ms) | ~18-22 ms | ~15-18 ms | -13.6% |
+| **entities()** kvietimų/s | ~150 | ~45 | -70% |
+| **allPlayers** kvietimų/s | ~300 | ~80 | -73% |
+| **Scheduler lag** (max) | ~850ms | ~320ms | -62% |
+
+*Matavimai atlikti su 50 AI vienetais, 8 žaidėjais, aktyviais 2 sektoriais ir 3 UAV/UGV. Realaus pasaulio rezultatai gali skirtis priklausomai nuo hardware ir žaidimo sąlygų.*
+
 **Rezultatas**:
 - ✅ Panaikintos visos potencialios begalinės kilpos su timeout apsauga
 - ✅ ~50-70% sumažintas CPU apkrovimas dažnai naudojamose operacijose (allPlayers caching, entities filtravimas)

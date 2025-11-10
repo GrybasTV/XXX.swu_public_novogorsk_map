@@ -49,9 +49,7 @@ if (!secBE1) exitWith {
     if(DBG)then{diag_log "[SECTOR_CREATION] BE1 sector creation skipped - timeout reached"};
 };  // sąlyga neįvykdyta – nieko nekuriam
 
-//Pašalinti lokalius marker'ius TIK tada, kai sektorius sukurtas ir aktyvus
-["mFobE"] remoteExec ["deleteMarkerLocal", 0, true]; //delete local marker (užtikrina, kad nepradėtų dubliuotis mFobE)
-deleteMarker resFobE;
+// Marker'iai bus pašalinti po sėkmingo sektoriaus sukūrimo
 
 // Paruošk reikšmes
 private _nme = format ["D: %1", nameBE1];
@@ -91,3 +89,7 @@ if(DBG)then{diag_log "[SECTOR_CREATION] BE1 sector created and initialized succe
 [3] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;
 dBE1 = true;
+
+// Pašalinti marker'ius TIK po sėkmingo sektoriaus sukūrimo
+["mFobE"] remoteExec ["deleteMarkerLocal", 0, true];
+deleteMarker resFobE;

@@ -64,12 +64,37 @@ if (!isNil "ugvE" && {alive ugvE}) then {
 	publicVariable "ugvE";
 };
 
-// 5. Sync any other critical mission variables that JIP players need
-if (!isNil "progress") then {
-	publicVariable "progress";
-};
-if (!isNil "aStart") then {
-	publicVariable "aStart";
-};
+// 5. Sync critical mission variables
+if (!isNil "progress") then { publicVariable "progress"; };
+if (!isNil "aStart") then { publicVariable "aStart"; };
+if (!isNil "version") then { publicVariable "version"; };
+if (!isNil "missType") then { publicVariable "missType"; };
+
+// 6. Sync sector markers (ensure they exist for JIP players)
+if (!isNil "secBE1" && secBE1) then { publicVariable "secBE1"; };
+if (!isNil "secBW1" && secBW1) then { publicVariable "secBW1"; };
+if (!isNil "secBE2" && secBE2) then { publicVariable "secBE2"; };
+if (!isNil "secBW2" && secBW2) then { publicVariable "secBW2"; };
+
+// 7. Sync base positions and other critical location data
+if (!isNil "posArti") then { publicVariable "posArti"; };
+if (!isNil "posCas") then { publicVariable "posCas"; };
+if (!isNil "posAA") then { publicVariable "posAA"; };
+if (!isNil "posBaseW1") then { publicVariable "posBaseW1"; };
+if (!isNil "posBaseW2") then { publicVariable "posBaseW2"; };
+if (!isNil "posBaseE1") then { publicVariable "posBaseE1"; };
+if (!isNil "posBaseE2") then { publicVariable "posBaseE2"; };
+
+// 8. Sync faction data
+if (!isNil "factionW") then { publicVariable "factionW"; };
+if (!isNil "factionE") then { publicVariable "factionE"; };
+if (!isNil "nameBW1") then { publicVariable "nameBW1"; };
+if (!isNil "nameBW2") then { publicVariable "nameBW2"; };
+if (!isNil "nameBE1") then { publicVariable "nameBE1"; };
+if (!isNil "nameBE2") then { publicVariable "nameBE2"; };
+
+// 9. Sync timer and respawn settings
+if (!isNil "rTime") then { publicVariable "rTime"; };
+if (!isNil "arTime") then { publicVariable "arTime"; };
 
 if(DBG)then{diag_log format ["[JIP_RESTORATION] Completed state restoration for player: %1", name _unit]};

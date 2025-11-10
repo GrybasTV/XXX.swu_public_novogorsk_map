@@ -100,19 +100,26 @@ if (isNil "wrm_dynSim_entityCreatedEH") then {
 	];
 };
 
-//Periodinis „catch-up“ – kartą per 2 minutes patikrina, ar kas nepraslydo
+//Periodinis „catch-up“ – kartą per 60 sekundžių patikrina, ar kas nepraslydo
 [] spawn {
 	while {true} do {
-		sleep 120;
+		sleep 60;
 		if(DBG)then{diag_log "[DYNAMIC_SIMULATION] Running periodic enforcer check"};
+
+		private _groupsProcessed = 0;
+		private _vehiclesProcessed = 0;
 
 		{
 			[_x] call (missionNamespace getVariable ["wrm_fnc_dynSim_markGroup", {}]);
+			_groupsProcessed = _groupsProcessed + 1;
 		} forEach allGroups;
 
 		{
 			[_x] call (missionNamespace getVariable ["wrm_fnc_dynSim_markVehicle", {}]);
+			_vehiclesProcessed = _vehiclesProcessed + 1;
 		} forEach vehicles;
+
+		if(DBG)then{diag_log format ["[DYNAMIC_SIMULATION] Enforcer processed: %1 groups, %2 vehicles", _groupsProcessed, _vehiclesProcessed]};
 	};
 };
 
