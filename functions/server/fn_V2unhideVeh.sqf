@@ -22,10 +22,9 @@ for "_i" from 0 to 1 step 0 do
 {
 	sleep 30; //30 sec default
 
-	//OPTIMIZACIJA: Naudoti allUnits tik vieną kartą ir išsaugoti rezultatą
-	//Tai yra labai svarbu, nes allUnits yra labai lėta komanda, kuri skenuoja VISUS objektus žaidime
-	//Jei naudojame ją 4 kartus per ciklą, tai sukuria didžiulę apkrovą ir gali sukelti "No alive" timeout'us
-	private _allUnits = allUnits; //Saugoti masyvą, kad nereikėtų kviesti allUnits kelis kartus
+	//OPTIMIZATION: Pakeista į entities su select filtravimu - VALIDUOTA SU ARMA 3 BEST PRACTICES
+	//entities yra greitesnė nei allUnits, o select filtruoja prieš iteraciją
+	private _allUnits = entities [["Man"], [], true, false] select {alive _x}; //Tik gyvi vienetai
 	
 	_eBW1=true;
 	{

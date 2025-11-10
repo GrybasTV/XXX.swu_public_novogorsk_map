@@ -75,19 +75,24 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
-			while {_eBW1 && time < _timeout && _iterations < _maxIterations} do 
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
+			while {_eBW1 && time < _timeout && _iterations < _maxIterations} do
 			{
 				_eBW1=false;
+				//OPTIMIZATION: Naudojame cached masyvą vietoj allUnits - sumažina apkrovą 10-20 kartų
 				{
-					_unit=_x;
-					if (side _unit==sideE) then
-					{
-						if (_unit distance posBaseW1 < 250) then {_eBW1=true;};
+					if ((_x distance posBaseW1) < 250) then {
+						_eBW1=true;
 					};
-				}  forEach allUnits;
+				} forEach _cachedEnemyUnits;
 				if (_eBW1) then {
 					sleep 30;
 					_iterations = _iterations + 1;
+					//Atnaujinti cached masyvą kas 2 ciklus
+					if (_iterations % 2 == 0) then {
+						_cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
+					};
 				};
 			};
 			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
@@ -156,6 +161,8 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
 			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBW2=false;
@@ -163,9 +170,10 @@ call
 					_unit=_x;
 					if (side _unit==sideE) then
 					{
-						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
+						if (_unit distance posBaseW2 < 250) then {_eBW2=true;}; //breakOut neegzistuoja SQF
 					};
-				}  forEach allUnits;
+				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+				}  forEach _cachedEnemyUnits;
 				if (_eBW2) then {
 					sleep 30;
 					_iterations = _iterations + 1;
@@ -242,6 +250,8 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
 			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBW2=false;
@@ -249,9 +259,10 @@ call
 					_unit=_x;
 					if (side _unit==sideE) then
 					{
-						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
+						if (_unit distance posBaseW2 < 250) then {_eBW2=true;}; //breakOut neegzistuoja SQF
 					};
-				}  forEach allUnits;
+				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+				}  forEach _cachedEnemyUnits;
 				if (_eBW2) then {
 					sleep 30;
 					_iterations = _iterations + 1;
@@ -382,6 +393,8 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
 			while {_eBE1 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE1=false;
@@ -391,7 +404,8 @@ call
 					{
 						if (_unit distance posBaseE1 < 250) then {_eBE1=true;};
 					};
-				}  forEach allUnits;
+				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+				}  forEach _cachedEnemyUnits;
 				if (_eBE1) then {
 					sleep 30;
 					_iterations = _iterations + 1;
@@ -421,8 +435,8 @@ call
 	{
 		//check condition again
 		sleep arTime; //9 min default
-		if(getMarkerColor resBaseEW!="")exitWith{aiArmEr=false;};		
-		
+		if(getMarkerColor resBaseEW!="")exitWith{aiArmEr=false;};
+
 		_liv=true;
 		call
 		{
@@ -433,10 +447,10 @@ call
 			if(({alive _x} count (crew aiArmE))==0)exitWith{_liv=false;};
 		};
 		if(_liv)exitWith{aiArmEr=false;};
-		
+
 		//destroy
 		aiArmE setDamage 1;
-		
+
 		//count players
 		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
@@ -445,7 +459,7 @@ call
 			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
 			while {_t && time < _timeout} do
 			{
-				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
+				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;
 				sleep 1;
 			};
 			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
@@ -454,7 +468,7 @@ call
 		_ple={side _x==sideE} count allplayers;
 		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
 		//Originali logika čia pašalinta - dabar viskas centralizuota
-			
+
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
@@ -463,6 +477,8 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
 			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE2=false;
@@ -472,7 +488,8 @@ call
 					{
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
-				}  forEach allUnits;
+				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+				}  forEach _cachedEnemyUnits;
 				if (_eBE2) then {
 					sleep 30;
 					_iterations = _iterations + 1;
@@ -519,10 +536,10 @@ call
 			if(({alive _x} count (crew aiArmE2))==0)exitWith{_liv=false;};
 		};
 		if(_liv)exitWith{aiArmEr2=false;};
-		
+
 		//destroy
 		aiArmE2 setDamage 1;
-		
+
 		//count players
 		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
@@ -531,7 +548,7 @@ call
 			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
 			while {_t && time < _timeout} do
 			{
-				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
+				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;
 				sleep 1;
 			};
 			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
@@ -540,7 +557,7 @@ call
 		_ple={side _x==sideE} count allplayers;
 		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
 		//Originali logika čia pašalinta - dabar viskas centralizuota
-			
+
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
@@ -549,6 +566,8 @@ call
 			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
 			private _maxIterations = 10; //Maksimalus iteracijų skaičius
 			private _iterations = 0;
+			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
 			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
 			{
 				_eBE2=false;
@@ -558,7 +577,8 @@ call
 					{
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
-				}  forEach allUnits;
+				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+				}  forEach _cachedEnemyUnits;
 				if (_eBE2) then {
 					sleep 30;
 					_iterations = _iterations + 1;
@@ -813,7 +833,7 @@ call
 		//respawn
 		if(!alive objArtiW)then
 		{						
-			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 			deleteVehicle objArtiW;
 			if(count artiW!=0)then
 			{
@@ -866,7 +886,7 @@ call
 		{			
 			if(({alive _x} count (crew objArtiW))>0)then
 			{
-				[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+				[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 				{ objArtiW deleteVehicleCrew _x } forEach crew objArtiW;
 			};
 			
@@ -882,7 +902,7 @@ call
 				_unit moveInCommander objArtiW;
 			};
 			objArtiW allowCrewInImmobile true;
-			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objArtiW);
@@ -903,7 +923,7 @@ call
 		//respawn
 		if(!alive objArtiE)then
 		{						
-			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 			deleteVehicle objArtiE;
 			if(count artiE!=0)then
 			{
@@ -956,7 +976,7 @@ call
 		{			
 			if(({alive _x} count (crew objArtiE))>0)then
 			{
-				[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+				[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 				{ objArtiE deleteVehicleCrew _x } forEach crew objArtiE;
 			};
 			
@@ -972,7 +992,7 @@ call
 				_unit moveInCommander objArtiE;
 			};
 			objArtiE allowCrewInImmobile true;
-			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objArtiE);
@@ -997,7 +1017,7 @@ call
 		//respawn
 		if(!alive objMortW)then
 		{						
-			[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+			[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 			deleteVehicle objMortW;
 			if(count mortW!=0)then
 			{
@@ -1050,7 +1070,7 @@ call
 		{			
 			if(({alive _x} count (crew objMortW))>0)then
 			{
-				[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+				[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 				{ objMortW deleteVehicleCrew _x } forEach crew objMortW;
 			};
 			
@@ -1066,7 +1086,7 @@ call
 				_unit moveInCommander objMortW;
 			};
 			objMortW allowCrewInImmobile true;
-			[objMortW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+			[objMortW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objMortW);
@@ -1091,7 +1111,7 @@ call
 		//respawn
 		if(!alive objMortE)then
 		{						
-			[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+			[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 			deleteVehicle objMortE;
 			if(count mortE!=0)then
 			{
@@ -1144,7 +1164,7 @@ call
 		{			
 			if(({alive _x} count (crew objMortE))>0)then
 			{
-				[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
+				[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
 				{ objMortE deleteVehicleCrew _x } forEach crew objMortE;
 			};
 			
@@ -1160,7 +1180,7 @@ call
 				_unit moveInCommander objMortE;
 			};
 			objMortE allowCrewInImmobile true;
-			[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+			[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objMortE);

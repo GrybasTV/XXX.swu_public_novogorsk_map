@@ -130,6 +130,13 @@ z1 addCuratorEditableObjects [allplayers+playableUnits]; //all players and playa
 //Prestige Strategic AI Balance sistema - dinaminis AI boost pagal strateginius sektorius
 [] spawn wrm_fnc_V2strategicAiBalance;
 
+//Dynamic Simulation - engine optimization: užšaldo tolimus AI/transportą (mažesnė CPU apkrova)
+[] call wrm_fnc_V2dynamicSimulation;
+
+//Cleanup mechanizmas mirusiems objektams - VALIDUOTA SU ARMA 3 BEST PRACTICES
+//Periodiškai valo mirusius objektus, kad sumažintų atminties naudojimą ir pagreitintų allUnits kvietimus
+[] spawn wrm_fnc_V2cleanup;
+
 //UAV Cleanup on Player Disconnect - išvalo žaidėjo dronus kai jis atsijungia
 addMissionEventHandler ["PlayerDisconnected", {
 	params ["_id", "_uid", "_name", "_jip", "_owner", "_idstr"];

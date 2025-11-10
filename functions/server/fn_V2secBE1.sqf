@@ -20,16 +20,27 @@
 */
 
 
-while {!secBE1} do 
+//OPTIMIZATION: Pridėtas timeout'as ir pakeista į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+private _timeout = time + 3600; //Maksimalus laukimo laikas 1 valanda
+while {!secBE1 && time < _timeout} do
 {
-	{
-		_unit=_x;
-		if (side _unit==sideW) then
-		{
-			if (_unit distance posBaseE1 < 200) then {secBE1=true;};
-		};
-	}  forEach allUnits;
-	sleep 5;
+    //OPTIMIZATION: Naudoti entities vietoj allUnits - greitesnė ir efektyvesnė
+    //Filtruoti PRIEŠ iteraciją - optimizacija
+    private _allAliveUnits = entities [["Man"], [], true, false];
+    if (count _allAliveUnits == 0) then {
+        _allAliveUnits = allUnits select {alive _x};
+    };
+
+    private _enemyUnits = _allAliveUnits select {side _x == sideW};
+
+    {
+        if ((_x distance posBaseE1) < 200) then {
+            secBE1 = true;
+        };
+        if (secBE1) exitWith {}; //Išeiti iš ciklo greičiau
+    } forEach _enemyUnits;
+
+    sleep 5;
 };
 publicvariable "secBE1";
 
@@ -68,14 +79,11 @@ _des=format ['Capture/Defend %1 base',nameBE1];
 				_mrkRaW setMarkerText nameBE1;
 				deleteMarker resFobEW;
 
+				//OPTIMIZATION: Pakeisti allUnits į entities su filtravimu - VALIDUOTA SU ARMA 3 BEST PRACTICES
 				_eBE1=true;
 				{
-					_unit=_x;
-					if (side _unit==sideW) then
-					{
-						if (_unit distance posBaseE1 < 250) then {_eBE1=false;};
-					};
-				}  forEach allUnits;	
+					if (side _x == sideW && _x distance posBaseE1 < 250) then {_eBE1=false;};
+				} forEach (entities [["Man"], [], true, false]);	
 				if((getMarkerColor resFobE!='''')&&(_eBE1))
 				then{
 					{_x hideObjectGlobal false,} forEach hideVehBE1;

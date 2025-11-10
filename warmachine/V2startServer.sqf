@@ -85,19 +85,26 @@ if (aoType==0) then
 		[_p] execVM "warmachine\V2aoCreate.sqf";
 		//Timeout: maksimalus laukimo laikas 30 sekundžių
 		private _timeout = time + 30;
+		//DIAG: Pridėti diag_log prieš waitUntil pradžią
+		diag_log format ["[AO_CREATION] Starting waitUntil for AOcreated == 2 at location %1, current AOcreated: %2", _i, AOcreated];
 		waitUntil {AOcreated == 2 || time > _timeout};
 		if (time > _timeout) then {
 			//Timeout'as pasiektas - AO sukurti nepavyko, bandyti kitą lokaciją
+			diag_log format ["[AO_CREATION] Timeout reached for location %1, AOcreated: %2", _i, AOcreated];
 			AOcreated = 0;
 			if(DBG)then{systemChat format ["AO creation timeout for location %1", _i];};
 		} else {
 			//AO sukurtas, laukti kol bus baigtas
+			diag_log format ["[AO_CREATION] AO started successfully, waiting for completion at location %1", _i];
 			_timeout = time + 30;
 			waitUntil {AOcreated != 2 || time > _timeout};
 			if (time > _timeout && AOcreated == 2) then {
 				//Timeout'as pasiektas, bet AO vis dar 2 - reikia reset'inti
+				diag_log format ["[AO_CREATION] Completion timeout for location %1, AO still at state 2", _i];
 				AOcreated = 0;
 				if(DBG)then{systemChat format ["AO creation stuck at state 2 for location %1", _i];};
+			} else {
+				diag_log format ["[AO_CREATION] AO creation completed for location %1, final state: %2", _i, AOcreated];
 			};
 		};
 		_i=_i+1;
@@ -117,19 +124,26 @@ if (aoType==0) then
 		[_p] execVM "warmachine\V2aoCreate.sqf";
 		//Timeout: maksimalus laukimo laikas 30 sekundžių
 		private _timeout = time + 30;
+		//DIAG: Pridėti diag_log prieš waitUntil pradžią
+		diag_log format ["[AO_CREATION] Starting waitUntil for AOcreated == 2 at random position %1, current AOcreated: %2", _i, AOcreated];
 		waitUntil {AOcreated == 2 || time > _timeout};
 		if (time > _timeout) then {
 			//Timeout'as pasiektas - AO sukurti nepavyko, bandyti kitą poziciją
+			diag_log format ["[AO_CREATION] Timeout reached for random position %1, AOcreated: %2", _i, AOcreated];
 			AOcreated = 0;
 			if(DBG)then{systemChat format ["AO creation timeout for random position %1", _i];};
 		} else {
 			//AO sukurtas, laukti kol bus baigtas
+			diag_log format ["[AO_CREATION] AO started successfully, waiting for completion at random position %1", _i];
 			_timeout = time + 30;
 			waitUntil {AOcreated != 2 || time > _timeout};
 			if (time > _timeout && AOcreated == 2) then {
 				//Timeout'as pasiektas, bet AO vis dar 2 - reikia reset'inti
+				diag_log format ["[AO_CREATION] Completion timeout for random position %1, AO still at state 2", _i];
 				AOcreated = 0;
 				if(DBG)then{systemChat format ["AO creation stuck at state 2 for random position %1", _i];};
+			} else {
+				diag_log format ["[AO_CREATION] AO creation completed for random position %1, final state: %2", _i, AOcreated];
 			};
 		};
 		_i=_i+1;
@@ -1415,8 +1429,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 } forEach [posArti,posAA,posCas];
 
 //sector Anti Air
-"ModuleSector_F" createUnit [posAA,createGroup sideLogic,format
-["
+"ModuleSector_F" createUnit [posAA,createGroup sideLogic,"
 	sectorAA=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
 	this setVariable ['name','A: Anti Air'];
@@ -1467,14 +1480,12 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					_unit moveInCommander objAAW;
 				};
 				objAAW allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objAAW);				
 				publicvariable ''objAAW'';
 				sleep 1;
 				z1 addCuratorEditableObjects [[objAAW],true];
 				defW pushBackUnique _grpAAW;
 				[posAA,sideW] call wrm_fnc_V2secDefense;
+				[] execVM ''warmachine\arti_event_handlers.sqf'';
 			 };
 
 			 if ((_this select 1) == sideE) exitWith  
@@ -1519,14 +1530,12 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					_unit moveInCommander objAAE;
 				};
 				objAAE allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objAAE);				
 				publicvariable ''objAAE'';
 				sleep 1;
 				z1 addCuratorEditableObjects [[objAAE],true];
 				defE pushBackUnique _grpAAE;
 				[posAA,sideE] call wrm_fnc_V2secDefense;
+				[] execVM ''warmachine\arti_event_handlers.sqf'';
 			 };
 		};
 		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
@@ -1545,7 +1554,10 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['ScoreReward','0'];
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
-"]];
+
+"];
+
+publicVariable "sectorAA";
 
 [sectorAA] call BIS_fnc_moduleSector; //initialize sector
 
@@ -1571,9 +1583,8 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 };
 
 //sector Artillery
-"ModuleSector_F" createUnit [posArti,createGroup sideLogic,format
-["
-	
+"ModuleSector_F" createUnit [posArti,createGroup sideLogic,"
+
 	sectorArti=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
 	this setVariable ['name','B: Artillery'];
@@ -1590,9 +1601,9 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 				_mrkRaW setMarkerType ''empty'';
 				_mrkRaW setMarkerText ''Artillery'';
 				deleteMarker resBE;
-				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
-				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
-				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
+				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
+				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
+				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
 				if(!isNull objArtiE)then
 				{
 					{objArtiE deleteVehicleCrew _x} forEach crew objArtiE;
@@ -1627,16 +1638,14 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 					_unit moveInCommander objArtiW;
 				};
 				objArtiW allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objArtiW);
-				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
+				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];				
 				publicvariable ''objArtiW'';
 				sleep 1;
 				z1 addCuratorEditableObjects [[objArtiW],true];
 				defW pushBackUnique _grpArtiW;
 				[] spawn wrm_fnc_V2mortarW;
 				[posArti,sideW] call wrm_fnc_V2secDefense;
+				[] execVM ''warmachine\arti_event_handlers.sqf'';
 			 };
 			 
 			 if ((_this select 1) == sideE) exitWith  
@@ -1647,9 +1656,9 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 				_mrkRaE setMarkerType ''empty'';
 				_mrkRaE setMarkerText ''Artillery'';
 				deleteMarker resBW;
-				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
-				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
-				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
+				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
+				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
+				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
 				if(!isNull objArtiW)then
 				{
 					{objArtiW deleteVehicleCrew _x} forEach crew objArtiW;
@@ -1684,20 +1693,19 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 					_unit moveInCommander objArtiE;
 				};
 				objArtiE allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objArtiE);
-				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
+				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];				
 				publicvariable ''objArtiE'';
 				sleep 1;
 				z1 addCuratorEditableObjects [[objArtiE],true];
 				defE pushBackUnique _grpArtiE;
 				[] spawn wrm_fnc_V2mortarE;
 				[posArti,sideE] call wrm_fnc_V2secDefense;
+				[] execVM ''warmachine\arti_event_handlers.sqf'';
 			};
 		};
 		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
 	'];
+
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
 	this setVariable ['CostWheeled','0.2'];
@@ -1714,7 +1722,12 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 	this setVariable ['objectArea',[75,75,0,false]];
 	this setVariable ['taskType','Attack'];
 
-"]];
+"];
+
+//DIAG: Pridėti diag_log prieš waitUntil pradžią
+diag_log "[SECTOR_INIT] Waiting for sectorArti to be defined";
+waitUntil {!(isNil 'sectorArti')};
+publicVariable "sectorArti";
 
 [sectorArti] call BIS_fnc_moduleSector; //initialize sector
 
@@ -1740,8 +1753,7 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 };
 
 //sector CAS Tower
-"ModuleSector_F" createUnit [posCas,createGroup sideLogic,format
-["
+"ModuleSector_F" createUnit [posCas,createGroup sideLogic,"
 	sectorCas=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
 	this setVariable ['name','C: CAS Tower'];
@@ -1761,8 +1773,8 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
 						if(_typ iskindof ''helicopter'')then
 						{
-							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
+							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
+							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 						};
 					};
 				};
@@ -1772,8 +1784,8 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
 					if(_typ iskindof ''plane'')then
 					{
-						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
+						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
+						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 					};
 				};				
 				_mrkRcW = createMarker [resCW, posCas];
@@ -1795,8 +1807,8 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
 						if(_typ iskindof ''helicopter'')then
 						{
-							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
+							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
+							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 						};
 					};
 				};
@@ -1806,8 +1818,8 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
 					if(_typ iskindof ''plane'')then
 					{
-						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
+						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
+						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 					};
 				};
 				_mrkRcE = createMarker [resCE, posCas];
@@ -1834,7 +1846,10 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 	this setVariable ['ScoreReward','0'];
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
-"]];
+
+"];
+
+publicVariable "sectorCas";
 
 //CAS sektorius inicializuojamas iš karto kaip originalo versijoje
 [sectorCas] call BIS_fnc_moduleSector; //initialize sector

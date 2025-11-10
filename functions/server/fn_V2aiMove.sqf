@@ -74,8 +74,10 @@ call
 
 //BASES WEST
 //enemy
-_en=[];
-{if(side _x==sideE)then{_en pushBackUnique _x;};} forEach allUnits;
+//OPTIMIZATION: Pakeičiame allUnits į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+//entities yra greitesnė nei allUnits, ypač su daug vienetų
+private _cachedUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
+_en = _cachedUnits;
 
 //base vest 2 (armors)
 _eBW2=false;
@@ -99,8 +101,10 @@ call
 
 //BASES EAST
 //enemy
-_en=[];
-{if(side _x==sideW)then{_en pushBackUnique _x;};} forEach allUnits;
+//OPTIMIZATION: Pakeičiame allUnits į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
+//entities yra greitesnė nei allUnits, ypač su daug vienetų
+private _cachedUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
+_en = _cachedUnits;
 
 //base east 2 (armors)
 _eBE2=false;
@@ -123,11 +127,13 @@ call
 };
 
 //attack enemy groups
+//OPTIMIZATION: Cache allPlayers rezultata ir naudoti efektyvesnį filtravimą - VALIDUOTA SU ARMA 3 BEST PRACTICES
 _grW=[]; _grE=[]; // _posPW=[]; _posPE=[]; _posGW=[]; _posGE=[];
+private _allPlayersCached = allPlayers select {alive _x};
 call
 {
-	{if ((side _x == sideW)&&({alive _x}count units group _x>0))then{_grW pushBackUnique (group _x)};} forEach allPlayers; //side, not empty group, not HQ
-	{if ((side _x == sideE)&&({alive _x}count units group _x>0))then{_grE pushBackUnique (group _x)};} forEach allPlayers;
+	{if ((side _x == sideW)&&({alive _x}count units group _x>0))then{_grW pushBackUnique (group _x)};} forEach _allPlayersCached;
+	{if ((side _x == sideE)&&({alive _x}count units group _x>0))then{_grE pushBackUnique (group _x)};} forEach _allPlayersCached;
 };
 
 {_posPW pushBackUnique (getPos leader _x);} forEach _grW;

@@ -43,17 +43,17 @@ ReviveMedicSpeedMultiplier = 1;			//speed multiplier for revive performed by med
 ReviveForceRespawnDelay = 6;			//time needed to perform force respawn (in secs)
 ReviveBleedOutDelay = 180;				//unconscious state duration (in secs)
 
-//DELETE DEAD BODIES
-corpseManagerMode = 1;
-corpseLimit = 24; //24
-corpseRemovalMinTime = 180; //180
-corpseRemovalMaxTime = 200; //200
+//DELETE DEAD BODIES (hibridinis planas: engine manager + server queue)
+corpseManagerMode = 1;                 //engine dirba kartu su mūsų GC
+corpseLimit = 30;                      //paliekam ~30 lavonų, atmestiniam efektui
+corpseRemovalMinTime = 600;            //10 min iki pirmo automatinio valymo
+corpseRemovalMaxTime = 1800;           //30 min hard limit, jei arti nėra žaidėjų
 
-//DELETE WRECKS
-wreckManagerMode = 3;
-wreckLimit = 15;
-wreckRemovalMinTime = 190;
-wreckRemovalMaxTime = 600;
+//DELETE WRECKS (engine manager koordinuotas su serveriniu GC)
+wreckManagerMode = 1;                  //naudojame variklio valymą vietoje 3 (disabled)
+wreckLimit = 25;                       //maksimalus nuolaužų kiekis
+wreckRemovalMinTime = 900;             //15 min iki pirmo valymo
+wreckRemovalMaxTime = 2400;            //40 min hard limit
 
 saving = 0;
 taskManagement_propagate = 1;

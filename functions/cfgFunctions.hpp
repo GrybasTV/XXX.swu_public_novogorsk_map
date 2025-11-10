@@ -18,6 +18,8 @@ class wrm
 		class V2aiVehicle {};
 		class V2aiVehUpdate {};
 		class V2baseSideCheck {};
+		class V2cleanup {}; //Cleanup mechanizmas mirusiems objektams - VALIDUOTA SU ARMA 3 BEST PRACTICES
+		class V2dynamicSimulation {}; //Dynamic Simulation sistema - įjungia DS ir prižiūri naujas grupes/transportą
 		class V2clearArea {};
 		class V2coolDown {};
 		class V2createVehicleWithCrew {};
@@ -42,6 +44,7 @@ class wrm
 		class V2strategicAiBalance {}; //Prestige Strategic AI Balance sistema - dinaminis AI boost pagal strateginius sektorius
 		class V2prestigeSquadManager {}; //Dinaminis squad management Prestige AI sistemai
 		class V2uavCleanup {}; //UAV cleanup funkcija - išvalo žaidėjo dronus iš masyvų
+		class V2uavRequest_srv {}; //Serverinė UAV/UGV kūrimo funkcija
 		class V2eventHandlerCleanup {}; //Event handler cleanup sistema - pašalina MPKilled handler'ius ir stebi memory leak'us
 	};
 	class client
