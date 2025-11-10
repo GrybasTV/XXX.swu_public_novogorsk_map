@@ -21,14 +21,18 @@
 		- Naudojami aiškūs nuotoliai (foot, vehicle, prop) pagal hibridinį planą
 */
 
-if(DBG)then{diag_log "[DYNAMIC_SIMULATION] Initializing Dynamic Simulation system"};
+if (DBG) then {
+	diag_log "[DYNAMIC_SIMULATION] Initializing Dynamic Simulation system";
+};
 if (!isServer) exitWith {
 	diag_log "[WRM][DYNSIM] Dynamic Simulation init iškviestas ne serveryje – nutraukiama.";
 };
 
 //Enable Dynamic Simulation system
 enableDynamicSimulationSystem true;
-if(DBG)then{diag_log "[DS] Dynamic Simulation enabled";};
+if (DBG) then {
+	diag_log "[DS] Dynamic Simulation enabled";
+};
 
 //Distances by type
 setDynamicSimulationDistance "Group", 1200;
@@ -51,7 +55,9 @@ private _fnc_markGroup = {
 	// IŠIMTYS: nepritaikyti DS grupėms su žaidėjais
 	private _groupUnits = units _grp;
 	if (_groupUnits findIf {isPlayer _x} > -1) exitWith {
-		if(DBG)then{diag_log format ["[DS_GROUP_SKIP] Skipped group with player: %1", _grp]};
+		if (DBG) then {
+			diag_log format ["[DS_GROUP_SKIP] Skipped group with player: %1", _grp];
+		};
 	};
 
 	_grp enableDynamicSimulation true;
@@ -68,7 +74,9 @@ private _fnc_markVehicle = {
 
 	// IŠIMTYS: nepritaikyti DS transportui su žaidėjais įguloje
 	if ((crew _veh) findIf {isPlayer _x} > -1) exitWith {
-		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with player crew: %1", typeOf _veh]};
+		if (DBG) then {
+			diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with player crew: %1", typeOf _veh];
+		};
 	};
 
 	// IŠIMTYS: nepritaikyti DS transportui su gyva įgula arba kroviniu
@@ -77,7 +85,9 @@ private _fnc_markVehicle = {
 	private _hasCargo = count (getVehicleCargo _veh) > 0;
 
 	if (_hasCrew || _hasCargo) exitWith {
-		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with crew/cargo: %1 (crew: %2, cargo: %3)", typeOf _veh, _hasCrew, _hasCargo]};
+		if (DBG) then {
+			diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with crew/cargo: %1 (crew: %2, cargo: %3)", typeOf _veh, _hasCrew, _hasCargo];
+		};
 	};
 
 	_veh enableDynamicSimulation true;
@@ -125,7 +135,9 @@ if (isNil "wrm_dynSim_entityCreatedEH") then {
 [] spawn {
 	while {true} do {
 		sleep 60;
-		if(DBG)then{diag_log "[DYNAMIC_SIMULATION] Running periodic enforcer check"};
+		if (DBG) then {
+			diag_log "[DYNAMIC_SIMULATION] Running periodic enforcer check";
+		};
 
 		private _groupsProcessed = 0;
 		private _vehiclesProcessed = 0;
@@ -140,7 +152,9 @@ if (isNil "wrm_dynSim_entityCreatedEH") then {
 			_vehiclesProcessed = _vehiclesProcessed + 1;
 		} forEach vehicles;
 
-		if(DBG)then{diag_log format ["[DYNAMIC_SIMULATION] Enforcer processed: %1 groups, %2 vehicles", _groupsProcessed, _vehiclesProcessed]};
+		if (DBG) then {
+			diag_log format ["[DYNAMIC_SIMULATION] Enforcer processed: %1 groups, %2 vehicles", _groupsProcessed, _vehiclesProcessed];
+		};
 	};
 };
 
