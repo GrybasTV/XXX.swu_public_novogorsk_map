@@ -81,28 +81,28 @@ if (DBG) then {
 ```sqf
 // Enable Dynamic Simulation
 enableDynamicSimulationSystem true;
-setDynamicSimulationEnabledGlobal true;
 
 if (DBG) then {
 	diag_log "[DS] Dynamic Simulation enabled";
 };
 
 // Distances
-setDynamicSimulationDistance "Group", 1200;
-setDynamicSimulationDistance "Vehicle", 1500;
-setDynamicSimulationDistance "Prop", 300;
-setDynamicSimulationDistance "IsMoving", 50;
+"Group" setDynamicSimulationDistance 1200;
+"Vehicle" setDynamicSimulationDistance 1500;
+"Prop" setDynamicSimulationDistance 300;
+"EmptyVehicle" setDynamicSimulationDistance 1000;
 
 // Optional coefficients
-setDynamicSimulationDistanceCoef "Group", 1.0;
-setDynamicSimulationDistanceCoef "Vehicle", 1.0;
+"Group" setDynamicSimulationDistanceCoef 1.0;
+"Vehicle" setDynamicSimulationDistanceCoef 1.0;
 ```
 
 ### Svarbu:
-- **Kiekviena DS komanda turi užsibaigti `;`** - dažna klaida yra palikti komentaro/teksto likučius tarp `enableDynamicSimulationSystem` ir `setDynamicSimulationEnabledGlobal`
-- **Abi įjungimo komandos turi būti viena po kitos** - pirmiausia `enableDynamicSimulationSystem`, tada `setDynamicSimulationEnabledGlobal`, tik tada distances
-- **Teisingi tipai**: `"Group"`, `"Vehicle"`, `"Prop"`, `"IsMoving"` - **`"EmptyVehicle"` nėra DS tipo raktas**
-- **`if` blokas turi kabliataškį** po `}`: `if (...) then { ... };`
+- **Sintaksė**: `setDynamicSimulationDistance` ir `setDynamicSimulationDistanceCoef` naudoja **objekto sintaksę**: `type setDynamicSimulationDistance distance;`
+- **Ne funkcijos sintaksė**: **NEnaudok** `setDynamicSimulationDistance "Group", 1200;` - tai sukels sintaksės klaidą
+- **Teisingi tipai**: `"Group"`, `"Vehicle"`, `"Prop"`, `"EmptyVehicle"`, `"IsMoving"`
+- **`setDynamicSimulationEnabledGlobal` naudoti tik konkretiems objektams** - ne globaliai sistemai įjungti
+- **Kiekviena komanda turi užsibaigti `;`**
 - **Naudok standartinę `if-then` sintaksę** su tarpais (žr. sekciją 2)
 
 ---
@@ -469,8 +469,14 @@ if (DBG) then {
 
 ---
 
-**Paskutinis Atnaujinimas**: 2025-11-10  
-**Versija**: 2.1  
+**Paskutinis Atnaujinimas**: 2025-11-10
+**Versija**: 2.2
+**Pakeitimai v2.2**:
+- Išspręsta DS sintaksė pagal oficialią BI dokumentaciją: objekto sintaksė `"Group" setDynamicSimulationDistance 1200;` vietoj funkcijos sintaksės
+- Pašalinta klaidinga informacija apie `setDynamicSimulationEnabledGlobal` globalų naudojimą
+- Atnaujinti DS pavyzdžiai su teisinga objekto sintakse
+- Patikslinta DS dokumentacija pagal oficialius Bohemia Interactive šaltinius
+
 **Pakeitimai v2.1**:
 - Atnaujinta Dynamic Simulation sekcija su abiem įjungimo komandomis ir teisingais tipais (Group, Vehicle, Prop, IsMoving)
 - Pakeista If-Then sekcija iš "KRITIŠKA" į "Rekomenduojama stiliaus taisyklė" su aiškiu paaiškinimu
