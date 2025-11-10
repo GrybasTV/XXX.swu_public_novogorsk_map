@@ -500,24 +500,6 @@ class CfgDebriefing
 		picture = "n_inf";
 		pictureColor[] = {0,0.5,0,1};
 	};
-	class EndUkraine
-	{
-		title = "Ukraine victory";
-		subtitle = "";
-		description = "";
-		pictureBackground = "lobby.paa";
-		picture = "b_inf";
-		pictureColor[] = {0,0.3,0.6,1};
-	};
-	class EndRussia
-	{
-		title = "Russia victory";
-		subtitle = "";
-		description = "";
-		pictureBackground = "lobby.paa";
-		picture = "o_inf";
-		pictureColor[] = {0.5,0,0,1};
-	};
 	class EndLDF
 	{
 		title = "LDF victory";

@@ -28,6 +28,7 @@ if (!isServer) exitWith {
 
 //Įjungti dinaminės simuliacijos sistemą
 enableDynamicSimulationSystem true;
+setDynamicSimulationEnabledGlobal true;
 
 //Atstumai (metrais) pagal objektų kategorijas
 setDynamicSimulationDistance "Group", 1200;        //pėstininkams (AI grupėms)

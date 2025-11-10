@@ -219,19 +219,19 @@
 				[_x, _now] call _fnc_registerGround;
 			} forEach (_holders + _craters);
 
+			//HashMap iteracija - naudojame toArray false saugesniam variantui
 			{
-				private _obj = _x;
+				_x params ["_obj", "_ts"];
 				if (isNull _obj) then {
 					wrm_gc_holderTimestamps deleteAt _obj;
 				} else {
-					private _stamp = wrm_gc_holderTimestamps getOrDefault [_obj, _now];
-					private _age = _now - _stamp;
+					private _age = _now - _ts;
 					if (_age > _ttlGround && !([_obj, _keepRadius] call _fnc_isNearPlayers)) then {
 						deleteVehicle _obj;
 						wrm_gc_holderTimestamps deleteAt _obj;
 					};
 				};
-			} forEach (wrm_gc_holderTimestamps keys);
+			} forEach (wrm_gc_holderTimestamps toArray false);
 		};
 
 		//Debug informacija (įjungti tik testams)
