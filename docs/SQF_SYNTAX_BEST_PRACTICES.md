@@ -35,24 +35,16 @@ format ["
 
 ---
 
-## 2. If-Then Sintaksė (KRITIŠKA!)
+## 2. If-Then Sintaksė (Rekomenduojama Stiliaus Taisyklė)
 
-### Problema: Parserio Klaidos su Neteisinga Sintakse
+### Pastaba apie Sintaksę
 
-**Arma 3 parseris kartais neteisingai interpretuoja `if(...)then{...}` sintaksę be tarpų**, ypač kai po `if` bloko eina kitos komandos. Tai gali sukelti "Missing ;" klaidas net tada, kai kabliataškiai yra teisingi.
+**SQF parseris formaliai priima ir `if(...)then{...}` be tarpų**, bet dėl skaitomumo, diff'ų ir mažesnės klaidų rizikos **rekomenduojama** naudoti standartinę formą su tarpais.
 
-### Blogai (Gali Sukelti Klaidas):
-
-```sqf
-// NETIKSLU - be tarpų, vienoje eilutėje
-if(DBG)then{diag_log "[DS] Dynamic Simulation enabled";};
-if(DBG)then{diag_log format ["[MODULE] Action: %1", _action]};
-```
-
-### Gerai (Standartinė Forma):
+### Rekomenduojama Forma:
 
 ```sqf
-// TEISINGA - su tarpais, daugiau eilučių
+// REKOMENDUOJAMA - su tarpais, daugiau eilučių
 if (DBG) then {
 	diag_log "[DS] Dynamic Simulation enabled";
 };
@@ -62,16 +54,20 @@ if (DBG) then {
 };
 ```
 
-### Kodėl Tai Svarbu?
+### Kodėl Tai Rekomenduojama?
 
-1. **Parserio Suderinamumas**: Standartinė forma su tarpais yra labiau suderinama su Arma 3 parseriu
-2. **Klaidų Prevencija**: Sumažina "Missing ;" klaidų tikimybę net tada, kai sintaksė atrodo teisinga
-3. **Skaitymas**: Daugiau eilučių pagerina kodo skaitymą ir priežiūrą
+1. **Skaitomumas**: Daugiau eilučių pagerina kodo skaitymą ir priežiūrą
+2. **Diff'ai**: Lengviau matyti pakeitimus Git diff'uose
+3. **Klaidų Prevencija**: Sumažina "Missing ;" klaidų tikimybę, kai komandos jungiamos į vieną eilutę
 4. **Nuoseklumas**: Standartinė forma visur užtikrina nuoseklų kodavimo stilių
+
+### Svarbu:
+
+**Jei RPT rodo "Missing ;", nors kabliataškiai yra teisingi, pirmiausia padalink monolitines eilutes į kelias ir pridėk tarpus** – tai padeda greitai atskirti realią klaidą nuo parserio interpretacijos problemos.
 
 ### Taisyklė:
 
-**Visada naudok standartinę `if (...) then { ... }` formą su tarpais ir daugiau eilučių**, ypač kai:
+**Rekomenduojama naudoti standartinę `if (...) then { ... }` formą su tarpais ir daugiau eilučių**, ypač kai:
 - Po `if` bloko eina kitos komandos
 - `if` blokas yra format bloke arba init string'e
 - Reikia debug log'ų arba kompleksinės logikos
@@ -83,24 +79,31 @@ if (DBG) then {
 ### Teisinga Sintaksė:
 
 ```sqf
-//Enable Dynamic Simulation system
+// Enable Dynamic Simulation
 enableDynamicSimulationSystem true;
+setDynamicSimulationEnabledGlobal true;
+
 if (DBG) then {
 	diag_log "[DS] Dynamic Simulation enabled";
 };
 
-//Distances by type
+// Distances
 setDynamicSimulationDistance "Group", 1200;
-setDynamicSimulationDistance "Vehicle", 1800;
-setDynamicSimulationDistance "EmptyVehicle", 1500;
-setDynamicSimulationDistance "Prop", 600;
+setDynamicSimulationDistance "Vehicle", 1500;
+setDynamicSimulationDistance "Prop", 300;
+setDynamicSimulationDistance "IsMoving", 50;
+
+// Optional coefficients
+setDynamicSimulationDistanceCoef "Group", 1.0;
+setDynamicSimulationDistanceCoef "Vehicle", 1.0;
 ```
 
 ### Svarbu:
-- **Kiekviena komanda turi kabliataškį** `;` pabaigoje
+- **Kiekviena DS komanda turi užsibaigti `;`** - dažna klaida yra palikti komentaro/teksto likučius tarp `enableDynamicSimulationSystem` ir `setDynamicSimulationEnabledGlobal`
+- **Abi įjungimo komandos turi būti viena po kitos** - pirmiausia `enableDynamicSimulationSystem`, tada `setDynamicSimulationEnabledGlobal`, tik tada distances
+- **Teisingi tipai**: `"Group"`, `"Vehicle"`, `"Prop"`, `"IsMoving"` - **`"EmptyVehicle"` nėra DS tipo raktas**
 - **`if` blokas turi kabliataškį** po `}`: `if (...) then { ... };`
 - **Naudok standartinę `if-then` sintaksę** su tarpais (žr. sekciją 2)
-- **Nėra `setDynamicSimulationEnabledGlobal`** komandos - tai ne standartinė Arma 3 komanda
 
 ---
 
@@ -128,6 +131,7 @@ setDynamicSimulationDistance "Prop", 600;
 ### Svarbu:
 - **`keys` grąžina raktų masyvą** - reikšmę gauni su `get`
 - **`toArray false` grąžina `[key, value]` poras** - naudok `params`
+- **Po `forEach` visuomet turi būti uždaromas `)` ir `;`** - dažniausia "Missing )" priežastis yra pamirštas skliaustas po `keys` arba `toArray`
 - **Visada patikrink `isNull`** prieš naudojant objektą
 
 ---
@@ -136,9 +140,20 @@ setDynamicSimulationDistance "Prop", 600;
 
 ### Problema: Init String'as format bloke
 
-Kai naudoji `createUnit` su `format` bloku init string'ui, reikia teisingai escape'inti kabutes.
+Kai naudoji `createUnit` su `format` bloku init string'ui, reikia teisingai escape'inti kabutes. **Svarbu atskirti du scenarijus**: grynas SQF ir INIT STRING kontekstas.
 
-### Teisingas Pavyzdys:
+### Scenarijus 1: Grynas SQF (be INIT STRING)
+
+**Nenaudojamas dvigubinimas** - tiesioginis string'as:
+
+```sqf
+// Grynas .sqf failas - nenaudojamas dvigubinimas
+this setVariable ['OnOwnerChange', "['BE1', _this] execVM 'sectors\OnOwnerChange.sqf';"];
+```
+
+### Scenarijus 2: INIT STRING arba format bloke
+
+**Dvigubinti viengubas kabutes** - format bloke arba init string'e:
 
 ```sqf
 "ModuleSector_F" createUnit [
@@ -147,12 +162,16 @@ Kai naudoji `createUnit` su `format` bloku init string'ui, reikia teisingai esca
     format ["
         sectorBE1=this;
         this setVariable ['name','%1'];
-        this setVariable ['OnOwnerChange', ''['BE1', _this] execVM ''sectors\OnOwnerChange.sqf'';''];
+        this setVariable [''OnOwnerChange'', ''[''BE1'', _this] execVM ''sectors\OnOwnerChange.sqf'';''];
     ", _name, _desc]
 ];
 ```
 
-**Taisyklė**: Format bloke, visos viengubos kabutės `'` turi būti dvigubintos `''`.
+### Svarbu:
+
+- **Jei kyla "Missing ]"**, stringas greičiausiai neescapintas arba neuždarytas format blokas
+- **Format bloke**: visos viengubos kabutės `'` turi būti dvigubintos `''`
+- **Gryname SQF**: nenaudojamas dvigubinimas - tiesioginis string'as
 
 ---
 
@@ -256,19 +275,23 @@ if (!isNull _object) then {
 ### Teisinga Sintaksė:
 
 ```sqf
-// Server → All Clients
+// Server → All Clients (allowedTargets = 0)
 [_params] remoteExec ["functionName", 0, false]; // jip = false, nes state push per serverį
 
-// Server → Server Only
+// Server → Server Only (allowedTargets = 2)
 [_params] remoteExec ["functionName", 2, false];
 
-// Client → Server
+// Client → Server (allowedTargets = 2)
 [_params] remoteExec ["functionName", 2, false];
 ```
 
 ### Svarbu:
-- **`jip = false`** jei state push per serverį (`fn_V2jipRestoration`)
-- **`jip = true`** tik jei reikia JIP replay (retai)
+- **`allowedTargets` kryptys**:
+  - `0` = Server → All Clients
+  - `1` = Server → Client (vienas klientas)
+  - `2` = Server → Server Only arba Client → Server
+- **`jip = false`** jei state push per serverį (`fn_V2jipRestoration`) - neistoriškai replay
+- **`jip = true`** tik jei reikia JIP replay (retai) - istoriškai replay
 
 ---
 
@@ -290,12 +313,20 @@ class CfgRemoteExec
     class Functions
     {
         mode = 1; // Whitelist mode
-        jip = 0; // Disable JIP replay
+        jip = 0; // Disable JIP replay - state handled by server push
         
         class wrm_fnc_functionName { allowedTargets = 2; }; // Server only
     };
 };
 ```
+
+### Svarbu:
+- **`allowedTargets` kryptys**:
+  - `0` = Server → All Clients
+  - `1` = Server → Client (vienas klientas)
+  - `2` = Server → Server Only arba Client → Server
+- **`jip = 0`** kai JIP būseną stumia serveris (`fn_V2jipRestoration`), o ne istoriškai replay
+- **`jip = 1`** tik jei reikia istorinio replay (retai)
 
 ---
 
@@ -336,10 +367,31 @@ if (DBG) then {
 ### "Missing )"
 - **Priežastis**: Neteisinga HashMap iteracija arba neuždarytas skliaustas
 - **Sprendimas**: Naudok `toArray false` arba `keys` su teisingais skliaustais
+- **Dažniausia priežastis**: Pamirštas uždarantis `)` po `keys` arba `toArray` - patikrink, ar `forEach` turi `(myHashMap keys)` su skliaustais
 
 ### "No alive in 10000 ms"
 - **Priežastis**: `waitUntil` ciklas be timeout'o
 - **Sprendimas**: Pridėk timeout'ą: `waitUntil {_condition || time > _timeout}`
+
+### Sektorių Tipiniai Gedimai
+
+**Simptomai**: "Missing ]" su OnOwnerChange format bloke.
+
+**Sprendimas**:
+1. **Patikrink kontekstą**: ar tai grynas SQF ar INIT STRING?
+2. **Grynas SQF**: naudok tiesioginį string'ą be dvigubinimo: `"['BE1', _this] execVM 'sectors\OnOwnerChange.sqf';"`
+3. **INIT STRING arba format bloke**: dvigubink viengubas kabutes: `''[''BE1'', _this] execVM ''sectors\OnOwnerChange.sqf'';''`
+4. **Patikrink format bloko uždarymą**: ar yra `", _params]` pabaigoje?
+
+### Loadout Perspėjimai (Ne Kritiniai)
+
+**Šie perspėjimai RPT loguose nėra kritiniai** - tai loadout/mod klasės problemos:
+- `"item does not match weapon"` - neteisingas mod klasės pavadinimas
+- `"Uniform not allowed"` - uniform klasė neegzistuoja arba neteisinga
+- `"Backpack not found"` - backpack klasė neegzistuoja arba neteisinga
+- `"Trying to add item with empty name"` - tuščias string'as loadout klasėje
+
+**Sprendimas**: Patikrink `loadouts/` ir `factions/` failus dėl tuščių string'ų ir neteisingų klasės pavadinimų.
 
 ---
 
@@ -368,6 +420,31 @@ if (DBG) then {
 
 ---
 
+## 14. Lint/Smoke Kontrolinis Sąrašas
+
+### RPT Logų Patikra:
+
+**RPT neturėtų turėti**:
+- ❌ `"Missing ;"` - patikrink `if-then` sintaksę ir kabliataškius
+- ❌ `"Missing ]"` - patikrink format blokus ir OnOwnerChange escapinimą
+- ❌ `"Missing )"` - patikrink HashMap iteraciją ir skliaustus
+- ❌ `"remoteExec restriction"` - patikrink `CfgRemoteExec.hpp` whitelist
+
+**RPT turėtų turėti**:
+- ✅ `"[DS] Dynamic Simulation enabled"` log matomas (jei DBG = true)
+- ✅ Vienas sector flip per pusę valandos - be klaidų
+- ✅ 1 JIP prisijungimas - pilnas state (markers, Zeus, UAV) be rankinių veiksmų
+
+### Smoke Test Scenarijus:
+
+1. **Paleisk misiją** - patikrink RPT logus dėl sintaksės klaidų
+2. **Palauk 5-10 min** - patikrink, ar DS veikia (log'ai)
+3. **Padaryk 1 sector flip** - patikrink, ar nėra "Missing ]" klaidų
+4. **Prisijunk kaip JIP** - patikrink, ar visi markeriai, Zeus ir UAV state teisingi
+5. **Patikrink performance** - FPS ir scheduler lag turėtų būti stabilūs
+
+---
+
 ## Išvados
 
 - **⚠️ VISADA PIRMIAUSIA PATIKRINK DOKUMENTACIJĄ** - šį failą ir oficialius šaltinius prieš bandant taisyti klaidas
@@ -393,7 +470,17 @@ if (DBG) then {
 ---
 
 **Paskutinis Atnaujinimas**: 2025-11-10  
-**Versija**: 2.0  
+**Versija**: 2.1  
+**Pakeitimai v2.1**:
+- Atnaujinta Dynamic Simulation sekcija su abiem įjungimo komandomis ir teisingais tipais (Group, Vehicle, Prop, IsMoving)
+- Pakeista If-Then sekcija iš "KRITIŠKA" į "Rekomenduojama stiliaus taisyklė" su aiškiu paaiškinimu
+- Atnaujinta OnOwnerChange sekcija su aiškiu atskyrimu tarp gryno SQF ir INIT STRING konteksto
+- Pridėta HashMap iteracijos pastaba apie skliaustų uždarymą
+- Atnaujinta RemoteExec sekcija su `allowedTargets` kryptimis
+- Pridėta sekcija apie sektorių tipinius gedimus
+- Pridėta sekcija apie loadout perspėjimus (ne kritiniai)
+- Pridėta Lint/Smoke kontrolinis sąrašas su smoke test scenarijumi
+
 **Pakeitimai v2.0**:
 - Pridėta sekcija apie `if-then` sintaksę ir kodėl reikia tarpų
 - Atnaujinta Dynamic Simulation sekcija su teisinga sintakse
