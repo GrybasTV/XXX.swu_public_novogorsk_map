@@ -24,11 +24,13 @@ if (!(Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-# Clean build directory (exclude docs/, tests/, Original/)
+# Clean build directory (exclude docs/, tests/, .git/ for clean production PBO)
 Write-Host "Cleaning build directory..." -ForegroundColor Cyan
 
+# Exclude directories from PBO build (documentation, tests, git data)
 $excludeDirs = @("docs", "tests", ".git")
-$excludeFiles = @("*.log", "*.rpt", "*.tmp", ".git*")
+# Exclude temporary files
+$excludeFiles = @("*.log", "*.rpt", "*.tmp", ".git*", "*.orig", "*.rej")
 
 Get-ChildItem -Path "." -Directory | Where-Object {
     $excludeDirs -notcontains $_.Name
