@@ -28,7 +28,7 @@ if (!isServer) exitWith {
 
 //Enable Dynamic Simulation system
 enableDynamicSimulationSystem true;
-if(DBG)then{diag_log "[DS] Dynamic Simulation enabled"};
+if(DBG)then{diag_log "[DS] Dynamic Simulation enabled";};
 
 //Distances by type
 setDynamicSimulationDistance "Group", 1200;
