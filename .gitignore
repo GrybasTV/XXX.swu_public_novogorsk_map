@@ -1,0 +1,62 @@
+# Arma 3 Mission .gitignore
+# Based on Arma 3 community standards
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Logs
+*.log
+*.rpt
+logs/
+*.sqf.log
+
+# Build artifacts
+*.pbo
+*.pbo.md5
+*.bisign
+*.bikey
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arma 3 specific
+*.pbo.*
+mission.sqm.bak
+*.backup.sqm
+
+# Analysis and documentation files (to be cleaned up)
+*ANALIZĖ*.md
+*ANALYSIS*.md
+*BUGAS*.md
+*PROBLEMOS*.md
+*_EXPLANATION.md
+*_PALYGINIMAS.md
+*_ANALYSIS.md
+*_ANALYSE.md
+*_REPORT.md
+
+# Keep core documentation
+# MODIFICATIONS.md - keep
+# README.md - keep if updated
+
+# Node.js (if used for tooling)
+node_modules/
+npm-debug.log*
+
+# Git
+.git/
+*.orig
+*.rej
