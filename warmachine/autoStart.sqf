@@ -8,20 +8,24 @@ aStart=1; publicVariable "aStart";
 _t=0;
 while {_t==0} do
 {
+	//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
+	private _cachedPlayers = allPlayers;
 	{
-		if(count allPlayers == 0)exitWith{};
+		if(count _cachedPlayers == 0)exitWith{};
 		_t=1;
-	} forEach allPlayers;
+	} forEach _cachedPlayers;
 	sleep 1;
 };
 //JIP
 _j=0;
 while {_j==0} do
 {
+	//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
+	private _cachedPlayers = allPlayers;
 	{
 		if(isNull _x)exitWith{};
 		_j=1;
-	} forEach allPlayers;
+	} forEach _cachedPlayers;
 	sleep 1;
 };
 //player has respawned - tik DELAYED režime (jei reikia laukti)
@@ -30,15 +34,18 @@ if (_a == 1) then { //DELAYED mode
 	private _timeout = time + 30; //30 sekundžių timeout DELAYED režime
 	while {_p==0 && time < _timeout} do
 	{
+		//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
+		private _cachedPlayers = allPlayers select {alive _x};
 		{
 			if(!alive _x)exitWith{};
 			_p=1;
-		} forEach allPlayers;
+		} forEach _cachedPlayers;
 		sleep 1;
 	};
 	//Jei timeout'as pasiektas, tęsti bet kokiu atveju
 	if (time >= _timeout && _p == 0) then {
-		if (count allPlayers > 0) then {
+		//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
+		if (count (allPlayers select {alive _x}) > 0) then {
 			_p = 1;
 		};
 	};

@@ -36,7 +36,7 @@ for "_i" from 0 to 1 step 0 do
 	}  forEach _allUnits;
 	if((getMarkerColor resFobW!="")&&(_eBW1))
 	then{
-		{_x hideObjectGlobal false,} forEach hideVehBW1;
+		{_x hideObjectGlobal false;} forEach hideVehBW1;
 		hideVehBW1=[];
 	};
 	
@@ -50,7 +50,7 @@ for "_i" from 0 to 1 step 0 do
 	}  forEach _allUnits;
 	if((getMarkerColor resBaseW!="")&&(_eBW2))
 	then{
-		{_x hideObjectGlobal false,} forEach hideVehBW2;
+		{_x hideObjectGlobal false;} forEach hideVehBW2;
 		hideVehBW2=[];
 	};
 	
@@ -64,7 +64,7 @@ for "_i" from 0 to 1 step 0 do
 	}  forEach _allUnits;	
 	if((getMarkerColor resFobE!="")&&(_eBE1))
 	then{
-		{_x hideObjectGlobal false,} forEach hideVehBE1;
+		{_x hideObjectGlobal false;} forEach hideVehBE1;
 		hideVehBE1=[];
 	};	
 
@@ -78,7 +78,7 @@ for "_i" from 0 to 1 step 0 do
 	}  forEach _allUnits;	
 	if((getMarkerColor resBaseE!="")&&(_eBE2))
 	then{
-		{_x hideObjectGlobal false,} forEach hideVehBE2;
+		{_x hideObjectGlobal false;} forEach hideVehBE2;
 		hideVehBE2=[];
 	};		
 };

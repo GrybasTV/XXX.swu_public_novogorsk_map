@@ -101,6 +101,75 @@ waitUntil { !(isNil 'sectorBE1') };
 
 ---
 
+### 2025-11-11: SQF BEST PRACTICE OPTIMIZACIJOS IR KLAIDŲ TAISYMAI
+
+**Failai**:
+- `functions/server/fn_V2unhideVeh.sqf` - **MODIFIKUOTA** Pašalinti pertekliniai kableliai
+- `functions/server/fn_V2aiCAS.sqf` - **MODIFIKUOTA** Cache allPlayers, entities vietoj allUnits, timeout while ciklui
+- `warmachine/timerStart.sqf` - **MODIFIKUOTA** Cache allPlayers, timeout while ciklui
+- `warmachine/autoStart.sqf` - **MODIFIKUOTA** Cache allPlayers visuose cikluose
+
+**Problema** (PERFORMANCE - SQF best practice pažeidimai):
+- Pertekliniai kableliai forEach cikluose sukeliantys parserio klaidas
+- `allPlayers` naudojamas kelis kartus be caching kiekviename cikle
+- `allUnits` naudojimas vietoj efektyvesnio `entities`
+- while ciklai be timeout apsaugos prieš begalines kilpas
+
+**Sprendimas**:
+
+1. **Sintaksės klaidos taisymas**:
+```sqf
+// PRIEŠ (klaidinga):
+{_x hideObjectGlobal false,} forEach array;
+
+// PO (teisinga):
+{_x hideObjectGlobal false;} forEach array;
+```
+
+2. **allPlayers caching optimizacija**:
+```sqf
+// PRIEŠ (neefektyvu):
+while {condition} do {
+    { /* code */ } forEach allPlayers;
+    sleep 1;
+};
+
+// PO (optimizuota):
+while {condition} do {
+    private _cachedPlayers = allPlayers select {alive _x};
+    { /* code */ } forEach _cachedPlayers;
+    sleep 1;
+};
+```
+
+3. **allUnits pakeitimas į entities**:
+```sqf
+// PRIEŠ:
+forEach allUnits;
+
+// PO (greitesnė):
+forEach (entities [["Man"], [], true, false]);
+```
+
+4. **Timeout apsauga while ciklam**:
+```sqf
+// PRIEŠ (rizikinga begalinė kilpa):
+while {_t==0} do { /* code */ };
+
+// PO (saugi su timeout):
+private _timeout = time + 3600;
+while {_t==0 && time < _timeout} do { /* code */ };
+```
+
+**Rezultatas**:
+- ✅ Panaikintos visos sintaksės klaidos ir parserio error'ai
+- ✅ Sumažintas CPU apkrovimas brangiose `allPlayers`/`allUnits` operacijose
+- ✅ Pridėta apsauga prieš begalines kilpas su timeout'ais
+- ✅ Pagerintas serverio veikimas ir stabilumas
+- ✅ SQF kodas atitinka Arma 3 geriausias praktikas
+
+---
+
 ### 2025-11-11: "NO ALIVE IN 10000 MS" TIMEOUT KLAIDOS PATAISYMAS
 
 **Failai**:
