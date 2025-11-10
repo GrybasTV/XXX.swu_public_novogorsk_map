@@ -9,9 +9,12 @@
 class CfgRemoteExec
 {
     // Mode: 0 = disabled, 1 = whitelist, 2 = blacklist
+    // JIP: 0 = disabled, 1 = enabled (state replay for JIP players)
+    // Note: JIP state is handled by server-side state push in fn_V2jipRestoration
     class Commands
     {
         mode = 1; // Whitelist mode
+        jip = 0; // Disable JIP replay - state handled by server push
 
         // Core Arma 3 functions
         class BIS_fnc_endMission { allowedTargets = 0; }; // All clients
@@ -37,6 +40,7 @@ class CfgRemoteExec
     class Functions
     {
         mode = 1; // Whitelist mode
+        jip = 0; // Disable JIP replay - state handled by server push
 
         // WRM Mission Functions
         class wrm_fnc_registerCrewEH { allowedTargets = 2; }; // Server only - crew EH registration

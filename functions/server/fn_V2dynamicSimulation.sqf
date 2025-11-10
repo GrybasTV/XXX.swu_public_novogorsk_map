@@ -70,9 +70,13 @@ private _fnc_markVehicle = {
 		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with player crew: %1", typeOf _veh]};
 	};
 
-	// IŠIMTYS: nepritaikyti DS transportui su kroviniu (cargo)
-	if ((crew _veh) findIf {!isPlayer _x} > -1 || count (getVehicleCargo _veh) > 0) exitWith {
-		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with AI crew/cargo: %1", typeOf _veh]};
+	// IŠIMTYS: nepritaikyti DS transportui su gyva įgula arba kroviniu
+	// Gyva įgula = bet kokie vienetai įguloje (AI arba žaidėjai jau patikrinta aukščiau)
+	private _hasCrew = count (crew _veh) > 0;
+	private _hasCargo = count (getVehicleCargo _veh) > 0;
+
+	if (_hasCrew || _hasCargo) exitWith {
+		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with crew/cargo: %1 (crew: %2, cargo: %3)", typeOf _veh, _hasCrew, _hasCargo]};
 	};
 
 	_veh enableDynamicSimulation true;

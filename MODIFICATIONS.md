@@ -262,6 +262,33 @@ CPU apkrovos matavimas atliekamas naudojant Arma 3 Profiling Branch su šiomis s
 
 *Matavimai atlikti su 50 AI vienetais, 8 žaidėjais, aktyviais 2 sektoriais ir 3 UAV/UGV. Realaus pasaulio rezultatai gali skirtis priklausomai nuo hardware ir žaidimo sąlygų.*
 
+### Pre-Go-Live Chaos Test Protocol
+
+**Test scenarijus (20-30 min. sesija):**
+
+1. **Sektoriaus aktyvumas**: 2 sektorių "flip" per OnOwnerChange kiekvienai pusei (BE1/BW1 ownership changes)
+2. **UAV/UGV apkrova**: 4× UAV (2 WEST + 2 EAST) ir 2× UGV kūrimo/naikinimo ciklai
+3. **AI respawn**: 2-3 AI respawn bangos su EH registracija (vehicle/crew MPKilled handlers)
+4. **Cleanup apkrova**: 10+ lavonų ir 5+ nuolaužų aktyvus šalinimas (TTL/FIFO mechanizmai)
+5. **JIP testas**: 2 žaidėjų JIP prisijungimai vidury aktyvios kovos (po 10-15 min.)
+
+**Tikrinami kriterijai:**
+
+- ✅ **EH dublikatų nebuvimas**: wrm_eh_mpkilled vėliavėlės ant visų crew narių (po respawn ciklų)
+- ✅ **Pilna JIP state restauracija**: marker'iai, Zeus editable objektai, support link'ai, UAV masyvai
+- ✅ **DS enforcer selektyvumas**: žaidėjų grupės ir aktyvus transportas (su įgula/kroviniu) neliečiami
+- ✅ **RPT švara**: nėra "No alive in 10000 ms", "BE remotexec restriction", ar EH dublikatų
+- ✅ **Performance**: diag_fps stabilus, scheduler lag < ~350ms, diag_tickTime < ~20ms
+
+**Testavimo įrankiai:**
+- Arma 3 Profiling Branch
+- diag_captureFrame su 60s intervalu
+- diag_fps, diag_tickTime monitoring
+- RPT log analysis
+- Manual EH count verification
+
+**Test status**: ✅ PARUOŠTA - visi komponentai implementuoti ir suderinami
+
 **Rezultatas**:
 - ✅ Panaikintos visos potencialios begalinės kilpos su timeout apsauga
 - ✅ ~50-70% sumažintas CPU apkrovimas dažnai naudojamose operacijose (allPlayers caching, entities filtravimas)

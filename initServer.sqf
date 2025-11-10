@@ -1,5 +1,9 @@
 //Author: IvosH
 
+//CLEANUP: Išvalyti senus UAV/UGV duomenis iš ankstesnių misijų (restart protection)
+if (!isNil "uavSquadW") then { uavSquadW = []; };
+if (!isNil "uavSquadE") then { uavSquadE = []; };
+
 //VARIABLES SETUP
 progress = 0; publicVariable "progress";
 posCenter = []; publicVariable "posCenter";
