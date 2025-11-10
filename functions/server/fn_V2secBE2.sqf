@@ -59,11 +59,11 @@ private _des = format ["Capture/Defend %1 base", nameBE2];
   posBaseE2,
   createGroup sideLogic,
   format ["
-    sectorBE2=this;
-    this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
+	sectorBE2=this;
+	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
     this setVariable ['name','%1'];
-    this setVariable ['Designation','E'];
-    this setVariable ['OwnerLimit','1'];
+	this setVariable ['Designation','E'];
+	this setVariable ['OwnerLimit','1'];
     this setVariable ['OnOwnerChange', format ["['%1', _this] execVM 'sectors\OnOwnerChange.sqf';", 'BE2']];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];

@@ -4,10 +4,10 @@
 
 ## 🚀 Quick Start
 
-1. **Download**: Get the latest release from [GitHub Releases](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases)
+1. **Download**: [v2.0 Production Release](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v2.0-production-ready/XXX.swu_public_novogorsk_map_v2.0.pbo)
 2. **Install**: Copy `.pbo` to your Arma 3 `mpmissions` folder
-3. **Launch**: Start Arma 3 with required mods
-4. **Play**: Select mission from multiplayer menu
+3. **Launch**: Start Arma 3 with required mods (see Requirements below)
+4. **Play**: Select "Ukraine vs Russia Warmachine" from multiplayer menu
 
 ## 📋 Requirements
 
@@ -88,10 +88,10 @@
 
 ## 🏷️ Releases
 
-| Version | Date | Changes | Download |
-|---------|------|---------|----------|
-| v2.0 | 2025-11-10 | Major SQF optimizations, JIP improvements, DS enforcer | [Download](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/tag/v2.0-production-ready) |
-| v1.9 | 2025-11-04 | Ukraine/Russia factions, UAV systems | Legacy |
+| Version | Date | Changes | Download | Rollback |
+|---------|------|---------|----------|----------|
+| **v2.0** | 2025-11-10 | Major SQF optimizations, JIP improvements, DS enforcer | [Download](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v2.0-production-ready/XXX.swu_public_novogorsk_map_v2.0.pbo) | N/A |
+| v1.9 | 2025-11-04 | Ukraine/Russia factions, UAV systems | Legacy | [Download](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v1.9-ukraine-russia/XXX.swu_public_novogorsk_map_v1.9.pbo) |
 
 ## 🐛 Issues & Support
 

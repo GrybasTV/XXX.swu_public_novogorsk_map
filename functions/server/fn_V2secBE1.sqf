@@ -60,11 +60,11 @@ if(DBG)then{diag_log format ["[SECTOR_CREATION] Starting BE1 sector creation at 
   posBaseE1,
   createGroup sideLogic,
   format ["
-    sectorBE1=this;
-    this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
+	sectorBE1=this;
+	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
     this setVariable ['name','%1'];
-    this setVariable ['Designation','D'];
-    this setVariable ['OwnerLimit','1'];
+	this setVariable ['Designation','D'];
+	this setVariable ['OwnerLimit','1'];
     this setVariable ['OnOwnerChange', format ["['%1', _this] execVM 'sectors\OnOwnerChange.sqf';", 'BE1']];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];
