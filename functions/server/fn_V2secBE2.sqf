@@ -44,70 +44,75 @@ while {!secBE2 && time < _timeout} do
 };
 publicvariable "secBE2";
 
+// BE2 prieš sektoriaus kūrimą – išeiti, jei timeout ir neprisistatė priešas
+if (!secBE2) exitWith {};  // sąlyga neįvykdyta – nieko nekuriam
+
 //Pašalinti lokalius marker'ius TIK tada, kai sektorius sukurtas ir aktyvus
 ["mBaseE"] remoteExec ["deleteMarkerLocal", 0, true]; //delete local marker (leidžia išvengti seno markerio „užšalimo“)
 deleteMarker resBaseE;
-_nme=format ['E: %1',nameBE2];
-_des=format ['Capture/Defend %1 base',nameBE2];
-"ModuleSector_F" createUnit [posBaseE2,createGroup sideLogic,format
-["
-	sectorBE2=this;
-	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-	this setVariable ['name',_nme];
-	this setVariable ['Designation','E'];
-	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange','
-		call
-		{
-			 if ((_this select 1) == sideW) exitWith 
-			 {
-				if(getMarkerColor resBaseEW!='''')exitWith{};
-				_mrkRaW = createMarker [resBaseEW, posBaseE2];
-				_mrkRaW setMarkerShape ''ICON'';
-				_mrkRaW setMarkerType ''empty'';
-				_mrkRaW setMarkerText nameBE2;
-				deleteMarker resBaseE;
-				if(dBE2)then{[posBaseE2,sideW] call wrm_fnc_V2secDefense;};
-			 };
-			 if ((_this select 1) == sideE) exitWith  
-			 {
-				if(getMarkerColor resBaseE!='''')exitWith{};
-				_mrkRaW = createMarker [resBaseE, posBaseE2];
-				_mrkRaW setMarkerShape ''ICON'';
-				_mrkRaW setMarkerType ''empty'';
-				_mrkRaW setMarkerText nameBE2;
-				deleteMarker resBaseEW;
 
-				//OPTIMIZATION: Pakeisti allUnits į entities su filtravimu - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				_eBE2=true;
-				{
-					if (side _x == sideW && _x distance posBaseE2 < 250) then {_eBE2=false;};
-				} forEach (entities [["Man"], [], true, false]);	
-				if((getMarkerColor resBaseE!='''')&&(_eBE2))
-				then{
-					{_x hideObjectGlobal false,} forEach hideVehBE2;
-					hideVehBE2=[];
-				};	
-				if(dBE2)then{[posBaseE2,sideE] call wrm_fnc_V2secDefense;};
-			 };
-		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
-	'];
-	this setVariable ['CaptureCoef','0.05']; 	
-	this setVariable ['CostInfantry','0.2'];
-	this setVariable ['CostWheeled','0.2'];
-	this setVariable ['CostTracked','0.2'];
-	this setVariable ['CostWater','0.2'];
-	this setVariable ['CostAir','0.2'];
-	this setVariable ['CostPlayers','0.2'];
-	this setVariable ['DefaultOwner','-1'];
-	this setVariable ['TaskOwner','3'];
-	this setVariable ['TaskTitle',nameBE2];
-	this setVariable ['taskDescription',_des];
-	this setVariable ['ScoreReward','0'];
-	this setVariable ['Sides',[sideE,sideW]];
-	this setVariable ['objectArea',[75,75,0,false]];
-"]];	
+// Paruošk reikšmes
+private _nme = format ["E: %1", nameBE2];
+private _des = format ["Capture/Defend %1 base", nameBE2];
+// Kurk sektorių su teisingu format įterpimu ir sutvarkytomis citatomis
+"ModuleSector_F" createUnit [
+  posBaseE2,
+  createGroup sideLogic,
+  format ["
+    sectorBE2=this;
+    this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
+    this setVariable ['name','%1'];
+    this setVariable ['Designation','E'];
+    this setVariable ['OwnerLimit','1'];
+    this setVariable ['OnOwnerChange','
+      call {
+        if ((_this select 1) == sideW) exitWith {
+          if(getMarkerColor resBaseEW!='''')exitWith{};
+          _mrkRaW = createMarker [resBaseEW, posBaseE2];
+          _mrkRaW setMarkerShape ''ICON'';
+          _mrkRaW setMarkerType ''empty'';
+          _mrkRaW setMarkerText nameBE2;
+          deleteMarker resBaseE;
+          if(dBE2)then{[posBaseE2,sideW] call wrm_fnc_V2secDefense;};
+        };
+        if ((_this select 1) == sideE) exitWith {
+          if(getMarkerColor resBaseE!='''')exitWith{};
+          _mrkRaW = createMarker [resBaseE, posBaseE2];
+          _mrkRaW setMarkerShape ''ICON'';
+          _mrkRaW setMarkerType ''empty'';
+          _mrkRaW setMarkerText nameBE2;
+          deleteMarker resBaseEW;
+
+          _eBE2=true;
+          { if (side _x == sideW && _x distance posBaseE2 < 250) then { _eBE2=false; }; }
+            forEach (entities [[''Man''], [], true, false]);
+          if((getMarkerColor resBaseE!='''')&&(_eBE2)) then {
+            { _x hideObjectGlobal false; } forEach hideVehBE2;
+            hideVehBE2=[];
+          };
+          if(dBE2)then{[posBaseE2,sideE] call wrm_fnc_V2secDefense;};
+        };
+      };
+      if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+    '];
+    this setVariable [''CaptureCoef'',0.05];
+    this setVariable [''CostInfantry'',0.2];
+    this setVariable [''CostWheeled'',0.2];
+    this setVariable [''CostTracked'',0.2];
+    this setVariable [''CostWater'',0.2];
+    this setVariable [''CostAir'',0.2];
+    this setVariable [''CostPlayers'',0.2];
+    this setVariable [''DefaultOwner'',-1];
+    this setVariable [''TaskOwner'',3];
+    this setVariable [''TaskTitle'', nameBE2];
+    this setVariable [''taskDescription'',''%2''];
+    this setVariable [''Sides'',[sideE,sideW]];
+    this setVariable [''objectArea'',[75,75,0,false]];
+  ", _nme, _des]
+];
+
+// Palauk kol sectorBE2 bus priskirtas init string'e
+waitUntil { !(isNil 'sectorBE2') };
 [sectorBE2, sideE] call BIS_fnc_moduleSector; //initialize sector
 [4] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;

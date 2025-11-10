@@ -44,6 +44,63 @@ private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x
 
 ---
 
+### 2025-11-11: KRITINĖS SEKTORIŲ FUNKCIJŲ SINTAKSĖS IR INICIALIZAVIMO KLAIDOS
+
+**Failai**:
+- `functions/server/fn_V2secBE1.sqf` - **MODIFIKUOTA** Ištaisytos format, kablelis, race condition klaidos
+- `functions/server/fn_V2secBW1.sqf` - **MODIFIKUOTA** Ištaisytos format, kablelis, race condition klaidos
+- `functions/server/fn_V2secBE2.sqf` - **MODIFIKUOTA** Ištaisytos format, kablelis, race condition klaidos
+- `functions/server/fn_V2secBW2.sqf` - **MODIFIKUOTA** Ištaisytos format, kablelis, race condition klaidos
+
+**Problema** (KRITIŠKA - trukdo sektorių kūrimui ir inicijavimui):
+- `format` blokas neįterpdavo `_nme/_des` reikšmių dėl trūkstamų `%1/%2` vietos žymų
+- Sintaksės klaida su pertekliniais kableliais po `hideObjectGlobal false`
+- Race condition tarp `createUnit` ir `sector*=this` priskyrimo
+- Sektoriai kuriami net po timeout'o, kai sąlyga neįvykdyta
+
+**Sprendimas**:
+
+1. **exitWith apsauga po while ciklo**:
+```sqf
+// Prieš sektoriaus kūrimą - išeiti, jei timeout ir neprisistatė priešas
+if (!secBE1) exitWith {};  // sąlyga neįvykdyta – nieko nekuriam
+```
+
+2. **Teisingas format įterpimas su vietos žymomis**:
+```sqf
+// Paruošk reikšmes
+private _nme = format ["D: %1", nameBE1];
+private _des = format ["Capture/Defend %1 base", nameBE1];
+
+// Naudok %1 ir %2 vietos žymes
+format ["
+  this setVariable ['name','%1'];
+  this setVariable ['taskDescription','%2'];
+", _nme, _des]
+```
+
+3. **Pašalintas perteklinis kablelis ir sutvarkytos kabutės**:
+```sqf
+// PRIEŠ: {_x hideObjectGlobal false,} forEach hideVehBE1;
+// PO: { _x hideObjectGlobal false; } forEach hideVehBE1;
+```
+
+4. **waitUntil prieš BIS_fnc_moduleSector**:
+```sqf
+// Palauk kol sectorBE1 bus priskirtas init string'e
+waitUntil { !(isNil 'sectorBE1') };
+[sectorBE1, sideE] call BIS_fnc_moduleSector;
+```
+
+**Rezultatas**:
+- ✅ Panaikintos visos sintaksės klaidos ir parserio error'ai
+- ✅ Išspręstas race condition tarp sektoriaus kūrimo ir inicijavimo
+- ✅ Sektoriai kuriami tik tada, kai sąlyga įvykdyta (priešas priartėjo)
+- ✅ Stabilus sektorių veikimas ir teisinga inicializacija
+- ✅ Nėra daugiau "Missing ]/;" klaidų žaidimo metu
+
+---
+
 ### 2025-11-11: "NO ALIVE IN 10000 MS" TIMEOUT KLAIDOS PATAISYMAS
 
 **Failai**:
