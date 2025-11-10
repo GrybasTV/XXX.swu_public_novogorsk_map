@@ -26,17 +26,19 @@ if (!isServer) exitWith {
 	diag_log "[WRM][DYNSIM] Dynamic Simulation init iškviestas ne serveryje – nutraukiama.";
 };
 
-//Įjungti dinaminės simuliacijos sistemą
+//Enable Dynamic Simulation system
 enableDynamicSimulationSystem true;
+
+//Global enable
 setDynamicSimulationEnabledGlobal true;
 
-//Atstumai (metrais) pagal objektų kategorijas
-setDynamicSimulationDistance "Group", 1200;        //pėstininkams (AI grupėms)
-setDynamicSimulationDistance "Vehicle", 1800;      //transportui su įgula
-setDynamicSimulationDistance "EmptyVehicle", 1500; //palikti arti kovos
-setDynamicSimulationDistance "Prop", 600;          //statiniams objektams
+//Distances by type
+setDynamicSimulationDistance "Group", 1200;
+setDynamicSimulationDistance "Vehicle", 1800;
+setDynamicSimulationDistance "EmptyVehicle", 1500;
+setDynamicSimulationDistance "Prop", 600;
 
-//Koeficientai – kiek greitai suaktyvinami nuo žaidėjų judėjimo
+//Optional coefficients
 setDynamicSimulationDistanceCoef "Group", 1.0;
 setDynamicSimulationDistanceCoef "Vehicle", 1.0;
 setDynamicSimulationDistanceCoef "EmptyVehicle", 1.0;
