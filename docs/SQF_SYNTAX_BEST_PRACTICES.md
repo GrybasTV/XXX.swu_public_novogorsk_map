@@ -35,14 +35,59 @@ format ["
 
 ---
 
-## 2. Dynamic Simulation Sintaksė
+## 2. If-Then Sintaksė (KRITIŠKA!)
+
+### Problema: Parserio Klaidos su Neteisinga Sintakse
+
+**Arma 3 parseris kartais neteisingai interpretuoja `if(...)then{...}` sintaksę be tarpų**, ypač kai po `if` bloko eina kitos komandos. Tai gali sukelti "Missing ;" klaidas net tada, kai kabliataškiai yra teisingi.
+
+### Blogai (Gali Sukelti Klaidas):
+
+```sqf
+// NETIKSLU - be tarpų, vienoje eilutėje
+if(DBG)then{diag_log "[DS] Dynamic Simulation enabled";};
+if(DBG)then{diag_log format ["[MODULE] Action: %1", _action]};
+```
+
+### Gerai (Standartinė Forma):
+
+```sqf
+// TEISINGA - su tarpais, daugiau eilučių
+if (DBG) then {
+	diag_log "[DS] Dynamic Simulation enabled";
+};
+
+if (DBG) then {
+	diag_log format ["[MODULE] Action: %1", _action];
+};
+```
+
+### Kodėl Tai Svarbu?
+
+1. **Parserio Suderinamumas**: Standartinė forma su tarpais yra labiau suderinama su Arma 3 parseriu
+2. **Klaidų Prevencija**: Sumažina "Missing ;" klaidų tikimybę net tada, kai sintaksė atrodo teisinga
+3. **Skaitymas**: Daugiau eilučių pagerina kodo skaitymą ir priežiūrą
+4. **Nuoseklumas**: Standartinė forma visur užtikrina nuoseklų kodavimo stilių
+
+### Taisyklė:
+
+**Visada naudok standartinę `if (...) then { ... }` formą su tarpais ir daugiau eilučių**, ypač kai:
+- Po `if` bloko eina kitos komandos
+- `if` blokas yra format bloke arba init string'e
+- Reikia debug log'ų arba kompleksinės logikos
+
+---
+
+## 3. Dynamic Simulation Sintaksė
 
 ### Teisinga Sintaksė:
 
 ```sqf
 //Enable Dynamic Simulation system
 enableDynamicSimulationSystem true;
-if(DBG)then{diag_log "[DS] Dynamic Simulation enabled";};
+if (DBG) then {
+	diag_log "[DS] Dynamic Simulation enabled";
+};
 
 //Distances by type
 setDynamicSimulationDistance "Group", 1200;
@@ -53,12 +98,13 @@ setDynamicSimulationDistance "Prop", 600;
 
 ### Svarbu:
 - **Kiekviena komanda turi kabliataškį** `;` pabaigoje
-- **`if` blokas turi kabliataškį** po `}`: `if(...)then{...};`
+- **`if` blokas turi kabliataškį** po `}`: `if (...) then { ... };`
+- **Naudok standartinę `if-then` sintaksę** su tarpais (žr. sekciją 2)
 - **Nėra `setDynamicSimulationEnabledGlobal`** komandos - tai ne standartinė Arma 3 komanda
 
 ---
 
-## 3. HashMap Iteracija
+## 4. HashMap Iteracija
 
 ### Teisingi Šablonai:
 
@@ -86,7 +132,7 @@ setDynamicSimulationDistance "Prop", 600;
 
 ---
 
-## 4. createUnit Init String Sintaksė
+## 5. createUnit Init String Sintaksė
 
 ### Problema: Init String'as format bloke
 
@@ -110,7 +156,7 @@ Kai naudoji `createUnit` su `format` bloku init string'ui, reikia teisingai esca
 
 ---
 
-## 5. Event Handler Registracija
+## 6. Event Handler Registracija
 
 ### Problema: Dublikatai
 
@@ -125,7 +171,7 @@ if (!(_unit getVariable ["wrm_eh_mpkilled", false])) then {
 
 ---
 
-## 6. While/WaitUntil Ciklai
+## 7. While/WaitUntil Ciklai
 
 ### Problema: Begaliniai Ciklai
 
@@ -144,7 +190,7 @@ if (time >= _timeout) then {
 
 ---
 
-## 7. Performance Optimizacijos
+## 8. Performance Optimizacijos
 
 ### `allUnits` → `entities`
 
@@ -175,14 +221,16 @@ private _cachedPlayers = allPlayers select {alive _x};
 
 ---
 
-## 8. Klaidų Valdymas
+## 9. Klaidų Valdymas
 
 ### `diag_log` Debugging
 
 **Visada naudok `diag_log`** su aiškiais prefix'ais:
 
 ```sqf
-if(DBG)then{diag_log format ["[MODULE_NAME] Action: %1, Result: %2", _action, _result]};
+if (DBG) then {
+	diag_log format ["[MODULE_NAME] Action: %1, Result: %2", _action, _result];
+};
 ```
 
 ### `isNil` / `isNull` Patikrinimai
@@ -201,7 +249,7 @@ if (!isNull _object) then {
 
 ---
 
-## 9. RemoteExec Sintaksė
+## 10. RemoteExec Sintaksė
 
 ### Teisinga Sintaksė:
 
@@ -222,7 +270,7 @@ if (!isNull _object) then {
 
 ---
 
-## 10. CfgRemoteExec Whitelist
+## 11. CfgRemoteExec Whitelist
 
 ### Teisinga Sintaksė (`CfgRemoteExec.hpp`):
 
@@ -249,11 +297,35 @@ class CfgRemoteExec
 
 ---
 
-## 11. Dažniausios Klaidos ir Sprendimai
+## 12. Dažniausios Klaidos ir Sprendimai
 
-### "Missing ;"
+### "Missing ;" (Su If-Then Sintakse)
+
+**Problema**: RPT rodo "Missing ;" net tada, kai kabliataškiai atrodo teisingi.
+
+**Priežastis**: `if(...)then{...}` sintaksė be tarpų kartais neteisingai interpretuojama parserio.
+
+**Sprendimas**:
+1. **Pakeisk į standartinę formą**: `if (...) then { ... }` su tarpais
+2. **Naudok daugiau eilučių**: ne vienoje eilutėje
+3. **Patikrink dokumentaciją**: žr. sekciją 2 apie `if-then` sintaksę
+
+**Pavyzdys**:
+```sqf
+// Blogai (gali sukelti "Missing ;")
+if(DBG)then{diag_log "[DS] enabled";};
+
+// Gerai (standartinė forma)
+if (DBG) then {
+	diag_log "[DS] enabled";
+};
+```
+
+### "Missing ;" (Bendrasis)
+
 - **Priežastis**: Trūksta kabliataškio po komandos ar `if` bloko
 - **Sprendimas**: Patikrink, ar visos komandos turi `;` pabaigoje
+- **Papildoma patikra**: Jei visi kabliataškiai teisingi, patikrink `if-then` sintaksę (žr. aukščiau)
 
 ### "Missing ]"
 - **Priežastis**: Format bloke neuždarytas blokas arba neteisingai escape'intos kabutės
@@ -269,15 +341,22 @@ class CfgRemoteExec
 
 ---
 
-## 12. Validavimo Procesas
+## 13. Validavimo Procesas
 
-### Prieš Commit'ą:
+### ⚠️ SVARBU: Visada Pirmiausia Patikrink Dokumentaciją!
 
-1. **Patikrink sintaksę** su SQFLint arba Arma 3 editor
-2. **Patikrink RPT logus** - neturėtų būti "Missing ;", "Missing ]", "Missing )"
-3. **Patikrink performance** - naudok `entities` vietoj `allUnits`
-4. **Patikrink timeout'us** - visi `while`/`waitUntil` turi timeout'us
-5. **Patikrink EH dublikatus** - naudok vėliavėles
+**Prieš bandant taisyti klaidas**:
+1. **Patikrink šią dokumentaciją** - galbūt problema jau aprašyta
+2. **Ieškok oficialių šaltinių** - Arma 3 Community Wiki, Forums
+3. **Patikrink panašius pavyzdžius** - kaip kiti sprendžia panašias problemas
+
+**Tik po to**:
+4. **Patikrink sintaksę** su SQFLint arba Arma 3 editor
+5. **Patikrink RPT logus** - neturėtų būti "Missing ;", "Missing ]", "Missing )"
+6. **Patikrink `if-then` sintaksę** - naudok standartinę formą su tarpais (žr. sekciją 2)
+7. **Patikrink performance** - naudok `entities` vietoj `allUnits`
+8. **Patikrink timeout'us** - visi `while`/`waitUntil` turi timeout'us
+9. **Patikrink EH dublikatus** - naudok vėliavėles
 
 ### Po Commit'o:
 
@@ -289,6 +368,8 @@ class CfgRemoteExec
 
 ## Išvados
 
+- **⚠️ VISADA PIRMIAUSIA PATIKRINK DOKUMENTACIJĄ** - šį failą ir oficialius šaltinius prieš bandant taisyti klaidas
+- **Naudok standartinę `if-then` sintaksę** - `if (...) then { ... }` su tarpais, ne `if(...)then{...}`
 - **Visada naudok oficialią dokumentaciją** prieš spėliojant
 - **Testuok mažais žingsniais** - ne viską vienu kartu
 - **Loguok viską** - `diag_log` su aiškiais prefix'ais
@@ -297,6 +378,23 @@ class CfgRemoteExec
 
 ---
 
+## Dokumentacijos Atnaujinimo Procesas
+
+**Kai randama nauja klaida arba sprendimas**:
+1. **Iš karto atnaujink šią dokumentaciją** - pridėk naują sekciją arba atnaujink esamą
+2. **Pridėk konkretų pavyzdį** - kaip buvo blogai ir kaip taisoma
+3. **Pridėk priežastį** - kodėl problema atsiranda
+4. **Atnaujink versiją** - padidink versijos numerį ir datą
+
+**Tikslas**: Kitas kartas, kai susidursime su panašia problema, dokumentacija padės greitai ją išspręsti.
+
+---
+
 **Paskutinis Atnaujinimas**: 2025-11-10  
-**Versija**: 1.0
+**Versija**: 2.0  
+**Pakeitimai v2.0**:
+- Pridėta sekcija apie `if-then` sintaksę ir kodėl reikia tarpų
+- Atnaujinta Dynamic Simulation sekcija su teisinga sintakse
+- Pridėta instrukcija visada pirmiausia patikrinti dokumentaciją
+- Atnaujinta "Missing ;" klaidos sprendimas su `if-then` informacija
 
