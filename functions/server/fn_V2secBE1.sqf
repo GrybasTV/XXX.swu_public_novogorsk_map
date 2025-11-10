@@ -67,38 +67,7 @@ if(DBG)then{diag_log format ["[SECTOR_CREATION] Starting BE1 sector creation at 
     this setVariable ['name','%1'];
     this setVariable ['Designation','D'];
     this setVariable ['OwnerLimit','1'];
-    this setVariable ['OnOwnerChange','
-      call {
-        if ((_this select 1) == sideW) exitWith {
-          if(getMarkerColor resFobEW!='''')exitWith{};
-          _mrkRaW = createMarker [resFobEW, posBaseE1];
-          _mrkRaW setMarkerShape ''ICON'';
-          _mrkRaW setMarkerType ''empty'';
-          _mrkRaW setMarkerText nameBE1;
-          deleteMarker resFobE;
-          if(dBE1)then{[posBaseE1,sideW] call wrm_fnc_V2secDefense;};
-        };
-
-        if ((_this select 1) == sideE) exitWith {
-          if(getMarkerColor resFobE!='''')exitWith{};
-          _mrkRaW = createMarker [resFobE, posBaseE1];
-          _mrkRaW setMarkerShape ''ICON'';
-          _mrkRaW setMarkerType ''empty'';
-          _mrkRaW setMarkerText nameBE1;
-          deleteMarker resFobEW;
-
-          _eBE1=true;
-          { if (side _x == sideW && _x distance posBaseE1 < 250) then { _eBE1=false; }; }
-            forEach (entities [[''Man''], [], true, false]);
-          if((getMarkerColor resFobE!='''')&&(_eBE1)) then {
-            { _x hideObjectGlobal false; } forEach hideVehBE1;
-            hideVehBE1=[];
-          };
-          if(dBE1)then{[posBaseE1,sideE] call wrm_fnc_V2secDefense;};
-        };
-      };
-      if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
-    '];
+    this setVariable ['OnOwnerChange', format ["['%1', _this] execVM 'sectors\OnOwnerChange.sqf';", 'BE1']];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];
     this setVariable [''CostWheeled'',0.2];

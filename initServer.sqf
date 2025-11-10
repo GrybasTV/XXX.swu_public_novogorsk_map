@@ -137,6 +137,29 @@ z1 addCuratorEditableObjects [allplayers+playableUnits]; //all players and playa
 //Periodiškai valo mirusius objektus, kad sumažintų atminties naudojimą ir pagreitintų allUnits kvietimus
 [] spawn wrm_fnc_V2cleanup;
 
+//JIP State Restoration - užtikrina, kad JIP žaidėjai gautų teisingą misijos būseną
+addMissionEventHandler ["PlayerConnected", {
+	params ["_id", "_uid", "_name", "_jip", "_owner", "_idstr"];
+
+	if (_jip) then {
+		//Wait for player object to be created
+		[_uid] spawn {
+			params ["_playerUID"];
+			sleep 1; //Give time for player object to initialize
+			private _player = objNull;
+			{
+				if (getPlayerUID _x == _playerUID) exitWith {
+					_player = _x;
+				};
+			} forEach allPlayers;
+
+			if (!isNull _player) then {
+				[_player, _playerUID] call wrm_fnc_V2jipRestoration;
+			};
+		};
+	};
+}];
+
 //UAV Cleanup on Player Disconnect - išvalo žaidėjo dronus kai jis atsijungia
 addMissionEventHandler ["PlayerDisconnected", {
 	params ["_id", "_uid", "_name", "_jip", "_owner", "_idstr"];

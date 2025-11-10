@@ -64,37 +64,7 @@ private _des = format ["Capture/Defend %1 base", nameBW2];
     this setVariable ['name','%1'];
     this setVariable ['Designation','G'];
     this setVariable ['OwnerLimit','1'];
-    this setVariable ['OnOwnerChange','
-      call {
-        if ((_this select 1) == sideW) exitWith {
-          if(getMarkerColor resBaseW!='''')exitWith{};
-          _mrkRaW = createMarker [resBaseW, posBaseW2];
-          _mrkRaW setMarkerShape ''ICON'';
-          _mrkRaW setMarkerType ''empty'';
-          _mrkRaW setMarkerText nameBW2;
-          deleteMarker resBaseWE;
-
-          _eBW2=true;
-          { if (side _x == sideE && _x distance posBaseW2 < 250) then { _eBW2=false; }; }
-            forEach (entities [[''Man''], [], true, false]);
-          if((getMarkerColor resBaseW!='''')&&(_eBW2)) then {
-            { _x hideObjectGlobal false; } forEach hideVehBW2;
-            hideVehBW2=[];
-          };
-          if(dBW2)then{[posBaseW2,sideW] call wrm_fnc_V2secDefense;};
-        };
-        if ((_this select 1) == sideE) exitWith {
-          if(getMarkerColor resBaseWE!='''')exitWith{};
-          _mrkRaW = createMarker [resBaseWE, posBaseW2];
-          _mrkRaW setMarkerShape ''ICON'';
-          _mrkRaW setMarkerType ''empty'';
-          _mrkRaW setMarkerText nameBW2;
-          deleteMarker resBaseW;
-          if(dBW2)then{[posBaseW2,sideE] call wrm_fnc_V2secDefense;};
-        };
-      };
-      if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
-    '];
+    this setVariable ['OnOwnerChange', format ["['%1', _this] execVM 'sectors\OnOwnerChange.sqf';", 'BW2']];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];
     this setVariable [''CostWheeled'',0.2];

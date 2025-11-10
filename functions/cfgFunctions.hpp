@@ -45,6 +45,8 @@ class wrm
 		class V2prestigeSquadManager {}; //Dinaminis squad management Prestige AI sistemai
 		class V2uavCleanup {}; //UAV cleanup funkcija - išvalo žaidėjo dronus iš masyvų
 		class V2uavRequest_srv {}; //Serverinė UAV/UGV kūrimo funkcija
+		class V2registerCrewEH {}; //Centralizuota crew event handler registracija - VALIDUOTA SU ARMA 3 BEST PRACTICES
+		class V2jipRestoration {}; //JIP state restoration - užtikrina, kad JIP žaidėjai gautų teisingą misijos būseną
 		class V2eventHandlerCleanup {}; //Event handler cleanup sistema - pašalina MPKilled handler'ius ir stebi memory leak'us
 	};
 	class client

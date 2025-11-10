@@ -35,3 +35,7 @@ while {_t==0 && time < _timeout} do
 	} forEach _cachedPlayers;
 	sleep 7;
 };
+if (time >= _timeout && _t==0) then {
+	if(DBG)then{diag_log "[TIMER_START] ABORTED - timeout reached, players may still be too close to bases"};
+	systemChat "Timer start timeout - mission timer may not start automatically";
+};

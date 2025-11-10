@@ -54,6 +54,11 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 		if(({side _x==east} count (playableunits-AllPlayers))==0)then{_wait=false;};
 		sleep 0.1;
 	};
+	if (time >= _timeout && _wait) then {
+		if(DBG)then{diag_log "[FACTION_SYNC] ABORTED - timeout reached, AI units may not be properly synchronized"};
+		systemChat "Faction synchronization timeout - continuing anyway";
+		hintSilent "";
+	};
 
 	// Nustatyti respawn laiką pagal parametrus (asp12)
 	private _resTime = "asp12" call BIS_fnc_getParamValue;
@@ -77,6 +82,10 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	{
 		player joinAsSilent [_grp,_no];
 		sleep 1;
+	};
+	if (time >= _timeout2 && playerSide != independent) then {
+		if(DBG)then{diag_log "[PLAYER_SIDE_CHANGE] ABORTED - timeout reached, player side may not be properly set to independent"};
+		systemChat "Player side change timeout - continuing anyway";
 	};
 	
 	if(didJip)then

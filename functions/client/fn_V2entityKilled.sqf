@@ -105,11 +105,7 @@ if (_corpse isKindOf "Man") then
 	if(DBG)then{systemchat "Zeus vehicle respawned";};
 };
 
-call
-{
-	if(side _unit==WEST)exitWith{{_x addMPEventHandler ["MPKilled",{[(_this select 0),WEST] spawn wrm_fnc_killedEH;}];} forEach crew _unit;};
-	if(side _unit==EAST)exitWith{{_x addMPEventHandler ["MPKilled",{[(_this select 0),EAST] spawn wrm_fnc_killedEH;}];} forEach crew _unit;};
-	if(side _unit==INDEPENDENT)exitWith{{_x addMPEventHandler ["MPKilled",{[(_this select 0),INDEPENDENT] spawn wrm_fnc_killedEH;}];} forEach crew _unit;};
-};
+// CENTRALIZED EH REGISTRATION: Use server-side function to prevent duplicates
+[_unit, side _unit] remoteExec ["wrm_fnc_registerCrewEH", 2, false];
 
 [z1,[[_unit],true]] remoteExec ["addCuratorEditableObjects", 2, false]; //add unit to zeus
