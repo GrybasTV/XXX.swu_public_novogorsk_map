@@ -85,13 +85,92 @@
 - **[Technical Documentation](docs/MODIFICATIONS.md)** - Code changes, optimizations, and technical details
 - **[Performance Analysis](docs/MODIFICATIONS.md#performance-baseline-measurements)** - Benchmark results
 - **[Chaos Test Protocol](docs/MODIFICATIONS.md#chaos-test-execution-protocol)** - Pre-release testing procedures
+- **[Known Pitfalls](docs/KNOWN_PITFALLS.md)** - Common issues and solutions
+- **[Rollback Plan](docs/ROLLBACK_PLAN.md)** - Rollback instructions for v1.9
 
 ## 🏷️ Releases
 
 | Version | Date | Changes | Download | Rollback |
 |---------|------|---------|----------|----------|
-| **v2.0** | 2025-11-10 | Major SQF optimizations, JIP improvements, DS enforcer | [Download](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v2.0-production-ready/XXX.swu_public_novogorsk_map_v2.0.pbo) | N/A |
-| v1.9 | 2025-11-04 | Ukraine/Russia factions, UAV systems | Legacy | [Download](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v1.9-ukraine-russia/XXX.swu_public_novogorsk_map_v1.9.pbo) |
+| **v2.0** | 2025-11-10 | Major SQF optimizations, JIP improvements, DS enforcer | [Download .pbo](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v2.0-production-ready/XXX.swu_public_novogorsk_map_v2.0.pbo) | N/A |
+| v1.9 | 2025-11-04 | Ukraine/Russia factions, UAV systems | Legacy | [Download .pbo](https://github.com/GrybasTV/XXX.swu_public_novogorsk_map/releases/download/v1.9-ukraine-russia/XXX.swu_public_novogorsk_map_v1.9.pbo) |
+
+## 🔧 Compatibility Matrix
+
+| Component | Version | Status | Notes |
+|-----------|---------|--------|-------|
+| **CBA_A3** | Latest | ✅ Required | Always required for all functionality |
+| **Arma 3 Apex** | Latest | ✅ Required | Required for advanced mission features |
+| **RHS AFRF** | Latest | ✅ Required | Required for Ukraine vs Russia 2025 profile |
+| **RHS USAF** | Latest | ✅ Required | Required for Ukraine vs Russia 2025 profile |
+| **IFA3** | Latest | ⚠️ Optional | Alternative WW2 faction profile |
+| **SPE** | Latest | ⚠️ Optional | Alternative WW2 faction profile |
+| **CUP Weapons** | Latest | ⚠️ Optional | Enhanced weapon variety |
+| **GM** | Latest | ⚠️ Optional | Cold War faction profile |
+| **VN** | Latest | ⚠️ Optional | Vietnam War faction profile |
+
+**Profile Selection:**
+- **RHS Profile**: Requires RHS AFRF + RHS USAF (Ukraine vs Russia 2025)
+- **Alternative Profiles**: CUP/IFA3/SPE/GM/VN (no RHS required)
+
+## ⚙️ Server Configuration Tips
+
+### Recommended Server Settings
+
+**Difficulty Settings:**
+- **AI Skill**: 0.5-0.7 (balanced challenge)
+- **AI Precision**: 0.3-0.5 (realistic accuracy)
+- **Revive System**: Enabled (mission supports AI revive)
+
+**Performance Settings:**
+- **MaxMsgSend**: 128-256 (network optimization)
+- **MaxSizeGuaranteed**: 512 (for large marker counts)
+- **MaxSizeNonguaranteed**: 256 (standard)
+- **MinBandwidth**: 131072 (128 KB/s minimum)
+- **MaxBandwidth**: 10000000 (10 MB/s maximum)
+
+**Headless Client (Optional):**
+- Recommended for 20+ AI units
+- Configure HC to handle AI groups
+- Mission automatically distributes AI to HC if available
+
+**BattlEye Settings:**
+- **RemoteExec Restrictions**: Enabled (mission uses CfgRemoteExec whitelist)
+- **Script Restrictions**: Standard (mission scripts are whitelisted)
+- **Signature Verification**: Enabled (recommended)
+
+**Mission Parameters:**
+- **Player Count**: 1-48 players supported
+- **AI Count**: 40-60 units optimal (performance tested)
+- **Sector Count**: 4 sectors (BE1, BE2, BW1, BW2)
+- **UAV/UGV Limit**: Per-squad limits (prevents spam)
+
+### Troubleshooting
+
+**"remoteExec restriction" errors:**
+- Ensure `CfgRemoteExec.hpp` is included in `description.ext`
+- Check BattlEye whitelist matches mission functions
+- Verify `mode=1` (whitelist) and `jip=0` settings
+
+**Performance Issues:**
+- Reduce AI count if FPS < 40
+- Enable Dynamic Simulation (automatic in v2.0)
+- Check cleanup systems are running (corpse/wreck limits)
+
+**JIP Desynchronization:**
+- Verify `wrm_fnc_V2jipRestoration` is called on PlayerConnected
+- Check RPT logs for `[JIP_RESTORATION]` entries
+- Ensure mission variables are public (`publicVariable`)
+
+## 🧪 Smoke Tests
+
+Quick validation scripts for production readiness:
+
+- **[RemoteExec Check](tests/run_remoteexec_check.sqf)** - Validates CfgRemoteExec whitelist
+- **[DS Enforcer Check](tests/run_ds_enforcer_smoke.sqf)** - Verifies Dynamic Simulation exclusions
+- **[JIP Smoke Test](tests/run_jip_smoke.sqf)** - Tests JIP state restoration
+
+**Usage:** ExecVM scripts on server, check RPT logs for results.
 
 ## 🐛 Issues & Support
 
