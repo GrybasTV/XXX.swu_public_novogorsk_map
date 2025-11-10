@@ -29,9 +29,6 @@ if (!isServer) exitWith {
 //Enable Dynamic Simulation system
 enableDynamicSimulationSystem true;
 
-//Global enable
-setDynamicSimulationEnabledGlobal true;
-
 if (DBG) then { diag_log "[DS] Dynamic Simulation enabled"; };
 
 //Distances by type
