@@ -64,7 +64,7 @@ private _des = format ["Capture/Defend %1 base", nameBW1];
     this setVariable ['name','%1'];
 	this setVariable ['Designation','F'];
 	this setVariable ['OwnerLimit','1'];
-    this setVariable ['OnOwnerChange', "['BW1', _this] execVM 'sectors\OnOwnerChange.sqf';"];
+    this setVariable ['OnOwnerChange', "[''BW1'', _this] execVM ''sectors\OnOwnerChange.sqf'';"];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];
     this setVariable [''CostWheeled'',0.2];
