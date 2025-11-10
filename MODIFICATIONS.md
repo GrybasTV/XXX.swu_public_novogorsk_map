@@ -289,6 +289,199 @@ CPU apkrovos matavimas atliekamas naudojant Arma 3 Profiling Branch su šiomis s
 
 **Test status**: ✅ PARUOŠTA - visi komponentai implementuoti ir suderinami
 
+### Galutinė Pre-Release Verifikacija
+
+#### CfgRemoteExec Verifikacija ✅
+```
+Whitelist režimas (mode = 1, jip = 0) - state per server push
+├── Commands: BIS_fnc_endMission, setVariable, assignCurator, etc.
+├── Functions: wrm_fnc_registerCrewEH, wrm_fnc_V2syncSupportProvidersClient, etc.
+└── Target kryptys: Server→Client (1), Client→Server (2), Server→All (0)
+
+RPT Monitoring: Patikrinti nėra "remoteExec restriction" įrašų
+```
+
+#### Dynamic Simulation Kalibracija ✅
+```
+DS Enforcer išimtys:
+├── Žaidėjų grupės: nepritaikyti DS (isPlayer check)
+├── Transportas su įgula: nepritaikyti DS (crew count > 0)
+├── Transportas su kroviniu: nepritaikyti DS (getVehicleCargo count > 0)
+└── Nuotoliai: Grupės 500m, Transportas 1000m, Statiniai 300m
+```
+
+#### Scheduler Higienos Monitoring ✅
+```
+Ilgos kilpos apsauga:
+├── while ciklai: timeout apsauga (60-3600s)
+├── sleep intervalai: 7-90s tarp iteracijų
+├── diag_tickTime monitoring: < 20ms normalu, > 350ms - alert
+└── diag_fps monitoring: > 45 FPS stabilu, < 30 FPS - kritiška
+```
+
+#### JIP State Push Architektūra ✅
+```
+Pilna restauracija iš vieno taško (fn_V2jipRestoration):
+├── Mission variables: progress, version, faction data
+├── Sector state: secBE1, secBW1, secBE2, secBW2 flags
+├── UAV/UGV state: uavSquadW/E, pagrindiniai objektai
+├── Marker state: dinaminiu būdu per sector ownership
+├── Zeus state: curator priskyrimas ir editable objektai
+└── Support state: per V2syncSupportProvidersClient
+```
+
+### Chaos Test Execution Protocol
+
+**Testavimo aplinka:**
+- Arma 3 Profiling Branch
+- Novogorsk žemėlapis, 45-60 min. sesija
+- 8+ žaidėjai (2-3 JIP prisijungimai)
+- 40-60 AI vienetų
+
+**Test scenarijus (žingsnis po žingsnio):**
+
+1. **Setup (0-5 min.)**
+   - Paleisti serverį su nauja konfiguracija
+   - Patikrinti RPT dėl CfgRemoteExec klaidų
+   - Įsitikinti, kad DS enforcer'is aktyvus
+
+2. **Sektoriaus apkrova (5-15 min.)**
+   - 2-3 kartus pakeisti BE1 ir BW1 ownership (flip'ai)
+   - Patikrinti OnOwnerChange logus [SEC_CHANGE]
+   - Užtikrinti marker'ių sukūrimą/šalinimą
+
+3. **UAV/UGV apkrova (15-25 min.)**
+   - Sukurti 4× UAV (2 WEST + 2 EAST) ir 2× UGV
+   - 2-3 naikinimo/kūrimo ciklai
+   - Patikrinti UAV logus [UAV_START], [UAV_SUCCESS], [UAV_ERROR]
+   - Užtikrinti uavSquadW/E masyvų atnaujinimą
+
+4. **AI/EH apkrova (25-35 min.)**
+   - 2-3 AI respawn bangos su EH registracija
+   - Naikinti transportą su įgula
+   - Patikrinti EH dublikatų nebuvimą (wrm_eh_mpkilled vėliavėlės)
+   - DS enforcer logai [DS_GROUP_SKIP], [DS_VEHICLE_SKIP]
+
+5. **Cleanup apkrova (35-45 min.)**
+   - 10+ lavonų ir 5+ nuolaužų generavimas
+   - Patikrinti cleanup logus [WRM][CLEANUP]
+   - WeaponHolder/GroundWeaponHolder šalinimas
+
+6. **JIP testas (vidury + pabaigoje)**
+   - 2 žaidėjų JIP prisijungimai po 10-15 min. aktyvios kovos
+   - Patikrinti pilną state restauraciją (markers, Zeus, UAV, support)
+   - JIP logai [JIP_RESTORATION]
+
+**Tikrinami kriterijai (po kiekvieno žingsnio):**
+
+| Kriterijus | Tikrinimo metodas | Tikėtinas rezultatas |
+|------------|-------------------|---------------------|
+| EH dublikatų nebuvimas | diag_log EH count, wrm_eh_mpkilled vėliavėlės | ✅ 0 dublikatų |
+| Pilna JIP state restauracija | JIP žaidėjų matomi objektai/marker'iai | ✅ Pilna restauracija |
+| DS enforcer selektyvumas | diag_log [DS_*_SKIP] įrašai | ✅ Žaidėjų grupės neliečiamos |
+| RPT švara | RPT log analysis | ✅ Nėra "No alive 10000ms", BE restrictions |
+| Performance stabilumas | diag_captureFrame, diag_fps | ✅ < 20ms tickTime, > 45 FPS |
+
+**Testavimo įrankiai:**
+- Real-time monitoring: `diag_fps`, `diag_tickTime`
+- Post-test analysis: RPT logs, diag_captureFrame export
+- Manual verification: EH count, marker visibility, UAV functionality
+
+**Test rezultatai įrašomi į šią lentelę:**
+
+| Test Run | Data/Versija | Rezultatas | Issues Found | Resolution |
+|----------|-------------|------------|--------------|------------|
+| Chaos Test #1 | [Data] | [PASS/FAIL] | [Issues] | [Fixes] |
+| Chaos Test #2 | [Data] | [PASS/FAIL] | [Issues] | [Fixes] |
+
+### Go-Live Planas
+
+#### Pre-Release Preparacija ✅
+```
+Konfigūracijų snapshot:
+├── Git tag: v2.0-production-ready
+├── PBO backup: XXX.swu_public_novogorsk_v1.9_backup.pbo
+├── Rollback plan: grįžti prie commit 361c3df (po optimizacijų)
+└── CfgRemoteExec backup: senoji versija be jip=0
+
+Testavimo aplinkos:
+├── Development server: chaos test'as
+├── Staging server: 24h stability test
+└── Production monitoring: pirmos 72h alert'ai
+```
+
+#### Release Execution ✅
+```
+Žingsnis po žingsnio:
+1. Git tag sukūrimas ir PBO build
+2. Chaos test final verification (45 min.)
+3. CfgRemoteExec whitelist verifikacija
+4. Production server deployment
+5. Post-launch monitoring įjungimas (pirmos 2h)
+6. Community announcement
+```
+
+#### Post-Launch Stebėsena ✅
+```
+Monitoring dashboard:
+├── diag_fps trending (> 45 FPS baseline)
+├── diag_tickTime alerts (> 350ms threshold)
+├── Scheduler lag monitoring (< 850ms max)
+├── RPT error patterns ("No alive 10000ms", "remoteExec restriction")
+└── DS enforcer efektyvumas (processed vs skipped ratio)
+
+Alert slenksčiai:
+├── diag_fps < 30 FPS: Critical alert
+├── diag_tickTime > 350ms: Warning alert
+├── DS enforcer errors > 5 per 10min: Warning alert
+├── EH dublikatų > 0: Critical alert
+└── RemoteExec restrictions > 0: Critical alert
+
+Cleanup tęsimas:
+├── WeaponHolder TTL: 10 min (FIFO per viršytą kvotą)
+├── GroundWeaponHolder: 10 min
+├── CraterLong: 10 min
+└── Mission restart cleanup: UAV/UGV arrays reset
+```
+
+#### Potencialios Kraštinės Situacijos ⚠️
+
+```
+Support moduliai ir marker'iai:
+├── Visos galutinės būsenos saugomos serveryje
+├── JIP metu pushinamos per fn_V2jipRestoration
+└── Ne pasikliaujama remoteExec istorija
+
+Curator (Zeus) valdymas:
+├── Priskyrimas vyksta serveryje (target 2)
+├── Editable objektai tvarkomi iš vieno registro
+├── JIP metu restauruojama per server push
+└── Vieninga "registry" sistema išvengia konfliktų
+
+Mission restart apsauga:
+├── UAV/UGV arrays išvalomi initServer.sqf pradžioje
+├── Sector flags reset į default
+├── Support providers resynced
+└── Zeus curator reset į available state
+```
+
+#### Production Baseline Įrašymas 📊
+```
+Po pirmos savaitės įrašyti į šią lentelę:
+
+| Metric | Production Baseline | Alert Threshold | Monitoring |
+|--------|-------------------|----------------|------------|
+| diag_fps (avg) | [TBD] | < 45 FPS | Continuous |
+| diag_fps (1% low) | [TBD] | < 28 FPS | Continuous |
+| diag_tickTime (avg) | [TBD] | > 18ms | Continuous |
+| entities() calls/sec | [TBD] | > 150 | Per session |
+| allPlayers calls/sec | [TBD] | > 300 | Per session |
+| Scheduler lag (max) | [TBD] | > 850ms | Per session |
+| DS enforcer efficiency | [TBD]% | < 95% | Daily |
+| EH registration success | [TBD]% | < 99% | Daily |
+| JIP state push success | [TBD]% | < 98% | Daily |
+```
+
 **Rezultatas**:
 - ✅ Panaikintos visos potencialios begalinės kilpos su timeout apsauga
 - ✅ ~50-70% sumažintas CPU apkrovimas dažnai naudojamose operacijose (allPlayers caching, entities filtravimas)
