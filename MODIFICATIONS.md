@@ -241,7 +241,14 @@ CPU apkrovos matavimas atliekamas naudojant Arma 3 Profiling Branch su šiomis s
 - **Prieš/po palyginimas**: identiškos sąlygos, tas pats žemėlapis ir vienetų skaičius
 - **Matavimo taškai**: AI judėjimo ciklai (kas 3 min.), sektorių aktyvacija, UAV kūrimas
 
-**Performance Baseline Measurements** (Profiling Branch, Novogorsk, 45 min. testas):
+**Performance Baseline Measurements** (Profiling Branch, Novogorsk, 45 min. testas - prieš/po optimizaciją):
+
+**Įgyvendinti patobulinimai testavimo laikotarpiu:**
+- ✅ DS enforcer išimtys žaidėjų vienetams (nepritaikyti DS grupėms su žaidėjais)
+- ✅ assignCurator optimizacija į server-side (target 2)
+- ✅ CfgRemoteExec whitelist naujiems remoteExec kvietimams
+- ✅ Scheduler higiena: esami while ciklai turi timeout'us (nebegaliniai)
+- ✅ JIP marker restoration per sector flags sinchronizaciją
 
 | Metric | Prieš optimizaciją | Po optimizacija | Pagerėjimas |
 |--------|-------------------|-----------------|-------------|

@@ -8,7 +8,7 @@ exitWith {hint "Command is available only for admin";};
 if (isNull getAssignedCuratorUnit z1) then
 {
 	//player become Zeus
-	[player, z1] remoteExec ["assignCurator", 0, false];
+	[player, z1] remoteExec ["assignCurator", 2, false];
 	//all players and playable units will be editable by Zeus
 	z1 addCuratorEditableObjects [allplayers+playableUnits];
 	hint "ZEUS Enabled";
@@ -16,6 +16,6 @@ if (isNull getAssignedCuratorUnit z1) then
 } else
 {
 	//unassign zeus owner
-	z1 remoteExec ["unassignCurator", 0, false];
+	z1 remoteExec ["unassignCurator", 2, false];
 	hint "ZEUS Disabled";
 };

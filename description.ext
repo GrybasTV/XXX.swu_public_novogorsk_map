@@ -9,6 +9,7 @@ onLoadIntro = "YourMessage";
 #include "warmachine\defines.hpp"
 #include "warmachine\V2dialog.hpp"
 #include "admin\V2adminMenu.hpp"
+#include "CfgRemoteExec.hpp"
 class cfgFunctions 
 {
 	#include "functions\cfgfunctions.hpp"

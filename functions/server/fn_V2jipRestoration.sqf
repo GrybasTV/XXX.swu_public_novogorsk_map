@@ -70,6 +70,11 @@ if (!isNil "aStart") then { publicVariable "aStart"; };
 if (!isNil "version") then { publicVariable "version"; };
 if (!isNil "missType") then { publicVariable "missType"; };
 
+// 5.5. Force marker state synchronization
+// Markers are created dynamically by sector logic, but ensure critical marker data is synced
+if (!isNil "uavSquadW") then { publicVariable "uavSquadW"; };
+if (!isNil "uavSquadE") then { publicVariable "uavSquadE"; };
+
 // 6. Sync sector markers (ensure they exist for JIP players)
 if (!isNil "secBE1" && secBE1) then { publicVariable "secBE1"; };
 if (!isNil "secBW1" && secBW1) then { publicVariable "secBW1"; };

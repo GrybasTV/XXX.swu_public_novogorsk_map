@@ -47,6 +47,12 @@ private _fnc_markGroup = {
 	if (isNull _grp) exitWith {};
 	if (_grp getVariable ["wrm_dynSimEnabled", false]) exitWith {};
 
+	// IŠIMTYS: nepritaikyti DS grupėms su žaidėjais
+	private _groupUnits = units _grp;
+	if (_groupUnits findIf {isPlayer _x} > -1) exitWith {
+		if(DBG)then{diag_log format ["[DS_GROUP_SKIP] Skipped group with player: %1", _grp]};
+	};
+
 	_grp enableDynamicSimulation true;
 	_grp setVariable ["wrm_dynSimEnabled", true, false];
 };
@@ -58,6 +64,16 @@ private _fnc_markVehicle = {
 	if !(_veh isKindOf "AllVehicles") exitWith {}; //ignoruoja kitus objektus
 	if (_veh isKindOf "Man") exitWith {}; //žaidėjų ir AI pėstininkų neflaginam čia
 	if (_veh getVariable ["wrm_dynSimEnabled", false]) exitWith {};
+
+	// IŠIMTYS: nepritaikyti DS transportui su žaidėjais įguloje
+	if ((crew _veh) findIf {isPlayer _x} > -1) exitWith {
+		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with player crew: %1", typeOf _veh]};
+	};
+
+	// IŠIMTYS: nepritaikyti DS transportui su kroviniu (cargo)
+	if ((crew _veh) findIf {!isPlayer _x} > -1 || count (getVehicleCargo _veh) > 0) exitWith {
+		if(DBG)then{diag_log format ["[DS_VEHICLE_SKIP] Skipped vehicle with AI crew/cargo: %1", typeOf _veh]};
+	};
 
 	_veh enableDynamicSimulation true;
 	_veh setVariable ["wrm_dynSimEnabled", true, false];

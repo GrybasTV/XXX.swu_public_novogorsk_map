@@ -79,6 +79,10 @@ if (_index >= 0) then {
 
 	systemChat format ["[UAV CLEANUP] Cleaned up UAV data for %1 player %2", _sideName, _playerUID];
 
+	// Papildomai išvalyti pagrindinius objektus ir cooldown'us jei reikia
+	// Šiuo metu pagrindiniai objektai yra globalūs ir gali būti naudojami kelių žaidėjų,
+	// todėl jų neišvalome automatiškai - jie turi būti išvalomi kitais mechanizmais
+
 } else {
 	systemChat format ["[UAV CLEANUP] No UAV data found for %1 player %2", _sideName, _playerUID];
 };
