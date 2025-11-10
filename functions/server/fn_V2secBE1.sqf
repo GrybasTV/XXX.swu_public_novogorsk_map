@@ -45,7 +45,9 @@ while {!secBE1 && time < _timeout} do
 publicvariable "secBE1";
 
 // BE1 prieš sektoriaus kūrimą – išeiti, jei timeout ir neprisistatė priešas
-if (!secBE1) exitWith {};  // sąlyga neįvykdyta – nieko nekuriam
+if (!secBE1) exitWith {
+    if(DBG)then{diag_log "[SECTOR_CREATION] BE1 sector creation skipped - timeout reached"};
+};  // sąlyga neįvykdyta – nieko nekuriam
 
 //Pašalinti lokalius marker'ius TIK tada, kai sektorius sukurtas ir aktyvus
 ["mFobE"] remoteExec ["deleteMarkerLocal", 0, true]; //delete local marker (užtikrina, kad nepradėtų dubliuotis mFobE)
@@ -54,6 +56,7 @@ deleteMarker resFobE;
 // Paruošk reikšmes
 private _nme = format ["D: %1", nameBE1];
 private _des = format ["Capture/Defend %1 base", nameBE1];
+if(DBG)then{diag_log format ["[SECTOR_CREATION] Starting BE1 sector creation at %1", posBaseE1]};
 // Kurk sektorių su teisingu format įterpimu ir sutvarkytomis citatomis
 "ModuleSector_F" createUnit [
   posBaseE1,
@@ -115,6 +118,7 @@ private _des = format ["Capture/Defend %1 base", nameBE1];
 // Palauk kol sectorBE1 bus priskirtas init string'e
 waitUntil { !(isNil 'sectorBE1') };
 [sectorBE1, sideE] call BIS_fnc_moduleSector; //initialize sector
+if(DBG)then{diag_log "[SECTOR_CREATION] BE1 sector created and initialized successfully"};
 [3] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;
 dBE1 = true;

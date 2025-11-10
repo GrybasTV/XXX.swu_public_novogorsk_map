@@ -125,7 +125,7 @@ pushAction = player addAction
 [
 	"Push boat", //title
 	{
-		[cursorTarget,player,(cursorTarget getRelDir player)] remoteExec ["wrm_fnc_pushVeh", 0, true];
+		[cursorTarget,player,(cursorTarget getRelDir player)] remoteExec ["wrm_fnc_pushVeh", 0, false];
 	}, //script
 	nil, 6, true, true, "", //arguments, priority, showWindow, hideOnUse, shortcut,
 	"(cursorTarget isKindOf ""ship"") && (cursorTarget distance player<10) && (isTouchingGround cursortarget)", //condition,

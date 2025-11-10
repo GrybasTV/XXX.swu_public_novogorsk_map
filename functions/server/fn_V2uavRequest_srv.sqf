@@ -25,8 +25,11 @@ params ["_typ","_sde","_playerUID","_spawnPos"];
 
 private _result = objNull;
 
+if(DBG)then{diag_log format ["[UAV_CREATION] Starting UAV/UGV creation - Type: %1, Side: %2, UID: %3", _typ, _sde, _playerUID]};
+
 // Validate parameters
 if (isNil "_typ" || isNil "_sde" || isNil "_playerUID" || isNil "_spawnPos") exitWith {
+	if(DBG)then{diag_log "[UAV_CREATION] Failed - invalid parameters"};
 	["[UAV SERVER] Invalid parameters provided"] remoteExec ["systemChat", 0, false];
 	objNull
 };
@@ -363,6 +366,7 @@ if(_typ==1)exitWith
 		};
 	};
 
+	if(DBG)then{diag_log format ["[UAV_CREATION] Completed - Result: %1", _result]};
 	_result
 };
 

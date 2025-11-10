@@ -21,6 +21,7 @@
 		- Naudojami aiškūs nuotoliai (foot, vehicle, prop) pagal hibridinį planą
 */
 
+if(DBG)then{diag_log "[DYNAMIC_SIMULATION] Initializing Dynamic Simulation system"};
 if (!isServer) exitWith {
 	diag_log "[WRM][DYNSIM] Dynamic Simulation init iškviestas ne serveryje – nutraukiama.";
 };
@@ -103,6 +104,7 @@ if (isNil "wrm_dynSim_entityCreatedEH") then {
 [] spawn {
 	while {true} do {
 		sleep 120;
+		if(DBG)then{diag_log "[DYNAMIC_SIMULATION] Running periodic enforcer check"};
 
 		{
 			[_x] call (missionNamespace getVariable ["wrm_fnc_dynSim_markGroup", {}]);

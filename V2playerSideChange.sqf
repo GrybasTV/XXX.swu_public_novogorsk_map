@@ -47,7 +47,8 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	hint "Waiting for Factions synchronisation";
 	systemChat "Waiting for Factions synchronisation";
 	_wait=true;
-	while {_wait} do
+	private _timeout = time + 60; //1 minutės timeout
+	while {_wait && time < _timeout} do
 	{
 		if(({side _x==west} count (playableunits-AllPlayers))==0)then{_wait=false;};
 		if(({side _x==east} count (playableunits-AllPlayers))==0)then{_wait=false;};
@@ -71,7 +72,8 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	hintSilent "";
 	systemChat "Factions loaded";
 	[] execVM "V2clearLoadouts.sqf";
-	while{playerSide!=independent}do
+	private _timeout2 = time + 30; //30 sekundžių timeout
+	while{playerSide!=independent && time < _timeout2}do
 	{
 		player joinAsSilent [_grp,_no];
 		sleep 1;

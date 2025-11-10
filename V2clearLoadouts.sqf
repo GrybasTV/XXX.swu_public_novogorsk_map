@@ -1,7 +1,8 @@
 //delete wrong loadouts
 systemChat "Checking loadouts";
 _run=true;
-while{_run}do
+private _timeout = time + 60; //1 minutės timeout
+while{_run && time < _timeout}do
 {
 	if((count([missionNamespace, true] call BIS_fnc_getRespawnInventories))==0)then{_run=false;};
 	sleep 1;
@@ -11,7 +12,8 @@ systemChat "Loadouts ready";
 
 //show tasks
 _run=true;
-while{_run}do
+private _timeout2 = time + 60; //1 minutės timeout
+while{_run && time < _timeout2}do
 {
 	if((count(player call BIS_fnc_tasksUnit))==(count((units independent) call BIS_fnc_tasksUnit)))then{_run=false;};
 	sleep 1;

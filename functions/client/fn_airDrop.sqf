@@ -43,7 +43,7 @@ if (suppUsed==0) then
 						_box = createVehicle [selectRandom supply, [_pos select 0, _pos select 1, 60], [], 0, "NONE"];
 						[_box] call wrm_fnc_parachute;
 						[z1,[[_box],true]] remoteExec ["addCuratorEditableObjects", 2, false];
-						[_box,(str profileName),(side player)] remoteExec ["wrm_fnc_V2suppMrk", 0, true];
+						[_box,(str profileName),(side player)] remoteExec ["wrm_fnc_V2suppMrk", 0, false];
 						suppUsed = 1;
 						player removeAction supplyAction;
 						if (modA=="GM") then {[_box,(side player)] call wrm_fnc_supplyBox};
