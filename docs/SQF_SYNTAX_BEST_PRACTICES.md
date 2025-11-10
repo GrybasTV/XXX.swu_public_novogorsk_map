@@ -184,7 +184,9 @@ while {_condition && time < _timeout} do {
     sleep 1;
 };
 if (time >= _timeout) then {
-    if(DBG)then{diag_log "[ERROR] Timeout reached"};
+	if (DBG) then {
+		diag_log "[ERROR] Timeout reached";
+	};
 };
 ```
 
