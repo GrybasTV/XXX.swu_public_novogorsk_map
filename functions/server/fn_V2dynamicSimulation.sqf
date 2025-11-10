@@ -32,7 +32,7 @@ enableDynamicSimulationSystem true;
 //Global enable
 setDynamicSimulationEnabledGlobal true;
 
-if(DBG)then{diag_log "[DS] Dynamic Simulation system enabled successfully"};
+if (DBG) then { diag_log "[DS] Dynamic Simulation enabled"; };
 
 //Distances by type
 setDynamicSimulationDistance "Group", 1200;

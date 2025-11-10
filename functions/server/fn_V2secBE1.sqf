@@ -65,7 +65,7 @@ if(DBG)then{diag_log format ["[SECTOR_CREATION] Starting BE1 sector creation at 
     this setVariable ['name','%1'];
 	this setVariable ['Designation','D'];
 	this setVariable ['OwnerLimit','1'];
-    this setVariable ['OnOwnerChange', "[''BE1'', _this] execVM ''sectors\OnOwnerChange.sqf'';"];
+    this setVariable ['OnOwnerChange', format ["['%1', _this] execVM 'sectors\OnOwnerChange.sqf';", 'BE1']];
     this setVariable [''CaptureCoef'',0.05];
     this setVariable [''CostInfantry'',0.2];
     this setVariable [''CostWheeled'',0.2];
