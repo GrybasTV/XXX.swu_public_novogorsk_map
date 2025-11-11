@@ -4,12 +4,12 @@
 
 _posLMB = _this select 0;
 
-mrk setMarkerPosLocal _posLMB;
-mrk setMarkerTypeLocal "select";
+mrk setMarkerPos _posLMB;
+mrk setMarkerType "select";
 
 call
 {
-	if (mrk =="mArti") exitWith {posArti = _posLMB; "mArtiRng0" setMarkerPosLocal _posLMB;  "mArtiRng1" setMarkerPosLocal _posLMB; if(DBG)then{vehArti setVehiclePosition [_posLMB, [], 0, "NONE"];};};
+	if (mrk =="mArti") exitWith {posArti = _posLMB; "mArtiRng0" setMarkerPos _posLMB;  "mArtiRng1" setMarkerPos _posLMB; if(DBG)then{vehArti setVehiclePosition [_posLMB, [], 0, "NONE"];};};
 	if (mrk =="mCas") exitWith {posCas = _posLMB; if(DBG)then{vehCas setVehiclePosition [_posLMB, [], 0, "NONE"];};};
 	if (mrk =="mAA") exitWith {posAA = _posLMB; if(DBG)then{vehAA setVehiclePosition [_posLMB, [], 0, "NONE"];};};
 	if (mrk =="mB1W") exitWith {posBaseW1 = _posLMB;};

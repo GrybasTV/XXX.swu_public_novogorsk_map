@@ -25,11 +25,15 @@ params ["_typ","_sde","_playerUID","_spawnPos"];
 
 private _result = objNull;
 
-if(DBG)then{diag_log format ["[UAV_START] Type:%1 Side:%2 Player:%3", _typ, _sde, _playerUID]};
+if (DBG) then {
+	diag_log format ["[UAV_START] Type:%1 Side:%2 Player:%3", _typ, _sde, _playerUID];
+};
 
 // Validate parameters
 if (isNil "_typ" || isNil "_sde" || isNil "_playerUID" || isNil "_spawnPos") exitWith {
-	if(DBG)then{diag_log "[UAV_ERROR] Failed - invalid parameters"};
+	if (DBG) then {
+		diag_log "[UAV_ERROR] Failed - invalid parameters";
+	};
 	["[UAV SERVER] Invalid parameters provided"] remoteExec ["systemChat", 0, false];
 	objNull
 };
@@ -52,14 +56,55 @@ if(_typ==0)exitWith
 				//PER-SQUAD SYSTEM (Ukraine 2025)
 				private _cooldownType = 11;
 				private _uavsArray = uavsW;
+				//KRITIŠKA: Naudoti šviežią masyvo kopiją iš serverio - ne kliento kopiją
 				private _uavSquadArray = uavSquadW;
 				private _uavGlobalVar = "uavW"; // Not used in per-squad, but for compatibility
+				private _blockRequest = false; // Flag'as patikrinimui
+
+				//SERVER-SIDE PROTECTION: Check UAV limits before creation
+				//KRITIŠKA: Patikrinti su šviežiu masyvu - publicVariable gali būti vėluojantis
+				private _activeUavCount = 0;
+				{
+					private _uavObj = _x select 1;
+					if (!isNull _uavObj && alive _uavObj) then {
+						_activeUavCount = _activeUavCount + 1;
+					};
+				} forEach _uavSquadArray;
+
+				if (_activeUavCount >= 4) then {
+					["[UAV SERVER] Maximum 4 active UAVs per faction reached (server check)"] remoteExec ["systemChat", 0, false];
+					if (DBG) then {
+						diag_log format ["[UAV_SERVER] Limit exceeded: %1 active UAVs for WEST", _activeUavCount];
+					};
+					_blockRequest = true;
+				};
 
 				// Find player entry in array
 				private _index = -1;
 				{
 					if ((_x select 0) == _playerUID) exitWith {_index = _forEachIndex;};
 				} forEach _uavSquadArray;
+
+				//SERVER-SIDE PROTECTION: Check if player already has active UAV
+				if (!_blockRequest && _index >= 0) then {
+					private _uavData = _uavSquadArray select _index;
+					private _uavObj = _uavData select 1;
+					if (!isNull _uavObj && alive _uavObj) then {
+						["[UAV SERVER] You already have an active drone deployed (server check)"] remoteExec ["systemChat", 0, false];
+						if (DBG) then {
+							diag_log format ["[UAV_SERVER] Player %1 already has active UAV: %2", _playerUID, typeOf _uavObj];
+						};
+						_blockRequest = true;
+					};
+				};
+
+				//KRITIŠKA: Jei patikrinimas nepavyko, sustabdyti funkciją
+				if (_blockRequest) exitWith {
+					if (DBG) then {
+						diag_log "[UAV_SERVER] Request blocked by server-side protection";
+					};
+					_result = objNull;
+				};
 
 				// Validate UAV array
 				if (count _uavsArray == 0) exitWith {
@@ -179,13 +224,54 @@ if(_typ==0)exitWith
 				//PER-SQUAD SYSTEM (Russia 2025)
 				private _cooldownType = 12;
 				private _uavsArray = uavsE;
+				//KRITIŠKA: Naudoti šviežią masyvo kopiją iš serverio - ne kliento kopiją
 				private _uavSquadArray = uavSquadE;
+				private _blockRequest = false; // Flag'as patikrinimui
+
+				//SERVER-SIDE PROTECTION: Check UAV limits before creation
+				//KRITIŠKA: Patikrinti su šviežiu masyvu - publicVariable gali būti vėluojantis
+				private _activeUavCount = 0;
+				{
+					private _uavObj = _x select 1;
+					if (!isNull _uavObj && alive _uavObj) then {
+						_activeUavCount = _activeUavCount + 1;
+					};
+				} forEach _uavSquadArray;
+
+				if (_activeUavCount >= 4) then {
+					["[UAV SERVER] Maximum 4 active UAVs per faction reached (server check)"] remoteExec ["systemChat", 0, false];
+					if (DBG) then {
+						diag_log format ["[UAV_SERVER] Limit exceeded: %1 active UAVs for EAST", _activeUavCount];
+					};
+					_blockRequest = true;
+				};
 
 				// Find player entry in array
 				private _index = -1;
 				{
 					if ((_x select 0) == _playerUID) exitWith {_index = _forEachIndex;};
 				} forEach _uavSquadArray;
+
+				//SERVER-SIDE PROTECTION: Check if player already has active UAV
+				if (!_blockRequest && _index >= 0) then {
+					private _uavData = _uavSquadArray select _index;
+					private _uavObj = _uavData select 1;
+					if (!isNull _uavObj && alive _uavObj) then {
+						["[UAV SERVER] You already have an active drone deployed (server check)"] remoteExec ["systemChat", 0, false];
+						if (DBG) then {
+							diag_log format ["[UAV_SERVER] Player %1 already has active UAV: %2", _playerUID, typeOf _uavObj];
+						};
+						_blockRequest = true;
+					};
+				};
+
+				//KRITIŠKA: Jei patikrinimas nepavyko, sustabdyti funkciją
+				if (_blockRequest) exitWith {
+					if (DBG) then {
+						diag_log "[UAV_SERVER] Request blocked by server-side protection";
+					};
+					_result = objNull;
+				};
 
 				// Validate UAV array
 				if (count _uavsArray == 0) exitWith {
@@ -366,7 +452,9 @@ if(_typ==1)exitWith
 		};
 	};
 
-	if(DBG)then{diag_log format ["[UAV_SUCCESS] Completed - %1 created at %2", typeOf _result, getPos _result]};
+	if (DBG) then {
+		diag_log format ["[UAV_SUCCESS] Completed - %1 created at %2", typeOf _result, getPos _result];
+	};
 	_result
 };
 

@@ -81,6 +81,43 @@ if (!isNil "secBW1" && secBW1) then { publicVariable "secBW1"; };
 if (!isNil "secBE2" && secBE2) then { publicVariable "secBE2"; };
 if (!isNil "secBW2" && secBW2) then { publicVariable "secBW2"; };
 
+// 6.5. Ensure AO markers exist for JIP players (support sectors)
+if (!isNil "posArti" && count posArti == 3) then {
+    // Recreate artillery markers if they don't exist
+    if (getMarkerType "mArti" == "") then {
+        createMarker ["mArti", posArti];
+        "mArti" setMarkerShape "ICON";
+        "mArti" setMarkerType "select";
+        "mArti" setMarkerText "Artillery";
+        "mArti" setMarkerColor "ColorBlack";
+        if(DBG)then{diag_log "[JIP_RESTORATION] Recreated artillery marker for JIP player"};
+    };
+};
+
+if (!isNil "posCas" && count posCas == 3) then {
+    // Recreate CAS markers if they don't exist
+    if (getMarkerType "mCas" == "") then {
+        createMarker ["mCas", posCas];
+        "mCas" setMarkerShape "ICON";
+        "mCas" setMarkerType "select";
+        "mCas" setMarkerText "CAS Tower";
+        "mCas" setMarkerColor "ColorBlack";
+        if(DBG)then{diag_log "[JIP_RESTORATION] Recreated CAS marker for JIP player"};
+    };
+};
+
+if (!isNil "posAA" && count posAA == 3) then {
+    // Recreate AA markers if they don't exist
+    if (getMarkerType "mAA" == "") then {
+        createMarker ["mAA", posAA];
+        "mAA" setMarkerShape "ICON";
+        "mAA" setMarkerType "select";
+        "mAA" setMarkerText "Anti Air";
+        "mAA" setMarkerColor "ColorBlack";
+        if(DBG)then{diag_log "[JIP_RESTORATION] Recreated AA marker for JIP player"};
+    };
+};
+
 // 7. Sync base positions and other critical location data
 if (!isNil "posArti") then { publicVariable "posArti"; };
 if (!isNil "posCas") then { publicVariable "posCas"; };
@@ -102,4 +139,9 @@ if (!isNil "nameBE2") then { publicVariable "nameBE2"; };
 if (!isNil "rTime") then { publicVariable "rTime"; };
 if (!isNil "arTime") then { publicVariable "arTime"; };
 
-if(DBG)then{diag_log format ["[JIP_RESTORATION] Completed state restoration for player: %1", name _unit]};
+// 10. BIS_fnc_moduleSector automatiškai kuria task'us ir marker'ius su spalvomis
+// Nereikia rankinio marker'ių kūrimo - BIS sistema tai padaro automatiškai pagal TaskOwner=3
+
+if (DBG) then {
+	diag_log format ["[JIP_RESTORATION] Completed state restoration for player: %1", name _unit];
+};

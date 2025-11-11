@@ -30,6 +30,7 @@ if(missType>1&&AIon>0)then
 {
 	aiVehWr=false; aiArmWr=false; aiCasWr=false; aiVehEr=false; aiArmEr=false; aiCasEr=false;
 	//Armor 2 lygio vienetai dabar kontroliuojami Prestige sistemos (fn_V2strategicAiBalance.sqf)
+	aiArmWr2=false; aiArmEr2=false; //Pridėti Armor 2 lygio vėliavėlių inicializaciją
 }; //AI vehicles
 
 //infinite loop

@@ -1,4 +1,4 @@
-# Arma 3 SQF Sintaksės Geriausios Praktikos
+# Ekspertinis Arma 3 SQF Scenarijų Rinkinio Auditas: Techninis Tikslumas ir Geriausios Praktikos
 
 ## Dokumentacijos šaltiniai
 - [Arma 3 Community Wiki - Scripting](https://community.bistudio.com/wiki/Category:Scripting_Commands_Arma_3)
@@ -7,489 +7,255 @@
 
 ---
 
-## 1. Format Blokų Sintaksė
+## I. Santrauka: Galutinis SQF Audito Standartas
 
-### Problema: Nested Quotes (Įdėtos Kabutės)
+Ši ataskaita pateikia išsamų techninį auditą, skirtą nustatyti techninius faktus ir geriausias praktikas, kurių privalo laikytis kūrėjai, dirbantys su "Arma 3" Real Virtuality variklio SQF (Status Quo Function) scenarijų kalba. SQF, išsivysčiusi iš senesnės SQS kalbos, yra galingas, tačiau sudėtingas įrankis, ypač modifikacijų ir misijų kūrimui. Kūrėjams būtina pripažinti, kad SQF turi griežtus vykdymo konteksto ir kintamųjų apimties reikalavimus, o neatitikimas šiems reikalavimams lemia nestabilumą ir prastą našumą.
 
-**Format bloke**, kai naudoji dvigubas kabutes `"..."`, viduje esančios **viengubos kabutės** turi būti **dvigubintos** `''`.
+Vienas kritiškiausių faktų, kurį turi įsisavinti "Arma 3" scenarijų kūrėjas, yra būtinybė visiškai modernizuoti tinklo komunikaciją. Tai reiškia absoliutų ir galutinį atsisakymą naudoti pasenusias tinklo vykdymo sistemas, tokias kaip BIS_fnc_MP, ir privalomą perėjimą prie šiuolaikinių remoteExec arba remoteExecCall komandų. Šis perėjimas nėra tik stiliaus klausimas, bet esminis reikalavimas stabilioms daugialypio žaidimo aplinkoms.
 
-### Teisingi Pavyzdžiai:
-
-#### Pavyzdys 1: Paprastas format blokas
-```sqf
-format ["
-    this setVariable ['name','%1'];
-    this setVariable ['description','%2'];
-", _name, _desc]
-```
-
-#### Pavyzdys 2: Format bloke su string'u, kuris turi viengubas kabutes
-```sqf
-format ["
-    this setVariable ['OnOwnerChange', ''['BE1', _this] execVM ''sectors\OnOwnerChange.sqf'';''];
-    this setVariable [''CaptureCoef'',0.05];
-", _nme, _des]
-```
-
-**Taisyklė**: Format bloke (`format ["..."`), visos viduje esančios viengubos kabutės `'` turi būti dvigubintos `''`.
+Techninės priežiūros auditas turėtų sutelkti dėmesį į tris pagrindinius našumo trūkumus: 1) Nepakankama tinklo sinchronizacija dėl pernelyg didelio globalių komandų ar kintamųjų naudojimo; 2) Tvarkyklės (Scheduler) perkrova, sukuriama per dažno ir neefektyvaus naujų gijų paleidimo naudojant spawn ir execVM; ir 3) Fundamentalios klaidos vykdymo konteksto valdyme, pavyzdžiui, bandymas naudoti sustabdymo komandas (sleep, waitUntil) aplinkoje, kuri nėra suplanuota. Nors SQF yra sėkmingai naudojama "Arma 3" platformoje, reikia nepamiršti, kad naujesnėje "Arma Reforger" ji jau pakeista Enforce Script kalba, o tai skatina naudoti kuo švaresnius ir modernesnius SQF kodavimo modelius, kad būtų palengvintas galimas ateities perkėlimas.
 
 ---
 
-## 2. If-Then Sintaksė (Rekomenduojama Stiliaus Taisyklė)
+## II. Pamatinė SQF Semantika ir Sintaksė (Techniniai Faktai)
 
-### Pastaba apie Sintaksę
+### A. SQF Architektūra ir Evoliucija
 
-**SQF parseris formaliai priima ir `if(...)then{...}` be tarpų**, bet dėl skaitomumo, diff'ų ir mažesnės klaidų rizikos **rekomenduojama** naudoti standartinę formą su tarpais.
+SQF yra iš esmės komandomis paremta kalba, pastatyta ant operatorių, kurie yra skirstomi į nuliarinius (Nular), vienetinius (Unary) ir dvejetainius (Binary). Skirtingai nei tradicinės objektinės programavimo kalbos, SQF funkcionalumą užtikrina šie operatoriai, veikiantys su įvairiais duomenų tipais. Ankstesnė kalba SQS (Status Quo Script) yra oficialiai pasenusi ir neturėtų būti naudojama misijų kūrimui nuo 2006 metų ("Armed Assault").
 
-### Rekomenduojama Forma:
+SQF kalbos dizainas yra paprastas, tačiau reikalauja tikslaus sintaksės laikymosi, nes variklis yra gana atlaidus klaidoms, kurios gali sukelti sunkiai aptinkamus šalutinius poveikius.
 
-```sqf
-// REKOMENDUOJAMA - su tarpais, daugiau eilučių
-if (DBG) then {
-	diag_log "[DS] Dynamic Simulation enabled";
-};
+### B. Esminės Sintaksės Taisyklės
 
-if (DBG) then {
-	diag_log format ["[MODULE] Action: %1", _action];
-};
-```
+#### 1. Išraiškos Baigtis
 
-### Kodėl Tai Rekomenduojama?
+Kiekviena SQF išraiška (komanda) turi būti užbaigta. Tai atliekama naudojant arba kabliataškį (;, tai yra labiausiai paplitusi ir rekomenduojama konvencija), arba kablelį (,). Yra kritiškai svarbu suprasti, kad eilučių lūžiai (line returns) neturi jokios įtakos kodo struktūrai ar vykdymui. Dėl šios priežasties kelios išraiškos gali būti įrašytos vienoje eilutėje, jei jos tinkamai atskirtos baigimo ženklais, nors tai nerekomenduojama dėl prastėjančio skaitomumo.
 
-1. **Skaitomumas**: Daugiau eilučių pagerina kodo skaitymą ir priežiūrą
-2. **Diff'ai**: Lengviau matyti pakeitimus Git diff'uose
-3. **Klaidų Prevencija**: Sumažina "Missing ;" klaidų tikimybę, kai komandos jungiamos į vieną eilutę
-4. **Nuoseklumas**: Standartinė forma visur užtikrina nuoseklų kodavimo stilių
+#### 2. Skliaustų Paskirtis
 
-### Svarbu:
+SQF sintaksėje skliaustai atlieka labai specifines funkcijas, kurias privalu atskirti:
 
-**Jei RPT rodo "Missing ;", nors kabliataškiai yra teisingi, pirmiausia padalink monolitines eilutes į kelias ir pridėk tarpus** – tai padeda greitai atskirti realią klaidą nuo parserio interpretacijos problemos.
+- **Apvalūs skliaustai ()**: Naudojami pirmiausiai siekiant pakeisti numatytąją operatorių pirmumo tvarką arba tiesiog pagerinti kodo skaitomumą, aiškiai nurodant išraiškos dalių grupavimą.
 
-### Taisyklė:
+- **Kvadratiniai skliaustai []**: Išskirtinai naudojami Array duomenų tipui apibrėžti.
 
-**Rekomenduojama naudoti standartinę `if (...) then { ... }` formą su tarpais ir daugiau eilučių**, ypač kai:
-- Po `if` bloko eina kitos komandos
-- `if` blokas yra format bloke arba init string'e
-- Reikia debug log'ų arba kompleksinės logikos
+- **Riečiamosios skliaustai {}**: Šie skliaustai apgaubia esminį Code Duomenų Tipą (vadinamuosius kodo blokus). Jie taip pat privalomi naudojant Valdymo Struktūras, tokias kaip if-then-else.
 
----
+Faktas, kad {} apibrėžia Code duomenų tipą, yra esminis SQF programavimo kalbos bruožas. Tai reiškia, kad scenarijų blokai yra traktuojami kaip pirmos klasės duomenys, kuriuos galima perduoti kaip argumentus, vėliau vykdyti (call arba spawn) arba struktūriškai apdoroti. Šis funkcinis aspektas yra esminis misijų kūrimo elementas ir tiesiogiai lemia teisingą valdymo struktūrų ir funkcijų iškvietimų naudojimą. Nesuprantant Code kaip duomenų, neišvengiamai kyla neteisingo parametrų perdavimo ir apimties (scope) klaidų, ypač asinchroninio arba nuotolinio kodo vykdymo metu.
 
-## 3. Dynamic Simulation Sintaksė
+#### 3. Tarpai ir Komentarai
 
-### Teisinga Sintaksė:
+Variklis ignoruoja tarpus (įskaitant tabuliaciją ir tuščias eilutes) vykdymo metu. Tarpai ir komentarai tarnauja tik kodo skaitomumui ir ateities nuorodoms.
 
-```sqf
-// Enable Dynamic Simulation
-enableDynamicSimulationSystem true;
+### C. Duomenų Tipų Naudojimas ir Paruošimas
 
-if (DBG) then {
-	diag_log "[DS] Dynamic Simulation enabled";
-};
+SQF palaiko platų duomenų tipų spektrą, įskaitant Array, Boolean, Code, Config, Object, Number, String, HashMap ir specializuotus tipus, tokius kaip Position (Vector3D). Patyrę kūrėjai naudoja HashMap kaip pažengusį duomenų tipą efektyviam raktų-verčių saugojimui, o tai ypač svarbu sudėtingiems misijų rėmams.
 
-// Distances
-"Group" setDynamicSimulationDistance 1200;
-"Vehicle" setDynamicSimulationDistance 1500;
-"Prop" setDynamicSimulationDistance 300;
-"EmptyVehicle" setDynamicSimulationDistance 1000;
-
-// Optional coefficients
-"Group" setDynamicSimulationDistanceCoef 1.0;
-"Vehicle" setDynamicSimulationDistanceCoef 1.0;
-```
-
-### Svarbu:
-- **Sintaksė**: `setDynamicSimulationDistance` ir `setDynamicSimulationDistanceCoef` naudoja **objekto sintaksę**: `type setDynamicSimulationDistance distance;`
-- **Ne funkcijos sintaksė**: **NEnaudok** `setDynamicSimulationDistance "Group", 1200;` - tai sukels sintaksės klaidą
-- **Teisingi tipai**: `"Group"`, `"Vehicle"`, `"Prop"`, `"EmptyVehicle"`, `"IsMoving"`
-- **`setDynamicSimulationEnabledGlobal` naudoti tik konkretiems objektams** - ne globaliai sistemai įjungti
-- **Kiekviena komanda turi užsibaigti `;`**
-- **Naudok standartinę `if-then` sintaksę** su tarpais (žr. sekciją 2)
+Kitas svarbus faktas susijęs su failų apdorojimu. Nors preprocessFile yra būtinas makrokomandų (pvz., #include) išplėtimui, techninė analizė rodo, kad tarp loadFile, preprocessFile ir preprocessFileLineNumbers yra nedideli, bet matuojami našumo skirtumai. loadFile yra šiek tiek greitesnis, nes jis neatlieka papildomų išankstinio apdorojimo veiksmų (makrokomandų ir eilučių numerių apdorojimo). Dėl šios priežasties, jei failas turi būti greitai nuskaitomas be preprocesoriaus išplėtimo, loadFile suteikia subtilų optimizavimo pranašumą, ypač didelio dažnio įkėlimo operacijoms.
 
 ---
 
-## 4. HashMap Iteracija
+## III. Kintamųjų Apimtis, Deklaravimas ir Kintamumas
 
-### Teisingi Šablonai:
+Kintamųjų apimties valdymas yra bene labiausiai klaidinantis ir kritiškiausias SQF aspektas. Netinkamas apimties valdymas tiesiogiai sukelia kritines scenarijų klaidas ir netinkamą tinklo komunikacijos modelį.
 
-#### Variantas 1: Naudojant `keys`
-```sqf
-{
-    private _key = _x;
-    private _value = myHashMap get _key;
-    // ... logika ...
-} forEach (myHashMap keys);
-```
+### A. Dvi Esminės Apimties Aplinkos
 
-#### Variantas 2: Naudojant `toArray false` (saugesnis)
-```sqf
-{
-    _x params ["_key", "_value"];
-    // ... logika ...
-} forEach (myHashMap toArray false);
-```
+SQF kalba iš esmės veikia dviejose kintamųjų apimties paradigmose:
 
-### Svarbu:
-- **`keys` grąžina raktų masyvą** - reikšmę gauni su `get`
-- **`toArray false` grąžina `[key, value]` poras** - naudok `params`
-- **Po `forEach` visuomet turi būti uždaromas `)` ir `;`** - dažniausia "Missing )" priežastis yra pamirštas skliaustas po `keys` arba `toArray`
-- **Visada patikrink `isNull`** prieš naudojant objektą
+#### 1. Sluoksniuota (Inheriting) Apimtis
 
----
+Šią apimtį sukuria Valdymo Struktūros (if, switch, while, forEach, waitUntil, try) ir call operatorius. Naujos apimtys yra dedamos ant esamos apimties, leidžiančios naujai apimtyje pasiekti tėvinių apimčių privačius kintamuosius, nebent jie būtų perrašyti.
 
-## 5. createUnit Init String Sintaksė
+#### 2. Izoliuota (Non-Inheriting) Apimtis
 
-### Problema: Init String'as format bloke
+Šią apimtį sukuria asinchroninio vykdymo metodai: spawn ir execVM, taip pat įvykių tvarkyklės (Event Handlers). Šios apimtys yra visiškai naujos ir izoliuotos; jos neperima jokių privačių kintamųjų iš jas iškviečiančio kodo. Jos prasideda su visiškai tuščia privačių kintamųjų erdve, išskyrus įterptą _this parametrą, naudojamą argumentams perduoti.
 
-Kai naudoji `createUnit` su `format` bloku init string'ui, reikia teisingai escape'inti kabutes. **Svarbu atskirti du scenarijus**: grynas SQF ir INIT STRING kontekstas.
+### B. Privačių Kintamųjų Taisyklės
 
-### Scenarijus 1: Grynas SQF (be INIT STRING)
+#### 1. Deklaravimas ir Prieiga
 
-**Nenaudojamas dvigubinimas** - tiesioginis string'as:
+Privatūs kintamieji, kurie yra matomi tik lokaliai, privalo būti žymimi pabraukimo ženklu (_).
 
-```sqf
-// Grynas .sqf failas - nenaudojamas dvigubinimas
-this setVariable ['OnOwnerChange', "['BE1', _this] execVM 'sectors\OnOwnerChange.sqf';"];
-```
+Kai SQF kodas bando perskaityti ar atnaujinti privatų kintamąjį (pvz., _num = 10), variklis ieško kintamojo per apimties sluoksnių kaminą, pradedant nuo viršutinės (dabartinės) apimties ir judėdamas žemyn. Kintamasis yra atnaujinamas toje apimtyje, kurioje jis buvo pirmą kartą rastas. Jei jis nerandamas, jis sukuriamas dabartinėje (viršutinėje) apimtyje.
 
-### Scenarijus 2: INIT STRING arba format bloke
+#### 2. Privalomas Inicializavimo Pavojus
 
-**Dvigubinti viengubas kabutes** - format bloke arba init string'e:
+Vienas dažnas programavimo klaidas sukeliantis faktas yra tai, kad privatūs kintamieji, kurie vėliau naudojami scenarijuje, turi būti inicializuoti už kontrolinio bloko ribų, net jei jie vėliau nustatomi tame bloke. Pavyzdžiui, jei kintamasis yra apibrėžtas tik if sąlygoje, ir ta sąlyga netampa true, kintamasis neegzistuos scenarijaus apimtyje pasibaigus if blokui. Štai kodėl private _living = false; turėtų būti nustatytas prieš if (alive player) then { _living = true; };. Kitu atveju, bandymas prieiti prie kintamojo po kontrolinio bloko sukels vykdymo klaidą.
 
-```sqf
-"ModuleSector_F" createUnit [
-    _position,
-    createGroup sideLogic,
-    format ["
-        sectorBE1=this;
-        this setVariable ['name','%1'];
-        this setVariable [''OnOwnerChange'', ''[''BE1'', _this] execVM ''sectors\OnOwnerChange.sqf'';''];
-    ", _name, _desc]
-];
-```
+Speciali taisyklė galioja private raktažodžiui ir params komandai: jie visada sukuria privatų kintamąjį tik dabartinėje apimtyje, ignoruodami standartinį paieškos mechanizmą apimties kamine.
 
-### Svarbu:
+### C. Apimties Izoliacijos Įtaka
 
-- **Jei kyla "Missing ]"**, stringas greičiausiai neescapintas arba neuždarytas format blokas
-- **Format bloke**: visos viengubos kabutės `'` turi būti dvigubintos `''`
-- **Gryname SQF**: nenaudojamas dvigubinimas - tiesioginis string'as
+Kadangi spawn ir execVM sukuria visiškai izoliuotas apimtis, jie negali tiesiogiai pasiekti kodo, kuris juos iškvietė, privačių kintamųjų. Tai reikalauja, kad visi reikalingi duomenys būtų perduodami per _this kintamąjį arba parametrų masyvą paleidžiant suplanuotą scenarijų. Nesugebėjimas teisingai perduoti parametrų sukelia nenustatytų kintamųjų klaidas iškviestame scenarijuje.
+
+Ši izoliacija sukuria esminę problemą, kurią privalo spręsti gerai suplanuotas kodas. call operatorius (sluoksniuota apimtis) leidžia lengvai pasiekti tėvinius privačius kintamuosius, o tai yra patogu, bet kelia netyčinio "apimties nutekėjimo" riziką, jei giliai įdėta funkcija pakeičia kintamąjį, kurio neturėjo liesti. Priešingai, spawn (izoliuota apimtis) apsaugo nuo nutekėjimo, bet reikalauja griežto parametrų perdavimo mechanizmo, kuris padidina kodo apimtį.
+
+Ekspertinis požiūris diktuoja naudoti call trumpiems, nuosekliems naudingumo metodams, o spawn – visiems ilgai trunkantiems, asinchroniniams ar misijai kritiškiems procesams, kad būtų užtikrinta funkcijų inkapsuliacija ir išvengta apimties užteršimo.
+
+### D. Globalių Kintamųjų Naudojimas ir Tinklas
+
+Globalūs kintamieji (be _ prefikso) yra matomi visoje misijos vardų erdvėje.
+
+**Kritinis Tinklo Apribojimas**: Lokalus kintamasis (pvz., _myLocalVariable) negali būti transliuojamas tiesiogiai naudojant publicVariable "_myLocalVariable". Jo vertė pirmiausia turi būti priskirta Globaliam kintamajam, kuris vėliau transliuojamas: GlobalVariable = _myLocalVariable; publicVariable "GlobalVariable";.
+
+Šis faktas tiesiogiai jungia kintamųjų apimties valdymą su tinklo našumu. Jei kūrėjas vengia tinkamai naudoti privačius kintamuosius ir remiasi globaliais kintamaisiais komunikacijai tarp gijų (dėl sudėtingumo tvarkant izoliuotas apimtis), jis yra priverstas naudoti publicVariable. Tai įveda nereikalingą tinklo srautą ir sinchronizavimo vėlavimus, sukeldamas našumo problemas. Taigi, prastas apimties valdymas yra tiesioginė tinklo apkrovos priežastis daugialypio žaidimo aplinkose.
 
 ---
 
-## 6. Event Handler Registracija
+## IV. Scenarijų Vykdymo Modeliai: Suplanuota vs. Nesuplanuota Aplinka
 
-### Problema: Dublikatai
+SQF vykdymo efektyvumas priklauso nuo tinkamo scriptų vykdymo konteksto pasirinkimo. Šis pasirinkimas tiesiogiai lemia, ar scenarijus gali naudoti sustabdymo komandas ir kiek jis apkraus variklio procesorių.
 
-**Visada patikrink**, ar EH jau pridėtas prieš pridėdamas naują:
+### A. Arma Scenarijų Tvarkyklė
 
-```sqf
-if (!(_unit getVariable ["wrm_eh_mpkilled", false])) then {
-    _unit setVariable ["wrm_eh_mpkilled", true, false];
-    _unit addMPEventHandler ["MPKilled", { params ["_u"]; [(_this select 0), _side] spawn wrm_fnc_killedEH; }];
-};
-```
+Tvarkyklė valdo lygiagretų scenarijų vykdymą, suteikdama pirmenybę tiems scenarijams, kurie ilgiausiai laukė nuo paskutinio sustabdymo.
 
----
+Naujas scenarijus, paleistas per spawn, execVM, exec ar execFSM, pridedamas prie šios tvarkyklės ir vykdomas per neblokuojančius "posūkius". Baigti scenarijai pašalinami, o nebaigti per skirtą laiką sustabdomi.
 
-## 7. While/WaitUntil Ciklai
+### B. Sustabdymo Būtinybė: Absoliutus Faktas
 
-### Problema: Begaliniai Ciklai
+Sustabdymo komandos – sleep, uiSleep ir waitUntil – yra esminės scenarijų, reikalaujančių laiko delsos ar laukimo, funkcionavimui.
 
-**Visada pridėk timeout'ą**:
+**ABSOLIUČI TAI SYKLĖ**: Sustabdymas yra visiškai draudžiamas nesuplanuotoje (blokuojančioje) aplinkoje. Bet koks bandymas naudoti šias komandas nesuplanuotame kode (pvz., kode, iškviestame per call, arba tiesiogiai objektų init lauke, jei nėra naudojama spawn/execVM) baigsis kritine klaida.
 
-```sqf
-private _timeout = time + 60; //60 sekundžių timeout
-while {_condition && time < _timeout} do {
-    // ... logika ...
-    sleep 1;
-};
-if (time >= _timeout) then {
-	if (DBG) then {
-		diag_log "[ERROR] Timeout reached";
-	};
-};
-```
+### C. Nesuplanuotos Aplinkos Apribojimai
 
----
+Nesuplanuotas kodas vykdomas sinchroniškai ir blokuoja kviečiantį procesą iki baigties. Tai reiškia, kad ilgos operacijos vienoje nesuplanuotoje gijoje gali sukelti variklio sustojimą arba stiprų kadrų dažnio kritimą.
 
-## 8. Performance Optimizacijos
+- **while Ciklo Riba**: Siekiant užkirsti kelią variklio užšalimui, while kilpos, vykdomos nesuplanuotoje aplinkoje, yra apribotos iki griežtai užkoduotos 10 000 iteracijų ribos.
 
-### `allUnits` → `entities`
+### D. Našumo Degradacija Dėl Perteklinių Gijų
 
-**Blogai**:
-```sqf
-{/* logika */} forEach allUnits;
-```
+Nors suplanuota aplinka leidžia naudoti sustabdymą ir užtikrina lygiagretų vykdymą, esminė našumo kliūtis misijose yra šimtai gijų tvarkyklėje, kurios susidaro dėl dažno ir nekontroliuojamo spawn ir execVM naudojimo. Gijų valdymo pridėtinės išlaidos galiausiai nusveria lygiagretumo privalumus, mažindamos bendrą procesoriaus našumą.
 
-**Gerai**:
-```sqf
-{/* logika */} forEach (entities [["Man"], [], true, false] select {alive _x});
-```
+Taip pat žalinga yra vykdyti ištekliams imlų kodą, pvz., ilgus for ciklus, už tvarkyklės ribų (nesuplanuotoje, blokuojančioje aplinkoje), nes tai monopolizuoja vieną vykdymo giją.
 
-### `allPlayers` Caching
+Konteksto Valdymas su waitUntil
 
-**Blogai**:
-```sqf
-{/* logika */} forEach allPlayers;
-{/* logika */} forEach allPlayers; // vėl kviečiama
-```
+Komanda waitUntil reikalauja suplanuotos aplinkos, nes tai yra sustabdymo operacija. Ji leidžia scenarijui laukti, kol sąlyga taps true, arba kol baigsis kitas scenarijus (naudojant scriptHandle). Jei scenarijus turi sinchronizuoti su išoriniu įvykiu arba periodiškai tikrinti būklę, jis privalo būti paleistas naudojant spawn arba execVM.
 
-**Gerai**:
-```sqf
-private _cachedPlayers = allPlayers select {alive _x};
-{/* logika */} forEach _cachedPlayers;
-{/* logika */} forEach _cachedPlayers; // naudoja cache'ą
-```
+Sistemingas požiūris į našumo optimizavimą diktuoja, kad kūrėjai neturėtų ieškoti stebuklingo sprendimo tūkstančiams dirbtinio intelekto vienetų, veikiančių 240 kadrų per sekundę greičiu; vietoj to, saikas yra raktas. Tai reiškia, kad vietoj dešimčių trumpalaikių suplanuotų scenarijų, geriausia sujungti pasikartojančius, lengvus patikrinimus į vieną, efektyvią while true do kilpą, veikiančią vienoje gijoje.
+
+**Lentelė I: Suplanuoto ir Nesuplanuoto Vykdymo Palyginimas**
+
+| Ypatybė | Suplanuota Aplinka (pvz., spawn, execVM) | Nesuplanuota Aplinka (pvz., call, init laukas) | Šaltinis |
+|---------|------------------------------------------|-----------------------------------------------|----------|
+| Vykdymo Eiga | Asinchroninė; veikia lygiagrečiai posūkiais; atleidžia kontrolę. | Sinchroninė; blokuoja kviečiantį kodą iki baigties. | |
+| Sustabdymo Komandos | Leidžiamos (sleep, waitUntil, uiSleep). | Draudžiamos (sukelia kritinę klaidos išeitį). | |
+| Kintamojo Apimtis | Izoliuota apimtis (nepasiekiama kviečiančio kodo privatiems kintamiesiems). | Sluoksniuota apimtis (pasiekia ir kuria privačius kintamuosius apimties kamine). | |
+| Našumo Poveikis | Per didelis gijų kiekis (šimtai) mažina tvarkyklės efektyvumą. | Blokuojantis kodas; while kilpos apribotos iki 10 000 iteracijų. | |
 
 ---
 
-## 9. Klaidų Valdymas
+## V. Aukšto Našumo Kodavimo Praktikos ir Optimizavimas
 
-### `diag_log` Debugging
+Optimalus SQF kodas turi būti ne tik veikiantis, bet ir lengvai skaitomas, prižiūrimas bei efektyvus procesoriaus ir tinklo atžvilgiu.
 
-**Visada naudok `diag_log`** su aiškiais prefix'ais:
+### A. Kodo Skaitomumo ir Priežiūros Standartai
 
-```sqf
-if (DBG) then {
-	diag_log format ["[MODULE_NAME] Action: %1, Result: %2", _action, _result];
-};
-```
+SQF bendruomenės standartai aiškiai pirmenybę teikia kodo skaitomumui ir prieinamumui.
 
-### `isNil` / `isNull` Patikrinimai
+- **Kintamųjų Pavadinimai**: Kintamieji ir funkcijos turi turėti prasmingus pavadinimus (pvz., _uniform vietoje _u). Nors kintamųjų pavadinimo ilgis turi nereikšmingą įtaką SQF našumui, tai neturi nusverti fakto, kad kodas turi būti skaitomas žmogui. _i yra išimtis, priimta kaip įprastas iteracijos kintamojo pavadinimas for cikluose.
 
-**Visada patikrink** prieš naudojant:
+- **Raidžių Stilius**: Rekomenduojama naudoti "Camel-casing" (pvz., namingLikeThis) kintamiesiems ir funkcijoms, nes tai padidina ilgų pavadinimų skaitomumą.
 
-```sqf
-if (!isNil "_variable") then {
-    // naudok _variable
-};
+- **Struktūrizavimas**: Naudojant tinkamus tarpus ir tarpinius rezultatus (pvz., sudėtingus masyvo pasirinkimus priskiriant aprašomiesiems privatiems kintamiesiems) žymiai pagerėja kodo supratimas ir audito galimybė. Pavyzdžiui, sudėtinga filtracija tampa skaitomesnė ir lengviau sekama, kai ji suskaidoma į logiškus etapus.
 
-if (!isNull _object) then {
-    // naudok _object
-};
-```
+Švarus ir prižiūrimas kodas yra lengviau audituojamas. Tai reiškia, kad geras kodo stilius yra ne tik estetinė, bet ir kritinė optimizavimo priemonė, nes lengviau nustatyti ir refaktoruoti našumo kliūtis.
 
----
+### B. Ciklų ir Masyvų Optimizavimas
 
-## 10. RemoteExec Sintaksė
+Audituojant senesnius scenarijus, ypač tuos, kurie konvertuojami iš ankstesnių "Arma" variklio versijų, būtina peržiūrėti komandų naudojimą.
 
-### Teisinga Sintaksė:
+Modernios Masyvų Iteracijos: Paprastos forEach kilpos, priklausomai nuo situacijos, turėtų būti pakeistos į optimizuotas, įmontuotas masyvų funkcijas: apply, count, findIf ir select. Pavyzdžiui, naudojant vieną select komandą, skirtą masyvo filtravimui, vietoj rankinės forEach iteracijos, dažnai sumažinamos vykdymo išlaidos ir pagerinamas aiškumas.
 
-```sqf
-// Server → All Clients (allowedTargets = 0)
-[_params] remoteExec ["functionName", 0, false]; // jip = false, nes state push per serverį
+### C. Variklio Resursų Valdymas
 
-// Server → Server Only (allowedTargets = 2)
-[_params] remoteExec ["functionName", 2, false];
+Intensyviai išteklius vartojančios komandos, ypač dažnai vykdomose kilpose, turi būti naudojamos minimaliai. Techninė dokumentacija konkrečiai pabrėžia, kad nearObjects ir nearestObjects žymiai padidina procesoriaus apkrovą, kai naudojami per daug. Šios komandos turėtų būti naudojamos taupiai ir, jei įmanoma, pakeistos efektyvesniais ar riboto spindulio patikrinimais.
 
-// Client → Server (allowedTargets = 2)
-[_params] remoteExec ["functionName", 2, false];
-```
+### D. Derinimo (Debugging) Kliūtys
 
-### Svarbu:
-- **`allowedTargets` kryptys**:
-  - `0` = Server → All Clients
-  - `1` = Server → Client (vienas klientas)
-  - `2` = Server → Server Only arba Client → Server
-- **`jip = false`** jei state push per serverį (`fn_V2jipRestoration`) - neistoriškai replay
-- **`jip = true`** tik jei reikia JIP replay (retai) - istoriškai replay
+Viena dažna, su aplinka susijusi klaida yra ta, kad "Windows File Explorer" slepia failų plėtinius, dėl ko kūrėjai netyčia sukuria neteisingai pavadintus konfigūracijos failus (pvz., Description.ext.txt vietoj Description.ext). Kadangi variklis neatpažįsta neteisingos plėtinio, misijos konfigūracijos nepavyksta įkelti. Kūrėjai visada turi užtikrinti, kad failų plėtiniai būtų matomi ir teisingai pavadinti.
 
 ---
 
-## 11. CfgRemoteExec Whitelist
+## VI. Daugialypio Žaidimo Tinklo Architektūra ir Nuotolinis Vykdymas
 
-### Teisinga Sintaksė (`CfgRemoteExec.hpp`):
+Tinklo optimizavimas yra svarbiausias veiksnys užtikrinant misijos stabilumą ir našumą "Arma 3" platformoje. Auditavimo metu būtina griežtai laikytis naujausių tinklo protokolų.
 
-```cpp
-class CfgRemoteExec
-{
-    class Commands
-    {
-        mode = 1; // Whitelist mode
-        jip = 0; // Disable JIP replay - state handled by server push
-        
-        class functionName { allowedTargets = 2; }; // Server only
-    };
-    
-    class Functions
-    {
-        mode = 1; // Whitelist mode
-        jip = 0; // Disable JIP replay - state handled by server push
-        
-        class wrm_fnc_functionName { allowedTargets = 2; }; // Server only
-    };
-};
-```
+### A. Absoliutus Tinklo Komunikacijos Mandatas
 
-### Svarbu:
-- **`allowedTargets` kryptys**:
-  - `0` = Server → All Clients
-  - `1` = Server → Client (vienas klientas)
-  - `2` = Server → Server Only arba Client → Server
-- **`jip = 0`** kai JIP būseną stumia serveris (`fn_V2jipRestoration`), o ne istoriškai replay
-- **`jip = 1`** tik jei reikia istorinio replay (retai)
+**FAKTAS**: Visiems nuotoliniams komandų vykdymams "Arma 3" misijose privaloma naudoti remoteExec arba remoteExecCall.
 
----
+**KRITINIS REIKALAVIMAS**: Kūrėjams privaloma „VISIŠKAI ATMESTI BIS_fnc_MP!". Ši komanda, paveldėta iš "Arma 2" tinklo sistemos, yra pasenusi ir sukelia kritiškai blogą našumą bei stabilumo problemas "Arma 3" aplinkoje. Bet koks scenarijus, kuriame vis dar naudojama BIS_fnc_MP, turėtų būti vertinamas kaip neatitinkantis šiuolaikinių "Arma 3" geriausių praktikų ir keliančios grėsmę misijos stabilumui.
 
-## 12. Dažniausios Klaidos ir Sprendimai
+Šis agresyvus raginimas atsisakyti BIS_fnc_MP signalizuoja apie esminį technologinio pagrindo pasikeitimą tarp "Arma 2" ir "Arma 3" variklių, todėl senoji funkcija yra visiškai nesuderinama su optimizuota "Arma 3" tinklo architektūra.
 
-### "Missing ;" (Su If-Then Sintakse)
+### B. Nuotolinio Vykdymo Protokolai
 
-**Problema**: RPT rodo "Missing ;" net tada, kai kabliataškiai atrodo teisingi.
+- **remoteExec**: Atlieka kodo vykdymą asinchroniškai, neblokuojant kviečiančios gijos, nurodytuose klientuose, serveryje ar visose mašinose. Tai yra standartinis, neblokuojantis nuotolinio kodo paleidimo metodas.
 
-**Priežastis**: `if(...)then{...}` sintaksė be tarpų kartais neteisingai interpretuojama parserio.
+- **remoteExecCall**: Atlieka kodo vykdymą sinchroniškai, reikalaujant grąžinamosios vertės iš nuotolinės mašinos. Ši komanda turėtų būti naudojama labai retai ir tik tuomet, kai grąžinamoji vertė yra būtina, nes sinchroniniai tinklo iškvietimai sukuria latentinio blokavimo riziką.
 
-**Sprendimas**:
-1. **Pakeisk į standartinę formą**: `if (...) then { ... }` su tarpais
-2. **Naudok daugiau eilučių**: ne vienoje eilutėje
-3. **Patikrink dokumentaciją**: žr. sekciją 2 apie `if-then` sintaksę
+### C. Tinklo Apkrovos Optimizavimas
 
-**Pavyzdys**:
-```sqf
-// Blogai (gali sukelti "Missing ;")
-if(DBG)then{diag_log "[DS] enabled";};
+Sėkmingas optimizavimas daugialypio žaidimo aplinkoje reikalauja, kad kūrėjas ne tik pasirinktų teisingą komandą, bet ir minimizuotų tinklo siunčiamų duomenų kiekį ir dažnumą.
 
-// Gerai (standartinė forma)
-if (DBG) then {
-	diag_log "[DS] enabled";
-};
-```
+#### 1. Globalių Komandų Apribojimas
 
-### "Missing ;" (Bendrasis)
+Globalios komandos, kurios sinchronizuoja padėtį ar būseną visiems klientams (pvz., setPos), turi būti naudojamos minimaliai. Nuolatinis pozicijos atnaujinimas yra labai brangus tinklo atžvilgiu. Jei reikalingas dažnas objekto judėjimas, verta apsvarstyti alternatyvas, tokias kaip attachTo, priklausomai nuo tikslo.
 
-- **Priežastis**: Trūksta kabliataškio po komandos ar `if` bloko
-- **Sprendimas**: Patikrink, ar visos komandos turi `;` pabaigoje
-- **Papildoma patikra**: Jei visi kabliataškiai teisingi, patikrink `if-then` sintaksę (žr. aukščiau)
+#### 2. Kintamųjų Transliacija
 
-### "Missing ]"
-- **Priežastis**: Format bloke neuždarytas blokas arba neteisingai escape'intos kabutės
-- **Sprendimas**: Dvigubink viengubas kabutes format bloke: `'` → `''`
+Nors publicVariable yra reikalinga globalių kintamųjų transliacijai , ji turi būti naudojama tikslingai. Siekiant sumažinti nereikalingą klientų apdorojimą ir tinklo srautą, geriausia naudoti specifinius variantus: publicVariableServer (transliacija tik serveriui) arba publicVariableClient (transliacija konkrečiam klientui).
 
-### "Missing )"
-- **Priežastis**: Neteisinga HashMap iteracija arba neuždarytas skliaustas
-- **Sprendimas**: Naudok `toArray false` arba `keys` su teisingais skliaustais
-- **Dažniausia priežastis**: Pamirštas uždarantis `)` po `keys` arba `toArray` - patikrink, ar `forEach` turi `(myHashMap keys)` su skliaustais
+#### 3. Žymeklių Optimizavimas
 
-### "No alive in 10000 ms"
-- **Priežastis**: `waitUntil` ciklas be timeout'o
-- **Sprendimas**: Pridėk timeout'ą: `waitUntil {_condition || time > _timeout}`
+Globalios žymeklių komandos visada siunčia visą žymeklio informaciją kiekvieno atnaujinimo metu. Jei žymekliai keičiami dažnai (pvz., serverio pusėje), geriausia praktika yra redaguoti juos lokaliai. Tik po visų pakeitimų atliekama viena globali komanda, sinchronizuojanti visą galutinę žymeklio būseną tinkle, užuot siuntus daugybę mažų atnaujinimų per tinklą.
 
-### Sektorių Tipiniai Gedimai
+#### 4. Kliento Matymo Atstumas
 
-**Simptomai**: "Missing ]" su OnOwnerChange format bloke.
+Nors tai misijos ir kliento nustatymas, mažinant kliento matymo atstumą, sumažėja prašymų atnaujinti objektų pozicijas skaičius, tiesiogiai palengvinant tinklo apkrovą. Tinklo optimizavimas yra decentralizuotas: jis apima ne tik tai, kas siunčiama, bet ir kam siunčiama bei kokiu dažnumu.
 
-**Sprendimas**:
-1. **Patikrink kontekstą**: ar tai grynas SQF ar INIT STRING?
-2. **Grynas SQF**: naudok tiesioginį string'ą be dvigubinimo: `"['BE1', _this] execVM 'sectors\OnOwnerChange.sqf';"`
-3. **INIT STRING arba format bloke**: dvigubink viengubas kabutes: `''[''BE1'', _this] execVM ''sectors\OnOwnerChange.sqf'';''`
-4. **Patikrink format bloko uždarymą**: ar yra `", _params]` pabaigoje?
+**Lentelė II: Arma 3 Tinklo Komunikacijos Komandų Hierarchija**
 
-### Loadout Perspėjimai (Ne Kritiniai)
-
-**Šie perspėjimai RPT loguose nėra kritiniai** - tai loadout/mod klasės problemos:
-- `"item does not match weapon"` - neteisingas mod klasės pavadinimas
-- `"Uniform not allowed"` - uniform klasė neegzistuoja arba neteisinga
-- `"Backpack not found"` - backpack klasė neegzistuoja arba neteisinga
-- `"Trying to add item with empty name"` - tuščias string'as loadout klasėje
-
-**Sprendimas**: Patikrink `loadouts/` ir `factions/` failus dėl tuščių string'ų ir neteisingų klasės pavadinimų.
+| Funkcija | Būsena Arma 3 | Geriausia Praktika / Panaudojimas | Šaltinis |
+|----------|---------------|-----------------------------------|----------|
+| remoteExec | Rekomenduojamas Standartas | Asinchroninis, neblokuojantis kodo vykdymas nurodytose mašinose. | |
+| remoteExecCall | Rekomenduojama (Sąlyginai) | Sinchroninis vykdymas; naudingas, kai kritiškai svarbi grąžinamoji vertė. Naudoti taupiai. | |
+| BIS_fnc_MP | Pasenusi/Draudžiama | Palikimas iš Arma 2; sukelia rimtas našumo ir stabilumo problemas. | |
+| publicVariable | Naudoti Tausojant | Paprasta, neapibrėžta globalaus kintamojo transliacija. Pageidautina naudoti tikslingesnius variantus. | |
+| publicVariableServer | Pageidaujama Alternatyva | Tiesioginė transliacija tik serveriui. | |
+| publicVariableClient | Pageidaujama Alternatyva | Tiesioginė transliacija tik nurodytam klientui. | |
 
 ---
 
-## 13. Validavimo Procesas
+## VII. Išvados: Audito Sistema ir Tolimesnė Plėtra
 
-### ⚠️ SVARBU: Visada Pirmiausia Patikrink Dokumentaciją!
+Ekspertinis misijų ir modifikacijų kodo auditas reikalauja ne tik funkcinio veikimo patikrinimo, bet ir griežto atitikimo "Arma 3" našumo bei stabilumo reikalavimams. Toliau pateikiamas patikrinimo sąrašas, skirtas patvirtinti kritinius SQF faktus ir geriausias praktikas.
 
-**Prieš bandant taisyti klaidas**:
-1. **Patikrink šią dokumentaciją** - galbūt problema jau aprašyta
-2. **Ieškok oficialių šaltinių** - Arma 3 Community Wiki, Forums
-3. **Patikrink panašius pavyzdžius** - kaip kiti sprendžia panašias problemas
+### A. SQF Dokumento Validavimo Patikrinimo Sąrašas
 
-**Tik po to**:
-4. **Patikrink sintaksę** su SQFLint arba Arma 3 editor
-5. **Patikrink RPT logus** - neturėtų būti "Missing ;", "Missing ]", "Missing )"
-6. **Patikrink `if-then` sintaksę** - naudok standartinę formą su tarpais (žr. sekciją 2)
-7. **Patikrink performance** - naudok `entities` vietoj `allUnits`
-8. **Patikrink timeout'us** - visi `while`/`waitUntil` turi timeout'us
-9. **Patikrink EH dublikatus** - naudok vėliavėles
+- **Sintaksė**: Ar visos išraiškos užbaigtos su ; arba , (preferuojamas ;) ?
+- **Vykdymas**: Ar sustabdymo komandos (sleep, uiSleep, waitUntil) naudojamos tik suplanotuose kontekstuose, t. y., tik po spawn ar execVM?
+- **Apimtis**: Ar scenarijų blokai, paleisti per spawn ar įvykių tvarkykles (kurios naudoja izoliuotą apimtį), tinkamai perduoda parametrus per _this, užuot kliavusios paveldimais privatiais kintamaisiais? Ar privatūs kintamieji, reikalingi po kontrolinio bloko, yra inicializuoti už jo ribų?
+- **Tinklo protokolas**: Ar BIS_fnc_MP yra visiškai pakeista remoteExec arba remoteExecCall?
+- **Optimizavimas**: Ar masyvo operacijos naudoja optimizuotas komandas (select, apply, findIf), o ne bendrą forEach, kai tai įmanoma? Ar yra minimizuojamas aktyvių suplanuotų gijų (sukurtų per spawn/execVM) skaičius?
+- **Našumas**: Ar naudojami efektyvūs duomenų tipai (HashMap) ir optimizuoti algoritmai?
 
-### Po Commit'o:
+### B. Pažvelgimas į Ateitį
 
-1. **Testuok misiją** - paleisk ir patikrink RPT logus
-2. **Testuok JIP** - prisijunk po 10-15 min ir patikrink state
-3. **Testuok performance** - patikrink FPS ir scheduler lag
-
----
-
-## 14. Lint/Smoke Kontrolinis Sąrašas
-
-### RPT Logų Patikra:
-
-**RPT neturėtų turėti**:
-- ❌ `"Missing ;"` - patikrink `if-then` sintaksę ir kabliataškius
-- ❌ `"Missing ]"` - patikrink format blokus ir OnOwnerChange escapinimą
-- ❌ `"Missing )"` - patikrink HashMap iteraciją ir skliaustus
-- ❌ `"remoteExec restriction"` - patikrink `CfgRemoteExec.hpp` whitelist
-
-**RPT turėtų turėti**:
-- ✅ `"[DS] Dynamic Simulation enabled"` log matomas (jei DBG = true)
-- ✅ Vienas sector flip per pusę valandos - be klaidų
-- ✅ 1 JIP prisijungimas - pilnas state (markers, Zeus, UAV) be rankinių veiksmų
-
-### Smoke Test Scenarijus:
-
-1. **Paleisk misiją** - patikrink RPT logus dėl sintaksės klaidų
-2. **Palauk 5-10 min** - patikrink, ar DS veikia (log'ai)
-3. **Padaryk 1 sector flip** - patikrink, ar nėra "Missing ]" klaidų
-4. **Prisijunk kaip JIP** - patikrink, ar visi markeriai, Zeus ir UAV state teisingi
-5. **Patikrink performance** - FPS ir scheduler lag turėtų būti stabilūs
-
----
-
-## Išvados
-
-- **⚠️ VISADA PIRMIAUSIA PATIKRINK DOKUMENTACIJĄ** - šį failą ir oficialius šaltinius prieš bandant taisyti klaidas
-- **Naudok standartinę `if-then` sintaksę** - `if (...) then { ... }` su tarpais, ne `if(...)then{...}`
-- **Visada naudok oficialią dokumentaciją** prieš spėliojant
-- **Testuok mažais žingsniais** - ne viską vienu kartu
-- **Loguok viską** - `diag_log` su aiškiais prefix'ais
-- **Timeout'ai visur** - begaliniai ciklai = serverio freeze
-- **Performance optimizacijos** - `entities` vietoj `allUnits`, caching
-
----
-
-## Dokumentacijos Atnaujinimo Procesas
-
-**Kai randama nauja klaida arba sprendimas**:
-1. **Iš karto atnaujink šią dokumentaciją** - pridėk naują sekciją arba atnaujink esamą
-2. **Pridėk konkretų pavyzdį** - kaip buvo blogai ir kaip taisoma
-3. **Pridėk priežastį** - kodėl problema atsiranda
-4. **Atnaujink versiją** - padidink versijos numerį ir datą
-
-**Tikslas**: Kitas kartas, kai susidursime su panašia problema, dokumentacija padės greitai ją išspręsti.
+Nors SQF išlieka pagrindine kalba "Arma 3" platformoje, kūrėjai turėtų pripažinti, kad SQF yra pakeista Enforce Script "Arma Reforger" žaidime. Todėl, kuriant misijas, patariama naudoti ypač modulines funkcijų struktūras, kurios veikia kaip BIS funkcijos. Toks požiūris ne tik pagerina kodo kokybę dabartinėje aplinkoje, bet ir palengvina galimą kodo migraciją į ateities BI platformas, mažinant priklausomybę nuo unikalių ir sudėtingų SQF sintaksės ypatumų.
 
 ---
 
 **Paskutinis Atnaujinimas**: 2025-11-10
-**Versija**: 2.2
-**Pakeitimai v2.2**:
-- Išspręsta DS sintaksė pagal oficialią BI dokumentaciją: objekto sintaksė `"Group" setDynamicSimulationDistance 1200;` vietoj funkcijos sintaksės
-- Pašalinta klaidinga informacija apie `setDynamicSimulationEnabledGlobal` globalų naudojimą
-- Atnaujinti DS pavyzdžiai su teisinga objekto sintakse
-- Patikslinta DS dokumentacija pagal oficialius Bohemia Interactive šaltinius
-
-**Pakeitimai v2.1**:
-- Atnaujinta Dynamic Simulation sekcija su abiem įjungimo komandomis ir teisingais tipais (Group, Vehicle, Prop, IsMoving)
-- Pakeista If-Then sekcija iš "KRITIŠKA" į "Rekomenduojama stiliaus taisyklė" su aiškiu paaiškinimu
-- Atnaujinta OnOwnerChange sekcija su aiškiu atskyrimu tarp gryno SQF ir INIT STRING konteksto
-- Pridėta HashMap iteracijos pastaba apie skliaustų uždarymą
-- Atnaujinta RemoteExec sekcija su `allowedTargets` kryptimis
-- Pridėta sekcija apie sektorių tipinius gedimus
-- Pridėta sekcija apie loadout perspėjimus (ne kritiniai)
-- Pridėta Lint/Smoke kontrolinis sąrašas su smoke test scenarijumi
-
-**Pakeitimai v2.0**:
-- Pridėta sekcija apie `if-then` sintaksę ir kodėl reikia tarpų
-- Atnaujinta Dynamic Simulation sekcija su teisinga sintakse
-- Pridėta instrukcija visada pirmiausia patikrinti dokumentaciją
-- Atnaujinta "Missing ;" klaidos sprendimas su `if-then` informacija
-
+**Versija**: 4.0
+**Pakeitimai v4.0**:
+- Pilnai perrašyta dokumentacija į išsamią ekspertinio SQF audito sistemą
+- Įtraukti techniniai faktai apie SQF architektūrą ir evoliuciją
+- Išplėsta kintamųjų apimties anatomija su praktiniais pavyzdžiais
+- Detalizuoti scenarijų vykdymo modeliai su palyginimo lentele
+- Išplėsta tinklo komunikacijos sekcija su absoliučiais reikalavimais
+- Pridėta audito patikrinimo sistema ir ateities perspektyvos

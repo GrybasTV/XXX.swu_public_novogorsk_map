@@ -21,6 +21,11 @@
 		- Valo tik mirusius objektus, ne gyvus
 */
 
+// Užtikrinti, kad DBG yra apibrėžtas (apsauga nuo undefined variable klaidos)
+if (isNil "DBG") then {
+	DBG = false;
+};
+
 //Cleanup sistema su engine manageriais, eilėmis ir TTL - VALIDUOTA SU ARMA 3 BEST PRACTICES
 [] spawn {
 	if (!isServer) exitWith {
@@ -110,7 +115,7 @@
 		if (isNull _obj) exitWith {};
 		if !(_obj getVariable ["wrm_gc_registered", false]) then {
 			_obj setVariable ["wrm_gc_registered", _now, false];
-			wrm_gc_holderTimestamps set [_obj, _now];
+			wrm_gc_holderTimestamps set [netId _obj, _now];
 		};
 	};
 
@@ -221,14 +226,15 @@
 
 			//HashMap iteracija - naudojame toArray false saugesniam variantui
 			{
-				_x params ["_obj", "_ts"];
+				_x params ["_netId", "_ts"];
+				private _obj = objectFromNetId _netId;
 				if (isNull _obj) then {
-					wrm_gc_holderTimestamps deleteAt _obj;
+					wrm_gc_holderTimestamps deleteAt _netId;
 				} else {
 					private _age = _now - _ts;
 					if (_age > _ttlGround && !([_obj, _keepRadius] call _fnc_isNearPlayers)) then {
 						deleteVehicle _obj;
-						wrm_gc_holderTimestamps deleteAt _obj;
+						wrm_gc_holderTimestamps deleteAt _netId;
 					};
 				};
 			} forEach (wrm_gc_holderTimestamps toArray false);

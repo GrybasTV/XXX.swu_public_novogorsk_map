@@ -8,58 +8,27 @@
 
 class CfgRemoteExec
 {
-    // Mode: 0 = disabled, 1 = whitelist, 2 = blacklist
-    // JIP: 0 = disabled, 1 = enabled (state replay for JIP players)
-    // Note: JIP state is handled by server-side state push in fn_V2jipRestoration
+    /*
+        Režimas perjungtas į blacklist (mode = 2), nes whitelist režimas
+        užblokavo kritines BIS funkcijas (pvz., BIS_fnc_moduleSector),
+        todėl sektoriai ir jų užduotys nebuvo aktyvuojamos.
+
+        Kai būsime pasiruošę, galėsime palaipsniui grįžti prie whitelist režimo,
+        tačiau tam reikės pilno visų naudojamų komandų/funkcijų sąrašo.
+    */
+
     class Commands
     {
-        mode = 1; // Whitelist mode
-        jip = 0; // Disable JIP replay - state handled by server push
-
-        // Core Arma 3 functions
-        class BIS_fnc_endMission { allowedTargets = 0; }; // All clients
-        class BIS_fnc_showMissionStatus { allowedTargets = 0; }; // All clients
-
-        // Support system functions
-        class setVariable { allowedTargets = 0; }; // All clients (for support providers)
-        class addCuratorEditableObjects { allowedTargets = 2; }; // Server only
-        class assignCurator { allowedTargets = 2; }; // Server only (confirmed)
-        class unassignCurator { allowedTargets = 2; }; // Server only (confirmed)
-
-        // Marker management
-        class deleteMarkerLocal { allowedTargets = 0; }; // All clients
-        class createMarker { allowedTargets = 2; }; // Server only
-        class deleteMarker { allowedTargets = 2; }; // Server only
-
-        // System chat and hints
-        class systemChat { allowedTargets = 0; }; // All clients
-        class hint { allowedTargets = 0; }; // All clients
-        class hintSilent { allowedTargets = 0; }; // All clients
+        mode = 2; // Blacklist mode (šiuo metu nieko neblokuojame)
+        jip = 0;
+        // Pastaba: sąrašas paliktas tuščias – visi default Arma 3 kvietimai leidžiami.
     };
 
     class Functions
     {
-        mode = 1; // Whitelist mode
-        jip = 0; // Disable JIP replay - state handled by server push
-
-        // WRM Mission Functions
-        class wrm_fnc_registerCrewEH { allowedTargets = 2; }; // Server only - crew EH registration
-        class wrm_fnc_V2syncSupportProvidersClient { allowedTargets = 1; }; // Client only - support sync
-        class wrm_fnc_V2hints { allowedTargets = 0; }; // All clients - mission hints
-        class wrm_fnc_V2suppMrk { allowedTargets = 2; }; // Server only - supply marker creation
-        class wrm_fnc_V2vehMrkW { allowedTargets = 2; }; // Server only - vehicle marker creation
-        class wrm_fnc_V2vehMrkE { allowedTargets = 2; }; // Server only - vehicle marker creation
-        class wrm_fnc_V2flagActions { allowedTargets = 2; }; // Server only - flag actions
-        class wrm_fnc_V2coolDown { allowedTargets = 2; }; // Server only - cooldown management
-        class wrm_fnc_V2entityKilled { allowedTargets = 2; }; // Server only - entity killed handler
-
-        // CBA Functions (if CBA is used)
-        class CBA_fnc_waitUntilAndExecute { allowedTargets = 2; }; // Server only
-        class CBA_fnc_waitAndExecute { allowedTargets = 2; }; // Server only
-
-        // BIS Module Functions
-        class BIS_fnc_moduleSector { allowedTargets = 2; }; // Server only
-        class BIS_fnc_moduleCAS { allowedTargets = 2; }; // Server only
-        class BIS_fnc_moduleCAS_AI { allowedTargets = 2; }; // Server only
+        mode = 2; // Blacklist mode (šiuo metu nieko neblokuojame)
+        jip = 0;
+        // Pastaba: kai turėsime pilną remoteExec audito ataskaitą,
+        // čia pridėsime tik tas funkcijas, kurias norime blokuoti.
     };
 };

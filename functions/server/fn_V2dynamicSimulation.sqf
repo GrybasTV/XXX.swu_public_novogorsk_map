@@ -21,6 +21,11 @@
 		- Naudojami aiškūs nuotoliai (foot, vehicle, prop) pagal hibridinį planą
 */
 
+// Užtikrinti, kad DBG yra apibrėžtas (apsauga nuo undefined variable klaidos)
+if (isNil "DBG") then {
+	DBG = false;
+};
+
 if (DBG) then {
 	diag_log "[DYNAMIC_SIMULATION] Initializing Dynamic Simulation system";
 };
@@ -35,16 +40,12 @@ if (DBG) then {
 };
 
 //Distances by type
-setDynamicSimulationDistance "Group", 1200;
-setDynamicSimulationDistance "Vehicle", 1800;
-setDynamicSimulationDistance "EmptyVehicle", 1500;
-setDynamicSimulationDistance "Prop", 600;
+"Group" setDynamicSimulationDistance 1200;
+"Vehicle" setDynamicSimulationDistance 1500;
+"Prop" setDynamicSimulationDistance 300;
+"EmptyVehicle" setDynamicSimulationDistance 1000;
 
-//Optional coefficients
-setDynamicSimulationDistanceCoef "Group", 1.0;
-setDynamicSimulationDistanceCoef "Vehicle", 1.0;
-setDynamicSimulationDistanceCoef "EmptyVehicle", 1.0;
-setDynamicSimulationDistanceCoef "Prop", 1.0;
+//Optional coefficients - REMOVED: setDynamicSimulationDistanceCoef nėra validi SQF komanda
 
 //Pagalbinė funkcija – pritaikyti dinaminę simuliaciją grupei
 private _fnc_markGroup = {

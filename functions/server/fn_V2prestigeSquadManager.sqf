@@ -18,6 +18,11 @@
 		[_targetAILevel] call wrm_fnc_V2prestigeSquadManager;
 */
 
+// Užtikrinti, kad DBG yra apibrėžtas (apsauga nuo undefined variable klaidos)
+if (isNil "DBG") then {
+	DBG = false;
+};
+
 //Parametrai
 params ["_targetAILevel"];
 

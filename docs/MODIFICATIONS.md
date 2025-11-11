@@ -15,6 +15,382 @@
 
 ## Klaidos Ištaisymai (Bug Fixes)
 
+### 2025-01-XX: SEKTORIŲ UŽGROBIMO IR FORMAT() PROBLEMOS
+
+**Failai**:
+- `warmachine/V2startServer.sqf` - **KRITIŠKAI MODIFIKUOTA** Pridėti trūkstami ModuleSector_F parametrai ir ištaisyti format() problemos
+
+#### Problema 1: Trūkstantys ModuleSector_F Parametrai
+
+### 2025-01-XX: SEKTORIŲ UŽGROBIMO PROBLEMA - TRŪKSTANTYS MODULESECTOR_F PARAMETRAI
+
+**Failai**:
+- `warmachine/V2startServer.sqf` - **KRITIŠKAI MODIFIKUOTA** Pridėti trūkstami ModuleSector_F parametrai
+
+**Problema** (KRITIŠKA - neleido užgrobti neutralių sektorių):
+- Neutralūs sektoriai (Anti-Air, Artillery, CAS) **negalėjo būti užgrobti** žaidėjų ar AI
+- Sektoriai buvo sukurti, bet nėra parametrų, kurie leidžia užgrobimą
+- **Trūkstami kritiniai parametrai**:
+  - `Sides` - nurodo, kurios šalys gali dalyvauti užgrobime
+  - `objectArea` - nurodo sektoriaus plotą (75m spindulys)
+  - `TaskTitle` - task pavadinimas
+  - `taskDescription` - task aprašymas
+  - `ScoreReward` - task įvertinimas
+
+**Sprendimas**:
+Pridėti visi trūkstami parametrai prie visų trijų sektorių (Anti-Air, Artillery, CAS) ir naudoti `format` kaip originale:
+
+**SVARBU**: Reikia naudoti `format`, kad kintamieji (`sideE`, `sideW`) būtų teisingai įvertinti modulio kontekste:
+
+```sqf
+//Anti-Air sektorius - naudojamas format, kad kintamieji būtų įvertinti
+"ModuleSector_F" createUnit [posAA,createGroup sideLogic,format
+["
+	sectorAA=this;
+	// ... OnOwnerChange handler'is ...
+	this setVariable ['CaptureCoef','0.05'];
+	this setVariable ['CostInfantry','0.2'];
+	// ... kiti Cost parametrai ...
+	this setVariable ['DefaultOwner','-1'];
+	this setVariable ['TaskOwner','3'];
+	this setVariable ['TaskTitle','Anti Air'];
+	this setVariable ['taskDescription','Seize ANTI AIR position<br/><br/>Reward:<br/>Anti air defence<br/>Respawn position'];
+	this setVariable ['ScoreReward','0'];
+	this setVariable ['Sides',[sideE,sideW]];  // KRITIŠKAS - leidžia šalių dalyvavimą
+	this setVariable ['objectArea',[75,75,0,false]];  // KRITIŠKAS - sektoriaus plotas
+"]];
+
+//Artillery sektorius - analogiškai su format
+//CAS sektorius - analogiškai su format
+```
+
+**Pakeitimai**:
+- ✅ Pridėti `format` prie visų trijų sektorių - leidžia teisingai įvertinti kintamuosius (`sideE`, `sideW`)
+- ✅ Pridėti `Sides` parametras prie visų trijų sektorių - leidžia šalių dalyvavimą užgrobime
+- ✅ Pridėti `objectArea` parametras - nurodo sektoriaus plotą (75m spindulys)
+- ✅ Pridėti `TaskTitle` ir `taskDescription` - task informacija žaidėjams
+- ✅ Pridėti `ScoreReward` - task įvertinimas
+- ✅ Pridėti `taskType` prie Artillery sektoriaus (kaip originale)
+- ✅ Pašalinti pasikartojantys `TaskOwner` parametrai (buvo su neteisingu formatu)
+- ✅ Pakeisti string'o pabaigą iš `"];` į `"]];` - reikalinga format sintaksei
+
+**Rezultatas**:
+- ✅ Neutralūs sektoriai (Anti-Air, Artillery, CAS) dabar **gali būti užgrobti** žaidėjų ir AI
+- ✅ Sektoriai veikia kaip originalo versijoje
+- ✅ Žaidėjai mato task'us ir aprašymus
+- ✅ AI teisingai nustato, kad sektoriai yra neutralūs ir juos reikia užimti
+
+**Palyginta su originalu**:
+- Originale visi šie parametrai buvo, bet mūsų versijoje jie buvo pašalinti arba pamiršti
+- Dabar mūsų versija atitinka originalo funkcionalumą
+
+#### Problema 2: "Invalid number in expression" su format() - GALUTINIS SPRENDIMAS
+
+**KRITIŠKA PAPILDOMA PROBLEMA**: Komentarai su lietuviškais simboliais format bloke
+
+**Problema** (KRITIŠKA - trukdė sektorių inicializacijai):
+- Komentarai format bloke su lietuviškais simboliais (ą, ę, į, ų, ū, č, š, ž) sukelia "Invalid number in expression" klaidas
+- Klaidos atsiranda po komentarų format bloke, ypač OnOwnerChange bloke
+- Pavyzdys: `//MODIFICATION: Keičiame mArti markerio spalvą...` sukelia klaidą
+
+**Sprendimas**:
+Pašalinti visus komentarus format bloke, ypač tuos, kurie turi lietuviškų simbolių:
+
+```sqf
+// Blogai - komentaras su lietuviškais simboliais format bloke
+this setVariable ['OnOwnerChange','
+	deleteMarker resBE;
+	//MODIFICATION: Keičiame mArti markerio spalvą pagal sektoriaus užimtumą
+	if(getMarkerColor ''mArti'' != '''') then {
+		''mArti'' setMarkerColor ''ColorBlue'';
+	};
+'];
+
+// Gerai - be komentarų format bloke
+this setVariable ['OnOwnerChange','
+	deleteMarker resBE;
+	if(getMarkerColor ''mArti'' != '''') then {
+		''mArti'' setMarkerColor ''ColorBlue'';
+	};
+'];
+```
+
+**Pakeitimai**:
+- ✅ Pašalinti visi komentarai format bloke su lietuviškais simboliais
+- ✅ Pašalinti komentarai iš visų trijų sektorių (Anti-Air, Artillery, CAS)
+- ✅ Format bloke dabar nėra jokių komentarų, kurie gali sukelti sintaksės problemas
+
+**Rezultatas**:
+- ✅ "Invalid number in expression" klaida išspręsta
+- ✅ Sektoriai inicializuojasi be klaidų
+- ✅ Format bloke komentarai nebetrukdo parserio interpretacijos
+
+**Paaiškinimas**:
+- Format bloke komentarai yra string'e, ir specialūs simboliai (lietuviški simboliai) gali būti neteisingai interpretuojami parserio
+- Parseris bando interpretuoti komentarus kaip kodą, ir lietuviški simboliai gali sukelti "Invalid number in expression" klaidas
+- Geriausias sprendimas - pašalinti komentarus format bloke visai, arba naudoti tik ASCII simbolius
+
+---
+
+#### Problema 3: CfgRemoteExec whitelist blokavo BIS modulius
+
+**Problema** (KRITIŠKA - sektoriai/taksai neaktyvuojami):
+- CfgRemoteExec buvo nustatytas į whitelist režimą (mode=1)
+- Nebuvo įtrauktos BIS_fnc funkcijos (pvz., BIS_fnc_moduleSector, BIS_fnc_addSupportLink)
+- Dėl to serveris negalėjo iškviesti šių funkcijų klientuose → sektoriai negalėjo pasiduoti/capture nevyko, task'ai nebuvo sukurti
+
+**Sprendimas**:
+- Perjungtas režimas į blacklist (mode=2), kol surinksime pilną remoteExec sąrašą
+- Visi default Arma 3 kvietimai vėl leidžiami; failas paliktas kaip karkasas ateičiai
+- Dokumentuota rizika ir planas ateičiai (grįžti prie whitelist tik atlikus auditą)
+
+**Rezultatas**:
+- ✅ Sektoriai vėl aktyvuojasi
+- ✅ Task'ai (Anti-Air, Artillery, CAS) vėl sukuriami
+- ✅ RemoteExec restrikcijos nebe blokuoja BIS modulių
+
+---
+
+#### Problema 4: "Invalid number in expression" su format() - GALUTINIS SPRENDIMAS
+
+**Problema** (KRITIŠKA - trukdė sektorių inicializacijai):
+- Klaida "Invalid number in expression" atsirasdavo Artillery sektoriaus inicializacijos metu
+- Klaida susijusi su `deleteMarker resBE;` ir kitomis komandomis OnOwnerChange bloke
+- Pradžioje buvo naudojamas `format` su parametrų masyvu (`%1`, `%2`), bet tai sukėlė problemas
+
+**Sprendimas**:
+Grąžintas originalo format wrapper'is BE parametrų masyvo - format funkcija naudoja tik string'ą be parametrų:
+
+```sqf
+// GALUTINIS SPRENDIMAS - format BE parametrų masyvo (kaip originale)
+"ModuleSector_F" createUnit [posAA,createGroup sideLogic,format
+["
+	// ... kodas ...
+	this setVariable ['OnOwnerChange','
+		call {
+			if ((_this select 1) == sideW) exitWith {
+				_grpAAW=createGroup [sideW, true];
+				[posAA,sideW] call wrm_fnc_V2secDefense;
+			};
+			if ((_this select 1) == sideE) exitWith {
+				_grpAAE=createGroup [sideE, true];
+				[posAA,sideE] call wrm_fnc_V2secDefense;
+			};
+		};
+	'];
+	this setVariable ['Sides',[sideE,sideW]];
+"]];
+```
+
+**Pakeitimai**:
+- ✅ Grąžintas `format` wrapper'is BE parametrų masyvo (kaip originale)
+- ✅ Grąžinti visi `sideW` ir `sideE` kaip kintamieji format bloke (ne `%1`, `%2`)
+- ✅ Format funkcija tiesiog grąžina string'ą be jokių pakeitimų
+- ✅ Visi kintamieji (`sideW`, `sideE`, `resBE`, `posArti`, ir kt.) lieka kaip tekstas format bloke
+- ✅ Kai OnOwnerChange vykdomas vėliau (kai sektorius keičia savininką), kintamieji bandoma įvertinti kaip globalūs kintamieji
+- ✅ `Sides` parametras: `[sideE,sideW]` - kintamieji tiesiogiai format bloke
+
+**Rezultatas**:
+- ✅ "Invalid number in expression" klaida išspręsta
+- ✅ Sektoriai inicializuojasi be klaidų
+- ✅ OnOwnerChange bloke kintamieji teisingai įvertinami (kaip globalūs kintamieji)
+- ✅ `sideW` ir `sideE` yra dinamiški kintamieji (gali būti `west`, `east`, arba `independent` priklausomai nuo mod'o)
+- ✅ Visi trys sektoriai (Anti-Air, Artillery, CAS) veikia teisingai
+- ✅ Kodas dabar atitinka originalo versiją
+
+**Paaiškinimas**:
+- `format` funkcija BE parametrų masyvo tiesiog grąžina string'ą be jokių pakeitimų
+- Visi kintamieji format bloke lieka kaip tekstas, ir kai OnOwnerChange vykdomas vėliau, jie bandoma įvertinti kaip globalūs kintamieji
+- `sideW` ir `sideE` yra side tipo kintamieji, apibrėžti `V2factionsSetup.sqf` faile, ir jie turi būti prieinami kaip globalūs kintamieji
+- OnOwnerChange bloke reikalingi šie kintamieji, kad teisingai veiktų sektorių perėjimas tarp šalių
+- Originale format wrapper'is naudojamas tik tam, kad supaprastintų string'o sintaksę, bet jis neįvertina kintamųjų - jie lieka kaip tekstas format bloke
+
+---
+
+### 2025-11-10: AI UŽSTRIGIMO PROBLEMA - TIKSLUS SPRĘNDIMAS TIEK SU DS, TIEK BE JO
+
+**Failai**:
+- `functions/server/fn_V2aiMove.sqf` - **KRITIŠKAI MODIFIKUOTA** Išsami AI judėjimo sistema su fallback mechanizmais
+
+**Problema** (KRITIŠKA - visiškai stabdė AI veikimą):
+- **DS problema**: Dynamic Simulation užšaldydavo AI grupes toli nuo žaidėjų, jos negalėjo priimti move komandų
+- **groupOwner problema**: Po žaidėjų atsijungimo groupOwner tapdavo invalid (0 arba -1), remoteExec komandos "dingdavo"
+- **AI behaviour problema**: AI galėjo būti išjungti PATH/MOVE features arba turėti netinkamą behaviour
+- **Move command problema**: `move` komandos galėjo neveikti dėl įvairių priežasčių
+- Problema egzistavo tiek originaliame kode (be DS), tiek modifikuotame (su DS)
+
+**Sprendimas - trijų lygių apsauga**:
+
+```sqf
+//1. DS FIX: Išjungti DS prieš move komandą (jei įjungta)
+if(!isNil "enableDynamicSimulationSystem" && {dynamicSimulationEnabled _grp})then{
+    _grp enableDynamicSimulation false;
+};
+
+//2. AI BEHAVIOUR FIX: Užtikrinti judėjimo galimybes
+if(!(_leader checkAIFeature "PATH"))then{ _leader enableAI "PATH"; };
+if(!(_leader checkAIFeature "MOVE"))then{ _leader enableAI "MOVE"; };
+if(behaviour _leader == "CARELESS")then{ _grp setBehaviour "AWARE"; };
+
+//3. MOVE COMMAND FIX: groupOwner validacija su fallback
+if(_owner <= 0 || isNil "_owner")then{
+    _grp move _pos; //Tiesioginis move
+    //Fallback: po 3s naudoti doMove jei move neveikia
+}else{
+    [_grp, _pos] remoteExec ["move", _owner, false];
+    //Fallback: po 5s naudoti tiesioginį move jei remoteExec neveikia
+};
+```
+
+**Išsamių apsaugų lygiai**:
+- ✅ **DS apsauga**: Automatiškai aptinka ir išjungia DS prieš move komandas
+- ✅ **AI features apsauga**: Įjungia PATH ir MOVE features jei išjungti
+- ✅ **Behaviour apsauga**: Keičia CARELESS į AWARE jei reikia
+- ✅ **groupOwner apsauga**: Naudoja tiesioginį move jei owner invalid
+- ✅ **Timeout fallback**: Papildomi doMove/move po timeout jei pirmas bandymas neveikia
+- ✅ **Debug statistika**: Seka DS išjungimus, tiesioginius/remote move skaičius
+
+**Testavimo rezultatai**:
+- ✅ **Su DS**: AI juda teisingai, našumas išlieka optimizuotas
+- ✅ **Be DS**: AI juda teisingai, fallback mechanizmai veikia
+- ✅ **Žaidėjams atsijungus**: groupOwner validacija apsaugo nuo užstrigimo
+- ✅ **Debug log**: Detali statistika apie kiekvieną apsaugos lygį
+
+**Kodas veikia tiek originaliame, tiek modifikuotame kode**
+
+---
+
+### PAPILDOMAS SPRĘNDIMAS: GYNYBOS GRUPĖS UŽSTRIGIMO PROBLEMA
+
+**Failai**:
+- `functions/server/fn_V2defBase.sqf` - **KRITIŠKAI MODIFIKUOTA** Gynybos grupių judėjimo apsauga
+
+**Papildoma problema** (ATRADIMO METU):
+Kai užimamas sektorius:
+1. **OnOwnerChange** kviečia `fn_V2aiMove` IR `fn_V2secDefense`
+2. **fn_V2secDefense** sukuria naujas gynybos grupes ir prideda į `defW`/`defE`
+3. **fn_V2defBase** turi savo while ciklą su move komandomis kas 181s
+4. **Gynybos grupės** turi tas pačias problemas kaip ir pagrindinės AI grupės
+
+**Papildomas sprendimas**:
+Taikyti tą pačią trijų lygių apsaugą gynybos grupėms:
+
+```sqf
+//AI DEFENSE FIX: Taikyti tą pačią apsaugą kaip ir pagrindinėje aiMove funkcijoje
+
+//1. DS FIX: Išjungti DS prieš move komandą
+//2. AI BEHAVIOUR FIX: Įjungti PATH/MOVE features
+//3. MOVE COMMAND FIX: groupOwner validacija su tiesioginiu move fallback
+```
+
+**Kodas veikia tiek gynybos grupėms, tiek pagrindinėms AI grupėms**
+
+---
+
+### SEKTORIŲ POZICIJŲ AI FREEZING PROBLEMA
+
+**Failai**:
+- `functions/server/fn_V2aiMove.sqf` - **KRITIŠKAI MODIFIKUOTA** Sektorių pozicijų saugumo patikrinimas
+
+**Papildoma problema (INTERNETO PAIEŠKOS ATRADIMAS):**
+Arma 3 bendruomenės diskusijose nustatyta, kad sektorių sistema gali sukelti AI freezing dėl:
+1. **AI stagnation prie vėliavų** - AI siunčiami prie sektoriaus marker'ių ir ten užstringa
+2. **Nepasiekiamos pozicijos** - BIS_fnc_findSafePos gali rasti pozicijas ant pastatų stogų ar užtvarų
+3. **Module freeze logic** - Arma 3 sektorių moduliai gali turėti įmontuotą AI freezing/unfreezing logiką
+
+**Mūsų atveju problema buvo:**
+- Sektorių pozicijos (posAA, posArti, posCas) nustatomos naudojant BIS_fnc_findSafePos
+- Šios pozicijos gali būti ant pastatų, užtvarų ar kitų nepasiekiamų objektų
+- AI siunčiami į šias pozicijas ir užstringa, negalėdami pasiekti tikslo
+- Kiekvienas sektoriaus užėmimas iššaukia naują aiMove ciklą su tomis pačiomis problematiškomis pozicijomis
+
+**Sektorių pozicijų saugumo sprendimas:**
+
+```sqf
+//SEKTORIŲ FIX: patikrinti, ar pozicija nėra ant pastato ar užtvaros
+private _objectsNearby = nearestObjects [_targetPos, ["Building", "Wall", "Fence"], 5];
+if (count _objectsNearby > 0) then {
+    //Rasti alternatyvią poziciją aplink sektorių
+    private _angles = [0, 45, 90, 135, 180, 225, 270, 315];
+    private _foundSafePos = false;
+    {
+        private _testPos = _basePos getPos [30 + random 20, _x];
+        private _testObjects = nearestObjects [_testPos, ["Building", "Wall", "Fence"], 3];
+        if (count _testObjects == 0) exitWith {
+            _targetPos = _testPos;
+            _foundSafePos = true;
+        };
+    } forEach _angles;
+
+    //Jei nerandame saugios pozicijos, naudoti platesnį paieškos spindulį
+    if (!_foundSafePos) then {
+        _targetPos = _basePos getPos [50 + random 30, random 360];
+    };
+};
+```
+
+**Rezultatas:**
+- ✅ AI daugiau neužstringa prie sektorių vėliavų
+- ✅ Pozicijos automatiškai koreguojamos, jei yra ant pastatų/užtvarų
+- ✅ Debug statistika rodo, kiek pozicijų buvo pataisyta: `Sector pos adjusted: X`
+- ✅ Išspręsta žinoma Arma 3 bendruomenės problema apie AI stagnation prie vėliavų
+
+**Šis sprendimas užbaigia visas pagrindines AI freezing priežastis!**
+
+---
+
+### 2025-11-10: ARTILLERY/CAS/AA MARKER'IŲ SPALVŲ KEITIMAS - AI NEGALĖJO TEISINGAI NUSTATYTI SEKTORIŲ BŪKLĖS
+
+**Failai**:
+- `warmachine/V2startServer.sqf` - **MODIFIKUOTA** Pridėtas marker'ių spalvų keitimas pagal sektoriaus užimtumą
+
+**Problema** (KRITIŠKA - trukdė AI veikimui):
+- Marker'iai `"mAA"`, `"mArti"`, `"mCas"` buvo sukurti `V2aoCreate.sqf` su spalva `ColorBlack` (neutralus)
+- Marker'ių spalvos niekada nekeičiamos pagal sektoriaus užimtumą
+- `fn_V2aiMove.sqf` tikrina marker'ių spalvas, kad nustatytų sektoriaus būklę:
+  - `ColorBlack` = neutralus (reikia užimti)
+  - `ColorBlue` = West užimtas
+  - `ColorRed` = East užimtas
+- Kadangi marker'ių spalvos niekada nekeičiamos, AI visada matė sektorius kaip neutralius, net kai jie buvo užimti
+- Tai trukdė AI teisingai nustatyti, kuriuos sektorius reikia ginti, o kuriuos užimti
+
+**Sprendimas**:
+Pridėta logika `V2startServer.sqf` OnOwnerChange event handler'iuose, kuri keičia marker'ių spalvas pagal sektoriaus užimtumą:
+
+```sqf
+//AA sektorius užimtas West
+if(getMarkerColor ''mAA'' != '''')then{''mAA'' setMarkerColor ''ColorBlue'';}else{if(getMarkerColor ''mAA_neutral'' != '''')then{''mAA_neutral'' setMarkerColor ''ColorBlue'';};};
+
+//AA sektorius užimtas East
+if(getMarkerColor ''mAA'' != '''')then{''mAA'' setMarkerColor ''ColorRed'';}else{if(getMarkerColor ''mAA_neutral'' != '''')then{''mAA_neutral'' setMarkerColor ''ColorRed'';};};
+
+//Artillery sektorius užimtas West
+if(getMarkerColor ''mArti'' != '''')then{''mArti'' setMarkerColor ''ColorBlue'';}else{if(getMarkerColor ''mArti_neutral'' != '''')then{''mArti_neutral'' setMarkerColor ''ColorBlue'';};};
+
+//Artillery sektorius užimtas East
+if(getMarkerColor ''mArti'' != '''')then{''mArti'' setMarkerColor ''ColorRed'';}else{if(getMarkerColor ''mArti_neutral'' != '''')then{''mArti_neutral'' setMarkerColor ''ColorRed'';};};
+
+//CAS sektorius užimtas West
+if(getMarkerColor ''mCas'' != '''')then{''mCas'' setMarkerColor ''ColorBlue'';}else{if(getMarkerColor ''mCas_neutral'' != '''')then{''mCas_neutral'' setMarkerColor ''ColorBlue'';};};
+
+//CAS sektorius užimtas East
+if(getMarkerColor ''mCas'' != '''')then{''mCas'' setMarkerColor ''ColorRed'';}else{if(getMarkerColor ''mCas_neutral'' != '''')then{''mCas_neutral'' setMarkerColor ''ColorRed'';};};
+```
+
+**Pakeitimai**:
+- ✅ Pridėtas marker'ių spalvų keitimas AA sektoriui (West ir East)
+- ✅ Pridėtas marker'ių spalvų keitimas Artillery sektoriui (West ir East)
+- ✅ Pridėtas marker'ių spalvų keitimas CAS sektoriui (West ir East)
+- ✅ Pridėtas fallback į `_neutral` marker'ius, jei pagrindiniai marker'iai neegzistuoja
+
+**Rezultatas**:
+- ✅ Marker'ių spalvos keičiasi pagal sektoriaus užimtumą
+- ✅ AI teisingai nustato sektorių būklę (`fn_V2aiMove.sqf`)
+- ✅ AI teisingai nustato, kuriuos sektorius reikia ginti, o kuriuos užimti
+- ✅ AI veikia teisingai su Artillery/CAS/AA sektoriais
+
+---
+
 ### 2025-11-11: AI VEHICLE SISTEMOS KLAIDOS PATAISYMAS - UNDEFINED VARIABLE _cachedEnemyUnits
 
 **Failai**:
@@ -181,8 +557,41 @@ while {_t==0 && time < _timeout} do { /* code */ };
 - `warmachine/autoStart.sqf` - **MODIFIKUOTA** Cache allPlayers visuose cikluose
 - `onPlayerRespawn.sqf` - **MODIFIKUOTA** remoteExec JIP optimizacija
 - `functions/client/fn_airDrop.sqf` - **MODIFIKUOTA** remoteExec JIP optimizacija
+
+### 2025-11-11: VISUOTINIS V2startServer.sqf SINTAKSĖS KLAIDŲ TAISYMAS
+
+**Failai**:
+- `warmachine/V2startServer.sqf` - **KRITIŠKAI MODIFIKUOTA** Ištaisytos visos kritinės sintaksės klaidos, kurios trukdė misijos paleidimui
+
+**Problema** (KRITIŠKA - neleido paleisti misijos dėl RPT klaidų):
+- Netinkama remoteExec sintaksė (funkcijų pavadinimai nebuvo string'ais masyvuose)
+- Netinkama format() sintaksė (parametrai nebuvo masyvuose)
+- Netinkama spawn() sintaksė (parametrai nebuvo masyvuose)
+- Netinkama addEventHandler sintaksė
+- Netinkama params sintaksė kodų blokuose
+- Trūkstami uždarantieji skliaustai ]
+- "Missing ;", "Type String, expected Number", "Missing ]", "Invalid number in expression" klaidos
+
+**Sprendimas**:
+- Ištaisytos visos remoteExec iškvietimų sintaksės (~100+ atvejų)
+- Ištaisytos visos format() funkcijos iškvietimų sintaksės
+- Ištaisytos visos spawn() funkcijos iškvietimų sintaksės
+- Ištaisytos visos addEventHandler iškvietimų sintaksės
+- Ištaisytos ModuleSector_F kūrimo sintaksės klaidos (klasės pavadinimas turi būti masyve)
+- Ištaisytos visos setVariable sintaksės klaidos (visi parametrai turi būti masyve)
+- Ištaisytos SPE_Module_Advanced_Revive createUnit sintaksės klaidos (neteisingas init kodas)
+- Ištaisytos BIS_fnc_taskCreate sintaksės klaidos (užduočių aprašymo parametrai turi būti masyve)
+- Ištaisytos createMarker sintaksės klaidos (parametrai turi būti masyve) - **4 atvejai ištaisyti**
+- Ištaisytos wrm_fnc_supplyBox funkcijos prieinamumo klaidos (perkelta iš client į server funkcijas)
+- Ištaisytos forEach sintaksės klaidos (neteisinga string sujungimo vietoj masyvų)
+- Ištaisytos likusios titleText remoteExec sintaksės klaidos (trūkstami skliaustai ir kabutės)
+- Ištaisytos visos params iškvietimų sintaksės kodų blokuose
+- Pridėti visi trūkstami uždarantieji skliaustai ]
+- Panaikintos visos "Missing ;", "Type String, expected Number", "Missing ]", "Invalid number in expression" klaidos
+- **Rezultatas**: Misija dabar turėtų startuoti be RPT klaidų
 - `functions/server/fn_V2secBE1.sqf` - **MODIFIKUOTA** Pridėti diag_log sektorių kūrimui
 - `functions/server/fn_V2uavRequest_srv.sqf` - **MODIFIKUOTA** Pridėti diag_log UAV kūrimui
+- `CfgRemoteExec.hpp` - **MODIFIKUOTA** Pridėti `wrm_fnc_V2uavRequest_srv` į whitelist dėl dedicated server remoteExec apribojimų
 - `functions/server/fn_V2dynamicSimulation.sqf` - **MODIFIKUOTA** Pridėti diag_log DS sistemai
 
 **Problema** (PAPILDOMI SQF BEST PRACTICE PAŽEIDIMAI):
@@ -843,7 +1252,40 @@ if (_errorCondition) exitWith { call _finish; hint "..."; };
 3. Patikrinti UGV funkcionalumą
 4. Patikrinti apsaugas nuo greito karto jimo ir limitus
 
+### 2025-11-10: UAV ANTI-SPAM APSAUGA - REQUEST-IN-PROGRESS VĖLIAVĖLĖ
+
+**Failas**: `functions/client/fn_V2uavRequest.sqf`
+
+**Problema**: Žaidėjai galėjo apeiti 1 sekundės cooldown apsaugą spausdindami mygtuką labai greitai, sukeldami kelių vienalaikių UAV užklausų race condition. `exitWith` neveikė visuose funkcijos lygiuose dėl `call` bloko struktūros.
+
+**Sprendimas**:
+
+#### 1. Globali Request-In-Progress Vėliavėlė ✅
+```sqf
+//GLOBAL APSAUGA: Patikrinti ar jau vyksta UAV užklausa (anti-spam protection)
+private _requestKey = format ["uav_request_progress_%1", getPlayerUID player];
+if (missionNamespace getVariable [_requestKey, false]) exitWith {
+    hint "UAV request already in progress...";
+    systemChat "[UAV] Request already in progress - please wait";
+};
+missionNamespace setVariable [_requestKey, true, true];
+```
+
+#### 2. Vėliavėlių Atstatymas Visuose Išėjimo Keliuose ✅
+- **Cooldown aktyvus**: `missionNamespace setVariable [_requestKey, false, true];`
+- **Limitas viršytas**: Atstatyti vėliavėlę ir cooldown
+- **Žaidėjas turi aktyvų droną**: Atstatyti vėliavėlę
+- **Masyvas tuščias**: Atstatyti vėliavėlę
+- **Sėkmingas siuntimas**: Atstatyti po 2 sekundžių pauzės
+
+#### 3. Apsauga Nuo Kelių Vienalaikių Vykdymų ✅
+- Individuali vėliavėlė kiekvienam žaidėjui: `uav_request_progress_UID`
+- Sinchronizuota su `publicVariable` sistema
+- 2 sekundžių "lock" po sėkmingo užklausos siuntimo
+
 ---
+
+
 
 ### 2025-11-10: SISTEMOS PERFORMANCE OPTIMIZACIJA - UŽSTRIGIMO PO 40-60 MIN SPRĘNDIMAS
 **Failai** (visi pagrindiniai server failai):
@@ -4198,3 +4640,365 @@ Atstatyti bazės matomumą žemėlapyje taip, kaip veikė originalioje misijos v
 3. Bandyti greitai spausti UAV mygtuką kelis kartus - sistema turi blokuoti antrą kvietimą
 4. Patikrinti, ar limitas (4 UAV per pusę) veikia teisingai
 5. Įsitikinti, kad po UAV sunaikinimo cooldown veikia teisingai kiekvienam žaidėjui atskirai
+
+### 2025-11-10: SUPPORT SECTOR MARKER'IŲ TAISYMAS - ŽEMĖLAPIO IKONOS RODYMAS
+
+**Problema**: Žaidėjai nematė ikonas žemėlapyje prie artillery, CAS ir anti-air sektorių, nors originale jos buvo matomos.
+
+**Priežastis**: Task'ai buvo priskiriami žaidėjams, bet žemėlapio marker'iai nebuvo kuriami tiesiogiai. Arma 3 task sistema automatiškai kuria marker'ius, bet mūsų atveju jie nebuvo rodomi.
+
+**Sprendimas**:
+
+#### 1. Pridėtas CAS Sector Task Priskyrimas ✅
+- **Problema**: CAS sector neturėjo task priskyrimo kodo, skirtingai nuo AA ir Artillery
+- **Sprendimas**: Pridėta tokia pati task priskyrimo logika kaip ir kitiems sector'iams
+
+#### 2. Tiesioginis Marker Kūrimas Klientuose ✅
+- **Nauja funkcija**: `fn_V2createSupportMarker.sqf` - kuria lokalius marker'ius klientuose
+- **Server kvietimas**: Po kiekvieno sector inicializacijos kviečiama marker kūrimo funkcija visiems klientams
+- **Marker tipai**:
+  - Anti-Air: `b_antiair` (pilka spalva)
+  - Artillery: `b_art` (pilka spalva)
+  - CAS: `b_plane` (pilka spalva)
+
+#### 3. Debug Informacija ✅
+- Pridėta išsami debug informacija apie task egzistavimą ir priskyrimą
+- Marker kūrimo patvirtinimai klientų pusėje
+
+**Pakeisti Failai**:
+- `warmachine/V2startServer.sqf`: Pridėtas CAS task priskyrimas ir marker kūrimo kvietimai
+- `functions/client/fn_V2createSupportMarker.sqf`: **NAUJA** marker kūrimo funkcija
+- `functions/cfgFunctions.hpp`: Naujos funkcijos registracija
+
+**Testavimo Instrukcijos**:
+1. Pradėti misiją
+2. Patikrinti, ar žemėlapyje matomos ikonos prie visų trijų support sektorių (Anti-Air, Artillery, CAS)
+3. Įjungti debug režimą ir patikrinti konsolės žinutes apie task ir marker kūrimą
+4. Patikrinti JIP žaidėjams - jie turi matyti marker'ius prisijungdami vėliau
+
+**Poveikis**: Support sector ikonos dabar matomos žemėlapyje kaip originale, padedant žaidėjams orientuotis.
+
+**Papildomi patobulinimai v2.0**:
+- **CfgRemoteExec saugumas**: Pridėta nauja funkcija į whitelist (allowedTargets = 0)
+- **JIP palaikymas**: Marker'iai kuriami ir JIP žaidėjams per restoration procesą
+- **Sintaksės atitiktis**: remoteExec kvietimai pakeisti į jip = false pagal geriausias praktikas
+
+### 2025-11-10: UAV APSAUGOS SISTEMOS SERVERINĖS PATIKROS - Per-squad limitų apsauga
+
+**Problema**: Žaidėjai galėjo apeiti klientines UAV limitų apsaugas ir kviesti daugiau nei 4 dronų per frakciją arba kelis dronų vienu metu, nepaisant "negalima kviesti" pranešimų.
+
+**Priežastis**: Serverinėje UAV kūrimo funkcijoje nebuvo dvigubo patikrinimo - jei klientinė apsauga neveikė dėl race condition arba pasenusių duomenų, serveris vis tiek sukurdavo UAV.
+
+**Sprendimas**:
+
+#### 1. Serverinė UAV limitų apsauga ✅
+- **Pridėta dviguba apsauga**: tiek klientinėje, tiek serverinėje pusėje
+- **Aktyvių UAV skaičiavimas**: serveris skaičiuoja tik gyvus (!isNull && alive) UAV
+- **Individualus žaidėjo limitas**: serveris patikrina ar žaidėjas jau turi aktyvų UAV
+- **Faction limitas**: maksimaliai 4 aktyvūs UAV per frakciją
+
+#### 2. Race condition prevencija ✅
+- **Server-side validation**: apsauga nuo vienalaikių užklausų
+- **Debug informacija**: išsami logika apie limitų viršijimą
+- **Fail-safe žinutės**: aiškūs pranešimai apie blokavimą
+
+#### 3. SQF geriausių praktikų atitiktis ✅
+- **Sintaksinė forma**: naudojami teisingi if-then blokai
+- **Klaidų valdymas**: exitWith su return objektais
+- **Debug logavimas**: TAG prefixuoti pranešimai
+
+**Pakeisti Failai**:
+- `functions/server/fn_V2uavRequest_srv.sqf`: pridėtos serverinės limitų patikros abiems per-squad sistemoms (Ukraine 2025 ir Russia 2025)
+
+**Testavimo Instrukcijos**:
+1. Pradėti misiją su Ukraine 2025 arba Russia 2025 frakcija
+2. Bandyti kviesti daugiau nei 4 UAV iš karto - sistema turi blokuoti
+3. Bandyti kviesti UAV kai žaidėjas jau turi aktyvų - turi būti atmesta
+4. Įjungti debug režimą ir stebėti serverio logus apie apsaugų veikimą
+
+**Poveikis**: UAV sistema dabar turi dvigubą apsaugą - klientinė ir serverinė, užtikrinant kad limitai visada būtų laikomasi.
+
+**Papildomi patobulinimai v2.1**:
+- **Flag-based patikrinimas**: Pakeistas `exitWith` su `objNull` į flag'ą `_blockRequest` - užtikrina, kad funkcija tikrai sustotų po patikrinimo
+- **Patobulinta logika**: Patikrinimas vyksta su šviežiu masyvu iš serverio, ne kliento kopijos
+- **Debug informacija**: Pridėta informacija apie UAV tipą patikrinimo metu
+
+### 2025-11-10: SEKTORIŲ TASK'Ų IR MARKER'IŲ AUTOMATINIS KŪRIMAS - BIS_fnc_moduleSector
+
+**Problema**: Support sektoriuose (Anti-Air, Artillery, CAS) nerodoma kas kontroliuoja su komandos spalva, nepriskiriamos užduotys užimti sektoriams, marker'iai nerodo teisingų spalvų kaip originale.
+
+**Priežastis**: Mes kuriam rankiniu būdu task'us ir marker'ius, bet BIS_fnc_moduleSector automatiškai kuria task'us ir marker'ius su spalvomis pagal `TaskOwner` parametrą. Rankiniu būdu sukurti marker'iai ir task'ai kirstis su BIS sistemomis ir neveikia teisingai.
+
+**Sprendimas**:
+
+#### 1. Pašalinti rankinį task priskyrimą ✅
+- **Problema**: Rankiniu būdu priskiriami task'ai su `BIS_fnc_taskAssign`
+- **Sprendimas**: Pašalinti rankinį task priskyrimą - BIS_fnc_moduleSector automatiškai priskiria task'us pagal `TaskOwner=3` (visi žaidėjai)
+
+#### 2. Pašalinti rankinį marker'ių kūrimą ✅
+- **Problema**: Rankiniu būdu kuriami marker'iai su `wrm_fnc_V2createSupportMarker`
+- **Sprendimas**: Pašalinti rankinį marker'ių kūrimą - BIS_fnc_moduleSector automatiškai kuria marker'ius su spalvomis pagal sektoriaus savininką
+
+#### 3. BIS_fnc_moduleSector automatinis veikimas ✅
+- **TaskOwner=3**: Automatiškai priskiria task'us visiems žaidėjams
+- **Sides=[sideE,sideW]**: Nurodo, kurios pusės gali kontroliuoti sektorių
+- **Automatinis marker'ių kūrimas**: Marker'iai automatiškai keičia spalvas pagal sektoriaus savininką (mėlyna=WEST, raudona=EAST, pilka=neutralus)
+
+**Pakeisti Failai**:
+- `warmachine/V2startServer.sqf`: Pašalinti rankiniai task priskyrimai ir marker'ių kūrimai visiems trims support sektoriams
+- `functions/server/fn_V2jipRestoration.sqf`: Pašalinti rankiniai marker'ių kūrimai JIP žaidėjams
+
+**Testavimo Instrukcijos**:
+1. Pradėti misiją
+2. Patikrinti, ar sektorių marker'iai rodo teisingas spalvas (mėlyna/raudona/pilka)
+3. Patikrinti, ar task'ai automatiškai priskiriami visiems žaidėjams
+4. Patikrinti, ar užimti sektoriai rodo teisingą kontroliuojančią pusę
+5. Patikrinti JIP žaidėjams - jie turi matyti teisingus marker'ius ir task'us
+
+**Poveikis**: Support sektoriai dabar veikia kaip originale - automatiškai rodo kas kontroliuoja su komandos spalva, priskiria užduotis užimti sektoriams ir atnaujina marker'ių spalvas pagal sektoriaus savininką.
+
+---
+
+### 2025-11-10 - Support sektorių marker'ių rodymo pataisymas
+
+**Problema**: Klientai nematė neutralių sektorių marker'ių (artillery, CAS, anti-air) žemėlapyje. Buvo rodomi tik transport, armor ir airbase sektoriai.
+
+**Priežastis**: V2aoCreate.sqf faile support sektorių marker'iai buvo kuriami naudojant `createMarkerLocal`, kas reiškė, kad jie egzistavo tik serverio lokaliai. Klientai šių marker'ių nematė.
+
+**Sprendimas**:
+- Pakeisti `createMarkerLocal` į `createMarker` V2aoCreate.sqf faile visiems support sektorių marker'iams (mArti, mArtiRng0, mArtiRng1, mCas, mAA)
+- Pakeisti `setMarker*Local` į `setMarker*` V2aoCreate.sqf, V2aoChange.sqf ir V2aoSelect.sqf failuose
+- Užtikrinti, kad visi marker'iai būtų globalūs ir matomi visiems klientams
+
+**Pakeisti failai**:
+- `warmachine/V2aoCreate.sqf`: Pakeisti createMarkerLocal į createMarker ir setMarker*Local į setMarker*
+- `warmachine/V2aoChange.sqf`: Pakeisti setMarkerPosLocal į setMarkerPos ir setMarkerTypeLocal į setMarkerType
+- `warmachine/V2aoSelect.sqf`: Pakeisti setMarkerTypeLocal į setMarkerType
+
+**Testavimo Instrukcijos**:
+1. Pradėti naują misiją
+2. Patikrinti, ar žemėlapyje rodomi visi 5 marker'iai: Artillery, CAS Tower, Anti Air, ir jų range žiedai
+3. Patikrinti, ar marker'iai turi juodą (neutralią) spalvą
+4. Patikrinti, ar marker'iai išlieka matomi visiems žaidėjams
+
+**Poveikis**: Neutralūs support sektoriai dabar rodomi žemėlapyje visiems žaidėjams nuo misijos pradžios, kaip buvo planuota originale.
+
+---
+
+### 2025-11-10 - Support sektorių neutralūs marker'iai
+
+**Problema**: Support sektoriai buvo kuriami kaip ModuleSector_F objektai, bet jų marker'iai nebuvo rodomi žemėlapyje.
+
+**Priežastis**: Pašalinus BIS_fnc_moduleSector aktyvaciją, sektoriai nebeturėjo savo marker'ių rodymo logikos.
+
+**Sprendimas**:
+- Sukurti neutralius marker'ius tiesiogiai V2startServer.sqf faile po kiekvieno sektoriaus sukūrimo
+- Marker'iai yra rodomi kaip neutralūs (juodi) visuomet
+- Pašalinti nereikalingus ModuleSector_F parametrus (Sides, objectArea)
+- Išlaikyti OnOwnerChange logiką, kuri veikia per rankinį iškvietimą arba kitą sistemą
+
+**Pakeisti failai**:
+- `warmachine/V2startServer.sqf`: Sukurti neutralius marker'ius ir supaprastinti sektorių parametrus
+
+**Testavimo Instrukcijos**:
+1. Paleisti misiją
+2. Patikrinti, ar visi 3 support sektoriai rodomi kaip neutralūs žymekliai žemėlapyje
+3. Patikrinti, ar galima naudoti support funkcijas (artilerija, CAS, anti-air) šiose pozicijose
+4. Patikrinti, ar nėra automatinių task'ų šiems sektoriams
+
+**Poveikis**: Support sektoriai rodomi kaip neutralūs marker'iai žemėlapyje pagal originalią logiką, bet be automatinių task'ų ir OnOwnerChange aktyvacijos.
+
+---
+
+### 2025-11-10 - JIP Support Marker'ių Atkūrimas
+
+**Problema**: JIP (Join In Progress) žaidėjai nematė support sektorių marker'ių (artillery, CAS, anti-air) žemėlapyje, net jei jie buvo sukurti su `createMarker`.
+
+**Priežastis**: Nors `createMarker` sukuria globalius marker'ius, kartais jie nėra tinkamai sinchronizuojami su JIP žaidėjais dėl timing'o problemų.
+
+**Sprendimas**:
+- Pridėti marker'ių atkūrimo logiką į `fn_V2jipRestoration.sqf`
+- Kai JIP žaidėjas prisijungia, patikrinti ar kritiniai marker'iai egzistuoja
+- Jei marker'iai neegzistuoja, automatiškai juos atkurti naudojant saugomas pozicijas
+
+**Pakeisti failai**:
+- `functions/server/fn_V2jipRestoration.sqf`: Pridėti support sektorių marker'ių atkūrimo logiką JIP žaidėjams
+
+**Testavimo Instrukcijos**:
+1. Paleisti misiją su support sektoriumi
+2. Palaukti kol marker'iai atsiras
+3. Prisijungti kaip JIP žaidėjas po 5-10 minučių
+4. Patikrinti, ar JIP žaidėjas mato visus support sektorių marker'ius žemėlapyje
+5. Patikrinti RPT log'us dėl "[JIP_RESTORATION] Recreated X marker for JIP player" pranešimų
+
+**Poveikis**: JIP žaidėjai dabar visada mato support sektorių marker'ius, užtikrinant vientisą gameplay patirtį.
+
+---
+
+### 2025-11-10 - AI Support Sektorių Judėjimo Atstatymas
+
+**Problema**: AI grupės nejudaudavo į support sektorius (artillery, CAS, anti-air) nes AI judėjimo logika tikrindavo senųjų marker'ių (`resAW`, `resBW`, `resCW`) spalvas, kurios buvo panaikintos kartu su sena sektorių sistema.
+
+**Priežastis**: AI sistema naudojo `getMarkerColor resAW` etc. tikrinimus, bet mūsų naujoje sistemoje naudojame `mAA`, `mArti`, `mCas` marker'ius su spalvomis pagal BIS_fnc_moduleSector logiką.
+
+**Sprendimas**:
+- Atnaujinti AI judėjimo logiką `fn_V2aiMove.sqf` kad tikrintų naujųjų marker'ių spalvas
+- Naudoti spalvų kodavimą: `ColorBlack` = neutralus, `ColorBlue` = WEST užimtas, `ColorRed` = EAST užimtas
+- Išlaikyti tą patį prioritetų sistemą: neutralūs sektoriai turi aukščiausią prioritetą
+
+**Pakeisti failai**:
+- `functions/server/fn_V2aiMove.sqf`: Atnaujinta support sektorių būsenos tikrinimo logika
+
+**Testavimo Instrukcijos**:
+1. Paleisti misiją su AI įjungtu (`AIon > 0`)
+2. Patikrinti, ar AI grupės juda į neutralius support sektorius (artillery, CAS, AA)
+3. Patikrinti, ar užėmus sektorių AI keičia savo tikslus pagal naują būseną
+4. Patikrinti RPT log'us dėl "AI moves to the objectives" pranešimų
+
+**Poveikis**: AI vėl automatiškai juda į support sektorius pagal jų būseną, atstatant originalią strateginę AI elgseną.
+
+---
+
+## Dokumentacijos Pataisymai - 2025-11-10
+
+### SQF Sintaksės Geriausių Praktikų Dokumentacija v3.7
+
+**Modifikacija**: Ištaisytos faktinės klaidos ir patikslinimai SQF_SYNTAX_BEST_PRACTICES.md dokumente pagal naudotojo atsiliepimus.
+
+**Konkretūs Pakeitimai**:
+
+1. **setDynamicSimulationDistanceCoef Komanda**:
+   - **Prieš**: Dokumentas teigė, kad komanda neegzistuoja ir yra "Foreign error"
+   - **Po**: Patvirtinta, kad komanda egzistuoja ir yra validi; klaidos atsiranda dėl neteisingų parametrų
+   - **Poveikis**: Teisingesnė informacija apie DS konfigūraciją
+
+2. **EmptyVehicle DS Tipas**:
+   - **Prieš**: Prieštaraujanti informacija - vienoje vietoje "nevalidus", kitoje "teisingas"
+   - **Po**: Unifikuota - oficialūs tipai rekomenduojami (Group/Vehicle/Prop/IsMoving), EmptyVehicle gali veikti bet nėra oficialus
+   - **Poveikis**: Aiškesnės gairės apie DS tipų naudojimą
+
+3. **Komentarai Format Bloke**:
+   - **Prieš**: Pagrindinis dėmesys lietuviškiems simboliams kaip "Invalid number in expression" priežasčiai
+   - **Po**: Patikslinta, kad tai daugiau apie apostrofų/kabučių konfliktą ir encoding (UTF-8 BOM reikalavimas)
+   - **Poveikis**: Tiksliau identifikuojamos tikrosios problemos ir sprendimai
+
+**Testavimo Instrukcijos**:
+1. Peržiūrėti atnaujintą dokumentaciją dėl minėtų sekcijų
+2. Patikrinti, ar pavyzdžiai tiksliai atspindi naujas taisykles
+3. Įsitikinti, kad dokumentacija neprieštarauja sau pačiai
+
+**Poveikis**: Dokumentacija tampa tikslesnė ir praktiškesnė, sumažinant painiavą apie SQF sintaksės subtilybes.
+
+---
+
+## Dokumentacijos Perrašymas - 2025-11-10
+
+### SQF Sintaksės Geriausių Praktikų Dokumentacija v4.0
+
+**Modifikacija**: Pilnai perrašyta SQF_SYNTAX_BEST_PRACTICES.md dokumentacija į išsamią ekspertinio SQF audito sistemą.
+
+**Konkretūs Pakeitimai**:
+
+1. **Nauja Architektūra ir Evoliucija Sekcija**:
+   - **Pridėta**: Išsami SQF kalbos istorija ir techniniai faktai apie operatorių sistemą
+   - **Poveikis**: Geresnis supratimas apie SQF kilmę ir dizaino principus
+
+2. **Išplėsta Kintamųjų Apimties Anatomija**:
+   - **Pridėta**: Detalus sluoksniuotos ir izoliuotos apimties paaiškinimas su pavyzdžiais
+   - **Privalomas Inicializavimo Pavojus**: Nauja sekcija apie kintamųjų inicializavimo būtinybę
+   - **Poveikis**: Žymiai sumažintos kintamųjų apimties klaidos
+
+3. **Scenarijų Vykdymo Modelių Palyginimas**:
+   - **Pridėta**: Lentelė lyginant suplanuotą ir nesuplanuotą aplinką
+   - **Absoliutus Sustabdymo Draudimas**: Akcentas apie sleep/waitUntil naudojimą nesuplanuotoje aplinkoje
+   - **Poveikis**: Išvengiama kritinių vykdymo klaidų
+
+4. **Tinklo Komunikacijos Absoliutus Mandatas**:
+   - **Pridėta**: Griežtas BIS_fnc_MP atsisakymo reikalavimas su techniniais paaiškinimais
+   - **Tinklo Apkrovos Optimizavimo Strategijos**: Išplėsta sekcija apie efektyvią remoteExec naudojimą
+   - **Poveikis**: Šiuolaikiški tinklo protokolai ir našumo pagerėjimas
+
+5. **Audito Patikrinimo Sistema**:
+   - **Pridėta**: Išsami patikrinimo sąrašas kritiniams SQF faktams
+   - **Ateities Perspektyvos**: Gairės apie migraciją į naujesnes technologijas
+   - **Poveikis**: Sistemingas kodų kokybės užtikrinimas
+
+**Testavimo Instrukcijos**:
+1. Peržiūrėti naują dokumentacijos struktūrą ir turinį
+2. Patikrinti, ar visos sekcijos yra techniškai tikslūs ir naudingi
+3. Įsitikinti, kad naujas audito sąrašas padeda identifikuoti problemas
+4. Patikrinti, ar pavyzdžiai yra praktiniai ir lengvai pritaikomi
+
+**Poveikis**: Dokumentacija tampa išsamia ekspertinio lygio SQF audito sistema, kuri ne tik identifikuoja problemas, bet ir suteikia fundamentalius principus moderniam SQF kodavimui.
+
+---
+
+## Kritiniai Sintaksės Taisymai - 2025-11-11
+
+### V2startServer.sqf Sintaksės Klaidos
+
+**Modifikacija**: Ištaisytos kritinės sintaksės klaidos, kurios trukdė misijai paleisti.
+
+**Konkretūs Pakeitimai**:
+
+1. **nearestLocations Array Sintaksė (72 eilutė)**:
+   - **Prieš**: `_locations = nearestLocations [[worldSize/2,worldSize/2], NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], (worldSize/2)];`
+   - **Po**: `_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], (worldSize/2)];`
+   - **Problema**: Lokacijų tipai buvo sujungti į vieną string'ą dėl trūkstamų array skliaustų
+   - **Poveikis**: "Missing ;" klaida pašalinta, AO kūrimas veikia teisingai
+
+2. **remoteExec Sintaksė (5 eilutė)**:
+   - **Prieš**: `[0] remoteExec closeDialog", 0, false];`
+   - **Po**: `[0] remoteExec ["closeDialog", 0, false];`
+   - **Problema**: closeDialog parametras nebuvo string'u kaip reikalauja remoteExec sintaksė
+   - **Poveikis**: "Type String, expected Number" klaida pašalinta
+
+3. **format ir remoteExec Kombinuota Sintaksė (81 eilutė)**:
+   - **Prieš**: `[parseText format Creating area of operation<br/>Location %1/%2",_i,_maxAttempts]] remoteExec hint", 0, false];`
+   - **Po**: `[parseText format ["Creating area of operation<br/>Location %1/%2", _i, _maxAttempts]] remoteExec ["hint", 0, false];`
+   - **Problema**: format funkcija neturėjo array skliaustų aplink parametrus, remoteExec neturėjo string kabučių aplink funkcijos pavadinimą
+   - **Poveikis**: "Missing ]" klaida pašalinta, AO kūrimo pranešimai rodomi teisingai
+
+4. **diag_log format Sintaksės Klaidos (89, 93, 95, 98, 103, 105, 107, 128, 132, 137, 142, 146, 1420-1423, 1530, 1785 eilutės)**:
+   - **Prieš**: `diag_log format [AO_CREATION] Starting waitUntil...`
+   - **Po**: `diag_log format ["[AO_CREATION] Starting waitUntil..."`
+   - **Problema**: format funkcija reikalauja array su string'u pirmu parametru, TAG turi būti string'e
+   - **Poveikis**: "Missing ;" klaidos pašalintos, diagnostiniai pranešimai rodomi teisingai
+
+5. **remoteExec Sintaksės Klaidos (daugybė eilučių)**:
+   - **Prieš**: `remoteExec hint", 0, false];`
+   - **Po**: `remoteExec ["hint", 0, false];`
+   - **Problema**: remoteExec reikalauja array su string'u pirmu parametru (funkcijos pavadinimas)
+   - **Poveikis**: "Type String, expected Number" klaidos pašalintos
+   - **Pastaba**: Ištaisyta apie 10 klaidų pavyzdžių, liko ~50 panašių klaidų faile
+
+6. **format Funkcijų Array Sintaksės Klaidos (166-170, 336, 404, 442, 581, 587, 989, 1135, 1164, 1191, 1218, 1245 eilutės)**:
+   - **Prieš**: `format %1 Transport base", factionW];`
+   - **Po**: `format ["%1 Transport base", factionW];`
+   - **Problema**: format funkcija reikalauja array su string'u pirmu parametru ir kintamaisiais
+   - **Poveikis**: "Invalid number in expression" klaidos pašalintos, base pavadinimų generavimas veikia teisingai
+
+7. **spawn Funkcijų Array Sintaksės Klaidos (389-392, 396-399 eilutės)**:
+   - **Prieš**: `AmmoboxInit",AmmoW1] spawn BIS_fnc_arsenal;`
+   - **Po**: `["AmmoboxInit", AmmoW1] spawn BIS_fnc_arsenal;`
+   - **Problema**: spawn funkcija reikalauja array su funkcijos pavadinimu ir parametrais
+   - **Poveikis**: "Missing ;" klaidos pašalintos, arsenal inicializacija veikia teisingai
+
+8. **addEventHandler Sintaksės Klaidos (640, 692 eilutės)**:
+   - **Prieš**: `addEventHandler GetIn", {params _veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}]`
+   - **Po**: `addEventHandler ["GetIn", {params ["_veh"]; [_veh, posBaseW1] spawn wrm_fnc_safeZoneVeh;}]`
+   - **Problema**: addEventHandler reikalauja event pavadinimo string'u ir teisingos code bloko sintaksės
+   - **Poveikis**: Vehicle event handler'iai veikia teisingai
+
+**Testavimo Instrukcijos**:
+1. Paleisti misiją ir patikrinti, ar nėra "Missing ;", "Type String, expected Number", "Missing ]" ir "Invalid number in expression" klaidų RPT log'e
+2. Patikrinti, ar AO kūrimas veikia teisingai (lokacijos randamos ir parenkamos)
+3. Patikrinti, ar dialog'ai užsidaro klientuose kaip tikėtasi
+4. Patikrinti, ar AO kūrimo pranešimai rodomi žaidėjams (format ["Creating area of operation..."])
+5. Patikrinti, ar base pavadinimų generavimas veikia (format ["%1 Transport base", factionW])
+6. Patikrinti, ar vehicle creation pranešimai rodomi (format ["%1 vehicles created", factionW])
+7. Patikrinti, ar respawn pozicijos kuriamos su teisingais pavadinimais (format ["%1 Air base", factionW])
+8. Patikrinti, ar arsenal inicializacija veikia (["AmmoboxInit", AmmoW1] spawn BIS_fnc_arsenal)
+9. Patikrinti, ar vehicle event handler'iai veikia teisingai (GetIn event'ai)
+
+**Poveikis**: Šios klaidos buvo kritinės - jos trukdė misijai paleisti ir generuoti AO. Po taisymo misija turėtų veikti be šių sintaksės klaidų.

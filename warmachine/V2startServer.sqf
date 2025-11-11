@@ -71,14 +71,14 @@ if (aoType==0) then
 	AOcreated = 0;
 	_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], (worldSize/2)];
 	_i=1;
-	_maxAttempts = 1000; //Maksimalus bandymų skaičius - padidinta iki 100, kad sistema turėtų daugiau galimybių rasti tinkamą poziciją
+	_maxAttempts = 1000; //Maksimalus bandymų skaičius - padidinta iki 1000, kad sistema turėtų daugiau galimybių rasti tinkamą poziciją
 	_l=count _locations;
 	
 	//Bandoma su lokacijomis iš žemėlapio
 	//FIX: Pridėti timeout'ą waitUntil ciklams, kad sistema neužstrigtų
 	while {(AOcreated == 0)&&(count _locations>0)&&(_i<=_maxAttempts)} do 
 	{
-		[parseText format ["Creating area of operation<br/>Location %1/%2",_i,_maxAttempts]] remoteExec ["hint", 0, false];
+		[parseText format ["Creating area of operation<br/>Location %1/%2", _i, _maxAttempts]] remoteExec ["hint", 0, false];
 		_loc = _locations select (floor (random (count _locations)));
 		_locations = _locations - [_loc];
 		_p = locationPosition _loc;
@@ -153,22 +153,22 @@ if (aoType==0) then
 if(aoType==0 && AOcreated==0)exitWith
 {
 	[parseText format ["ERROR<br/>AO Creation failed<br/>Select AO manually"]] remoteExec ["hint", 0, false];
-	progress = 0; 
+	progress = 0;
 	publicVariable "progress";
 	[3] remoteExec ["titleFadeOut", 0, false];
 };
-if(aoType==0 && AOcreated>0)then{["AO created succesfuly"] remoteExec ["systemChat", 0, false];};
+if(aoType==0 && AOcreated>0)then{"AO created succesfuly" remoteExec ["systemChat", 0, false];};
 
 //random mission type
 if (missType==0)then{missType = selectrandom [1,2,3]};
 if(missType==1)then
 {
-	nameBW1 = format ["%1 Transport base",factionW]; publicvariable "nameBW1";
-	nameBE1 = format ["%1 Transport base",factionE]; publicvariable "nameBE1";
-	nameBW2 = format ["%1 Helicopter base",factionW];
-	nameBE2 = format ["%1 Helicopter base",factionE];
-	if(count HeliTrW==0)then{nameBW2 = format ["%1 Infantry base",factionW];};
-	if(count HeliTrE==0)then{nameBE2 = format ["%1 Infantry base",factionE];};
+	nameBW1 = format ["%1 Transport base", factionW]; publicvariable "nameBW1";
+	nameBE1 = format ["%1 Transport base", factionE]; publicvariable "nameBE1";
+	nameBW2 = format ["%1 Helicopter base", factionW];
+	nameBE2 = format ["%1 Helicopter base", factionE];
+	if(count HeliTrW==0)then{nameBW2 = format ["%1 Infantry base", factionW];};
+	if(count HeliTrE==0)then{nameBE2 = format ["%1 Infantry base", factionE];};
 	publicvariable "nameBW2";
 	publicvariable "nameBE2";
 };
@@ -210,7 +210,7 @@ call
 	//Night, 23:00
 	if (day == 6) exitWith {skiptime ((23 - daytime + 24) % 24);};
 };
-["Time of day changed"] remoteExec ["systemChat", 0, false];
+"Time of day changed" remoteExec ["systemChat", 0, false];
 
 //BASE Structures part 1/2
 //clear sorroundings
@@ -333,7 +333,7 @@ _sel = selectRandom strFob;
 } forEach [[90,270],[180,0],[270,90]];
 
 //BASE 2 EAST (armors)
-[parseText format ["Creating structures<br/>%1",nameBE2]] remoteExec ["hint", 0, false];
+[parseText format ["Creating structures<br/>%1", nameBE2]] remoteExec ["hint", 0, false];
 
 //main building
 _selBaseE2 = selectRandom strFobEast;
@@ -386,17 +386,17 @@ call
 {
 	if("Param2" call BIS_fnc_getParamValue == 1)exitWith
 	{
-		["AmmoboxInit",AmmoW1] spawn BIS_fnc_arsenal;
-		["AmmoboxInit",AmmoW2] spawn BIS_fnc_arsenal;	
-		["AmmoboxInit",AmmoE1] spawn BIS_fnc_arsenal;
-		["AmmoboxInit",AmmoE2] spawn BIS_fnc_arsenal;	
+	["AmmoboxInit", AmmoW1] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", AmmoW2] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", AmmoE1] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", AmmoE2] spawn BIS_fnc_arsenal;
 	};
 	if("Param2" call BIS_fnc_getParamValue == 2)exitWith
 	{
-		["AmmoboxInit",[AmmoW1,true]] spawn BIS_fnc_arsenal;
-		["AmmoboxInit",[AmmoW2,true]] spawn BIS_fnc_arsenal;
-		["AmmoboxInit",[AmmoE1,true]] spawn BIS_fnc_arsenal;
-		["AmmoboxInit",[AmmoE2,true]] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", [AmmoW1, true]] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", [AmmoW2, true]] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", [AmmoE1, true]] spawn BIS_fnc_arsenal;
+	["AmmoboxInit", [AmmoE2, true]] spawn BIS_fnc_arsenal;
 	};
 };
 
@@ -534,35 +534,35 @@ publicVariable "plHE";
 //COMBAT SUPPORT modules
 {_x setPos (plHW getRelPos [20, 90]);} forEach [SupCasHW, SupCasBW];
 {_x setPos (plHE getRelPos [20, 90]);} forEach [SupCasHE, SupCasBE];
-{[_x,["bis_supp_cooldown", arTime]] remoteExec ["setVariable",0,false];} forEach [SupCasHW,SupCasBW,SupCasHE,SupCasBE]; //set coolDown time == arTime
+{[_x, "bis_supp_cooldown", arTime] remoteExec ["setVariable", 0, false];} forEach [SupCasHW, SupCasBW, SupCasHE, SupCasBE]; //set coolDown time == arTime
 
 _HeliArW=[];
 if ((HeliArW select 0) isEqualType [])
 then{{_HeliArW pushBackUnique (_x select 0);} forEach HeliArW;}
 else{_HeliArW=HeliArW;};
-[SupCasHW,["bis_supp_vehicles", _HeliArW]] remoteExec ["setVariable",0,false];
+[SupCasHW, "bis_supp_vehicles", _HeliArW] remoteExec ["setVariable", 0, false];
 
 _PlaneW=[];
 if ((PlaneW select 0) isEqualType [])
 then{{_PlaneW pushBackUnique (_x select 0);} forEach PlaneW;}
 else{_PlaneW=PlaneW;};
-[SupCasBW,["bis_supp_vehicles", _PlaneW]] remoteExec ["setVariable",0,false];
+[SupCasBW, "bis_supp_vehicles", _PlaneW] remoteExec ["setVariable", 0, false];
 
 _HeliArE=[];
 if ((HeliArE select 0) isEqualType [])
 then{{_HeliArE pushBackUnique (_x select 0);} forEach HeliArE;}
 else{_HeliArE=HeliArE;};
-[SupCasHE,["bis_supp_vehicles", _HeliArE]] remoteExec ["setVariable",0,false];
+[SupCasHE, "bis_supp_vehicles", _HeliArE] remoteExec ["setVariable", 0, false];
 
 _PlaneE=[];
 if ((PlaneE select 0) isEqualType [])
 then{{_PlaneE pushBackUnique (_x select 0);} forEach PlaneE;}
 else{_PlaneE=PlaneE;};
-[SupCasBE,["bis_supp_vehicles", _PlaneE]] remoteExec ["setVariable",0,false];
+[SupCasBE, "bis_supp_vehicles", _PlaneE] remoteExec ["setVariable", 0, false];
 
 if(modA=="IFA3")then
 {
-	{[_x,["bis_supp_vehicleinit",{_this setVelocityModelSpace [0, 100, 100];}]] remoteExec ["setVariable",0,false];} forEach [SupCasBW,SupCasBE]; //prevent the plane to fall down
+	{[_x, "bis_supp_vehicleinit", "{_this setVelocityModelSpace [0, 100, 100];}"] remoteExec ["setVariable", 0, false];} forEach [SupCasBW, SupCasBE]; //prevent the plane to fall down
 };
 
 //Sinhronizuoti CAS support provider'ius su teisingais lėktuvais visiems klientams (įskaitant JIP)
@@ -578,26 +578,26 @@ if(missType==3)then
 		((count PlaneW!=0)&&(planes==1)) ||
 		((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
 	)
-	then{[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base",factionW])] call BIS_fnc_addRespawnPosition;};
+	then{[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base", factionW])] call BIS_fnc_addRespawnPosition;};
 	if(
 		(count HeliArE!=0) ||
 		((count PlaneE!=0)&&(planes==1)) ||
-		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))
 	)
-	then{[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base",factionE])] call BIS_fnc_addRespawnPosition;};
+	then{[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base", factionE])] call BIS_fnc_addRespawnPosition;};
 	
 	if ((planes==1) || ((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))) then
 	{ 
 		//plane west
 		if(count PlaneW!=0)then
 		{
-			[parseText format ["Creating vehicles<br/>%1 Plane",factionW]] remoteExec ["hint", 0, false];
+			[parseText format ["Creating vehicles<br/>%1 Plane", factionW]] remoteExec ["hint", 0, false];
 			_pSelW = selectRandom PlaneW;
 			_pPosW = getPos plHW;
 			_pVehW = _pSelW createVehicle _pPosW;
 			_pVehW setDir getDir plHW;
-			_nme = format ["%1%2",_pSelW,(_pPosW select 0)];
-			[_nme,"plane",_pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+			_nme = format ["%1%2", _pSelW, (_pPosW select 0)];
+			[_nme, "plane", _pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 			z1 addCuratorEditableObjects [[_pVehW],true];	
 			[_pVehW,arTime,0,-1,{
 				params ["_pVehW"];
@@ -637,19 +637,19 @@ if(missType==3)then
 			},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 			removeFromRemainsCollector [_pVehW];
 			_pVehW allowDammage false;
-			_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
+			_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh, posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
 		};
 
 		//plane east
 		if(count PlaneE!=0)then
 		{
-			[parseText format ["Creating vehicles<br/>%1 Plane",factionE]] remoteExec ["hint", 0, false];
+			[parseText format ["Creating vehicles<br/>%1 Plane", factionE]] remoteExec ["hint", 0, false];
 			_pSelE = selectRandom PlaneE;
 			_pPosE = getPos plHe;
 			_pVehE = _pSelE createVehicle _pPosE;
 			_pVehE setDir getDir plHe;
-			_nme = format ["%1%2",_pSelE,(_pPosE select 0)];
-			[_nme,"plane",_pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+			_nme = format ["%1%2", _pSelE, (_pPosE select 0)];
+			[_nme, "plane", _pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
 			z1 addCuratorEditableObjects [[_pVehE],true];
 			[_pVehE,arTime,0,-1,{
 				params ["_pVehE"];
@@ -689,7 +689,7 @@ if(missType==3)then
 			},0,0,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
 			removeFromRemainsCollector [_pVehE];
 			_pVehE allowDammage false;
-			_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
+			_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh, posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
 		};
 		
 	};
@@ -711,8 +711,8 @@ if(missType==3)then
 		[_veh,[_tex,1]] call bis_fnc_initVehicle;
 		_veh setDir getDir plHW;
 		_veh setVectorUp surfaceNormal _res;			
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+		_nme = format ["%1%2", _typ, (_res select 0)];
+		[_nme, "air", _res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 		z1 addCuratorEditableObjects [[_veh],true];
 		[_veh,arTime,0,-1,{
 			params ["_veh"];
@@ -771,8 +771,8 @@ if(missType==3)then
 		[_veh,[_tex,1]] call bis_fnc_initVehicle;
 		_veh setDir getDir plHe;
 		_veh setVectorUp surfaceNormal _res;			
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+		_nme = format ["%1%2", _typ, (_res select 0)];
+		[_nme, "air", _res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
 		z1 addCuratorEditableObjects [[_veh],true];
 		[_veh,arTime,0,-1,{
 			params ["_veh"];
@@ -843,7 +843,7 @@ call
 };
 
 //VEHICLES WEST
-[parseText format ["Creating vehicles<br/>%1 vehicles",factionW]] remoteExec ["hint", 0, false];
+[parseText format ["Creating vehicles<br/>%1 vehicles", factionW]] remoteExec ["hint", 0, false];
 {
 	_vehs = _x select 0;
 	_ress = _x select 1;
@@ -860,8 +860,8 @@ call
 		[_veh,[_tex,1]] call bis_fnc_initVehicle;
 		_veh setDir dirBW;
 		_veh setVectorUp surfaceNormal _res;		
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+		_nme = format ["%1%2", _typ, (_res select 0)];
+		[_nme, _mrk, _res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 		z1 addCuratorEditableObjects [[_veh],true];
 		[_veh,_time,0,-1,{
 			params ["_veh"];
@@ -915,7 +915,7 @@ call
 //helicopters
 if (count _hW>0) then
 {
-	[parseText format ["Creating vehicles<br/>%1 helicopters",factionW]] remoteExec ["hint", 0, false];
+	[parseText format ["Creating vehicles<br/>%1 helicopters", factionW]] remoteExec ["hint", 0, false];
 	{
 		_vehs = _x select 0;
 		_ress = _x select 1;
@@ -935,8 +935,8 @@ if (count _hW>0) then
 			[_veh,[_tex,1]] call bis_fnc_initVehicle;
 			_veh setDir dirBW;
 			_veh setVectorUp surfaceNormal _res;			
-			_nme = format ["%1%2",_typ,(_res select 0)];
-			[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+			_nme = format ["%1%2", _typ, (_res select 0)];
+			[_nme, _mrk, _res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 			z1 addCuratorEditableObjects [[_veh],true];
 			[_veh,_time,0,-1,{
 				params ["_veh"];
@@ -986,10 +986,10 @@ if (count _hW>0) then
 		} forEach _ress;
 	} forEach _hW;
 };
-[format ["%1 vehicles created ",factionW]] remoteExec ["systemChat", 0, false];
+[format ["%1 vehicles created", factionW]] remoteExec ["systemChat", 0, false];
 
 //VEHICLES EAST
-[parseText format ["Creating vehicles<br/>%1 vehicles",factionE]] remoteExec ["hint", 0, false];
+[parseText format ["Creating vehicles<br/>%1 vehicles", factionE]] remoteExec ["hint", 0, false];
 {
 	_vehs = _x select 0;
 	_ress = _x select 1;
@@ -1006,8 +1006,8 @@ if (count _hW>0) then
 		[_veh,[_tex,1]] call bis_fnc_initVehicle;
 		_veh setDir dirBE;
 		_veh setVectorUp surfaceNormal _res;		
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+		_nme = format ["%1%2", _typ, (_res select 0)];
+		[_nme, _mrk, _res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
 		z1 addCuratorEditableObjects [[_veh],true];
 		[_veh,_time,0,-1,{
 			params ["_veh"];
@@ -1061,7 +1061,7 @@ if (count _hW>0) then
 //helicopters
 if (count _hE>0) then
 {
-	[parseText format ["Creating vehicles<br/>%1 helicopters",factionE]] remoteExec ["hint", 0, false];
+	[parseText format ["Creating vehicles<br/>%1 helicopters", factionE]] remoteExec ["hint", 0, false];
 	{
 		_vehs = _x select 0;
 		_ress = _x select 1;
@@ -1081,8 +1081,8 @@ if (count _hE>0) then
 			[_veh,[_tex,1]] call bis_fnc_initVehicle;
 			_veh setDir dirBE;
 			_veh setVectorUp surfaceNormal _res;			
-			_nme = format ["%1%2",_typ,(_res select 0)];
-			[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+			_nme = format ["%1%2", _typ, (_res select 0)];
+			[_nme, _mrk, _res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
 			z1 addCuratorEditableObjects [[_veh],true];
 			[_veh,_time,0,-1,{
 				params ["_veh"];
@@ -1132,7 +1132,7 @@ if (count _hE>0) then
 		} forEach _ress;
 	} forEach _hE;
 };
-[format ["%1 vehicles created ",factionE]] remoteExec ["systemChat", 0, false];
+[format ["%1 vehicles created", factionE]] remoteExec ["systemChat", 0, false];
 
 //BASE Structures part 2/2
 [parseText format ["Creating structures"]] remoteExec ["hint", 0, false];
@@ -1161,7 +1161,7 @@ if(modA=="GM")then
 		{if(typeOf _obj==_x)then{_obj setDir dirBW;};} forEach ["land_gm_woodbunker_01_bags","land_gm_sandbags_02_bunker_high","land_gm_euro_deerstand_01","land_gm_woodbunker_01"];
 	} forEach [objBaseW1,_obj2];
 };
-[format ["%1 created",nameBW1]] remoteExec ["systemChat", 0, false];
+[format ["%1 created", nameBW1]] remoteExec ["systemChat", 0, false];
 
 //2nd building BASE 2 WEST (Armors)
 _posR = objBaseW2 getRelPos [30, random 360];
@@ -1188,7 +1188,7 @@ if(modA=="GM")then
 		{if(typeOf _obj==_x)then{_obj setDir dirBW;};} forEach ["land_gm_woodbunker_01_bags","land_gm_sandbags_02_bunker_high","land_gm_euro_deerstand_01","land_gm_woodbunker_01"];
 	} forEach [objBaseW2,_obj2];
 };
-[format ["%1 created",nameBW2]] remoteExec ["systemChat", 0, false];
+[format ["%1 created", nameBW2]] remoteExec ["systemChat", 0, false];
 
 //2nd building BASE 1 EAST (UAV Transport)
 _posR = objBaseE1 getRelPos [30, random 360];
@@ -1215,7 +1215,7 @@ if(modA=="GM")then
 		{if(typeOf _obj==_x)then{_obj setDir dirBE;};} forEach ["land_gm_woodbunker_01_bags","land_gm_sandbags_02_bunker_high","land_gm_euro_deerstand_01","land_gm_woodbunker_01"];
 	} forEach [objBaseE1,_obj2];
 };
-[format ["%1 created",nameBE1]] remoteExec ["systemChat", 0, false];
+[format ["%1 created", nameBE1]] remoteExec ["systemChat", 0, false];
 
 //2nd building BASE 2 EAST (Armors)
 _posR = objBaseE2 getRelPos [30, random 360];
@@ -1242,7 +1242,7 @@ if(modA=="GM")then
 		{if(typeOf _obj==_x)then{_obj setDir dirBE;};} forEach ["land_gm_woodbunker_01_bags","land_gm_sandbags_02_bunker_high","land_gm_euro_deerstand_01","land_gm_woodbunker_01"];
 	} forEach [objBaseE2,_obj2];
 };
-[format ["%1 created",nameBE2]] remoteExec ["systemChat", 0, false];
+[format ["%1 created", nameBE2]] remoteExec ["systemChat", 0, false];
 
 //RESPAWN markers (for respawn menu)
 {
@@ -1351,11 +1351,11 @@ if (missType == 3) then
 	};
 };
 
-[flgBW1,flgBW2,flgJetW,flgBE1,flgBE2,flgJetE,missType] remoteExec ["wrm_fnc_V2flagActions", 0, true]; 
+[flgBW1, flgBW2, flgJetW, flgBE1, flgBE2, flgJetE, missType] remoteExec ["wrm_fnc_V2flagActions", 0, true]; 
 ["Flags created"] remoteExec ["systemChat", 0, false];
 
 //kill players
-{if (isPlayer _x)then{[_x] remoteExec ["forceRespawn", 0, false];};} forEach playableunits;
+{if (isPlayer _x) then {[_x] remoteExec ["forceRespawn", 0, false];};} forEach playableunits;
 sleep 0.1;
 
 //RESPAWN TIME
@@ -1380,46 +1380,73 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 {
 	if(revOn==3)then
 	{
-		"SPE_Module_Advanced_Revive" createUnit [(position player),createGroup sideLogic,format
-		["
-			mdlRev=this;
-			this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-			this setVariable ['name','modRev'];
-			
-			this setVariable ['SPE_ReviveEnabled',0,true];
-			this setVariable ['SPE_ReviveMode',0,true];
-			this setVariable ['SPE_ReviveRequiredTrait',0,true];
-			this setVariable ['SPE_ReviveMedicSpeedMultiplier',1,true];
-			this setVariable ['SPE_ReviveDelay',6,true];
-			this setVariable ['SPE_ReviveForceRespawnDelay',6,true];
-			this setVariable ['SPE_ReviveBleedOutDelay',180,true];
-			this setVariable ['SPE_ReviveFakAmount',1,true];
-			this setVariable ['SPE_ReviveIcons',0,true];
-			this setVariable ['SPE_ReviveAutoCall',2,true];
-			this setVariable ['SPE_ReviveAutoWithstand',2,true];
-			this setVariable ['SPE_WithstandExtraFAK',0,true];
-			this setVariable ['SPE_WithstandEnabled',0,true];
-			this setVariable ['SPE_WithstandEnabledAI',0,true];
-			this setVariable ['SPE_ReviveUnits',0,true];
-		"]];
-		publicVariable "mdlRev";
+		"SPE_Module_Advanced_Revive" createUnit [
+			position player,
+			createGroup sideLogic,
+			"
+				mdlRev=this;
+				this setVariable ['BIS_fnc_initModules_disableAutoActivation', false];
+				this setVariable ['name', 'modRev'];
+
+				this setVariable ['SPE_ReviveEnabled', 0, true];
+				this setVariable ['SPE_ReviveMode', 0, true];
+				this setVariable ['SPE_ReviveRequiredTrait', 0, true];
+				this setVariable ['SPE_ReviveMedicSpeedMultiplier', 1, true];
+				this setVariable ['SPE_ReviveDelay', 6, true];
+				this setVariable ['SPE_ReviveForceRespawnDelay', 6, true];
+				this setVariable ['SPE_ReviveBleedOutDelay', 180, true];
+				this setVariable ['SPE_ReviveFakAmount', 1, true];
+				this setVariable ['SPE_ReviveIcons', 0, true];
+				this setVariable ['SPE_ReviveAutoCall', 2, true];
+				this setVariable ['SPE_ReviveAutoWithstand', 2, true];
+				this setVariable ['SPE_WithstandExtraFAK', 0, true];
+				this setVariable ['SPE_WithstandEnabled', 0, true];
+				this setVariable ['SPE_WithstandEnabledAI', 0, true];
+				this setVariable ['SPE_ReviveUnits', 0, true];
+				publicVariable 'mdlRev';
+			",
+			0.5,
+			"NONE"
+		];
 	};
 };
 
 //create Tasks
-[sideW, "WW", ["Control ALL objectives, friendly and enemy bases<br/><br/>Reward:<br/>Win the battle","Control All",""], objNull, "CREATED", -1, true, "attack", true] call BIS_fnc_taskCreate;
-[sideE, "EW", ["Control ALL objectives, friendly and enemy bases<br/><br/>Reward:<br/>Win the battle","Control All",""], objNull, "CREATED", -1, true, "attack", true] call BIS_fnc_taskCreate;
-[sideW, "WA", ["Locate and capture enemy BASES<br/><br/>Reward:<br/>Enemy lost acces to vehicles<br/>Respawn position","Recon",""], objNull, "CREATED", -1, true, "scout", true] call BIS_fnc_taskCreate;
-[sideE, "EA", ["Locate and capture enemy BASES<br/><br/>Reward:<br/>Enemy lost acces to vehicles<br/>Respawn position","Recon",""], objNull, "CREATED", -1, true, "scout", true] call BIS_fnc_taskCreate;
-[sideW, "WD", ["Protect your BASES<br/><br/>Reward:<br/>Acces to vehicles<br/>Respawn position","Defend",""], objNull, "CREATED", -1, true, "defend", true] call BIS_fnc_taskCreate;
-[sideE, "ED", ["Protect your BASES<br/><br/>Reward:<br/>Acces to vehicles<br/>Respawn position","Defend",""], objNull, "CREATED", -1, true, "defend", true] call BIS_fnc_taskCreate;
+[sideW, "WW", ["Control ALL objectives, friendly and enemy bases<br/><br/>Reward:<br/>Win the battle", "Control All", ""], objNull, "CREATED", -1, true, "attack", true] call BIS_fnc_taskCreate;
+[sideE, "EW", ["Control ALL objectives, friendly and enemy bases<br/><br/>Reward:<br/>Win the battle", "Control All", ""], objNull, "CREATED", -1, true, "attack", true] call BIS_fnc_taskCreate;
+[sideW, "WA", ["Locate and capture enemy BASES<br/><br/>Reward:<br/>Enemy lost acces to vehicles<br/>Respawn position", "Recon", ""], objNull, "CREATED", -1, true, "scout", true] call BIS_fnc_taskCreate;
+[sideE, "EA", ["Locate and capture enemy BASES<br/><br/>Reward:<br/>Enemy lost acces to vehicles<br/>Respawn position", "Recon", ""], objNull, "CREATED", -1, true, "scout", true] call BIS_fnc_taskCreate;
+[sideW, "WD", ["Protect your BASES<br/><br/>Reward:<br/>Acces to vehicles<br/>Respawn position", "Defend", ""], objNull, "CREATED", -1, true, "defend", true] call BIS_fnc_taskCreate;
+[sideE, "ED", ["Protect your BASES<br/><br/>Reward:<br/>Acces to vehicles<br/>Respawn position", "Defend", ""], objNull, "CREATED", -1, true, "defend", true] call BIS_fnc_taskCreate;
 
 //CREATE SECTORS
 [parseText format ["Creating sectors"]] remoteExec ["hint", 0, false];
 
+//DIAGNOSTIKA: Patikrinti pozicijas prieš sektorių kūrimą
+if (DBG) then {
+	diag_log format ["[SECTOR_CREATION] Starting sector creation"];
+	diag_log format ["[SECTOR_CREATION] posAA: %1 (valid: %2)", posAA, count posAA == 3];
+	diag_log format ["[SECTOR_CREATION] posArti: %1 (valid: %2)", posArti, count posArti == 3];
+	diag_log format ["[SECTOR_CREATION] posCas: %1 (valid: %2)", posCas, count posCas == 3];
+};
+
+//Patikrinti ar pozicijos egzistuoja ir yra valid
+if (isNil "posAA" || count posAA < 2) exitWith {
+["SEKTORIAI NEKURTI: posAA nėra apibrėžta arba netinkama"] remoteExec ["systemChat", 0, false];
+	diag_log "[SECTOR_CREATION] ERROR: posAA is invalid";
+};
+if (isNil "posArti" || count posArti < 2) exitWith {
+["SEKTORIAI NEKURTI: posArti nėra apibrėžta arba netinkama"] remoteExec ["systemChat", 0, false];
+	diag_log "[SECTOR_CREATION] ERROR: posArti is invalid";
+};
+if (isNil "posCas" || count posCas < 2) exitWith {
+["SEKTORIAI NEKURTI: posCas nėra apibrėžta arba netinkama"] remoteExec ["systemChat", 0, false];
+	diag_log "[SECTOR_CREATION] ERROR: posCas is invalid";
+};
+
 //clear sorroundings
 {
-	_objs = nearestTerrainObjects [_x, 
+	_objs = nearestTerrainObjects [_x,
 	[
 		"TREE","SMALL TREE","BUSH","BUILDING","HOUSE","FOREST BORDER","FOREST TRIANGLE","FOREST SQUARE","CHURCH","CHAPEL","CROSS","BUNKER","FORTRESS","FOUNTAIN","VIEW-TOWER","LIGHTHOUSE","QUAY","FUELSTATION","HOSPITAL","FENCE","WALL","HIDE","BUSSTOP","FOREST","TRANSMITTER","STACK","RUIN","TOURISM","WATERTOWER","ROCK","ROCKS","POWERSOLAR","POWERWAVE","POWERWIND","SHIPWRECK" //"MAIN ROAD","ROAD","RAILWAY","TRACK","TRAIL""POWER LINES",
 	], 25, false, true];
@@ -1428,163 +1455,115 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	} forEach _objs;
 } forEach [posArti,posAA,posCas];
 
-//sector Anti Air
-"ModuleSector_F" createUnit [posAA,createGroup sideLogic,"
-	sectorAA=this;
-	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-	this setVariable ['name','A: Anti Air'];
-	this setVariable ['Designation','A'];
-	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange','
-		call
-		{
-			 if ((_this select 1) == sideW) exitWith 
-			 {
-				if(getMarkerColor resAW!='''')exitWith{};
-				_mrkRbW = createMarker [resAW, posAA];
-				_mrkRbW setMarkerShape ''ICON'';
-				_mrkRbW setMarkerType ''empty'';
-				_mrkRbW setMarkerText ''Anti Air'';
-				deleteMarker resAE;
-				if(!isNull objAAE)then
-				{
-					{objAAE deleteVehicleCrew _x} forEach crew objAAE;
-					deleteVehicle objAAE;
-				};
-				if(count aaW!=0)then
-				{
-					_vSel = selectRandom aaW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
-					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
-					_vSel = selectRandom aaE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
-					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
-				};
-				[objAAW] call wrm_fnc_parachute;
-				objAAW lockDriver true;
-				_grpAAW=createGroup [sideW, true];			
-				for ''_i'' from 1 to (objAAW emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-					_unit moveInGunner objAAW;
-				};
-				for ''_i'' from 1 to (objAAW emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-					_unit moveInCommander objAAW;
-				};
-				objAAW allowCrewInImmobile true;
-				publicvariable ''objAAW'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objAAW],true];
-				defW pushBackUnique _grpAAW;
-				[posAA,sideW] call wrm_fnc_V2secDefense;
-				[] execVM ''warmachine\arti_event_handlers.sqf'';
-			 };
+//ORIGINAL SECTOR CREATION - SIMPLIFIED VERSION
+//ANTI AIR SECTOR
+private _sectorAA = createGroup sideLogic createUnit ["ModuleSector_F", posAA, [], 0, "NONE"];
+_sectorAA setVariable ["BIS_fnc_initModules_disableAutoActivation", false];
+_sectorAA setVariable ["name", "A: Anti Air"];
+_sectorAA setVariable ["Designation", "A"];
+_sectorAA setVariable ["OwnerLimit", "1"];
+_sectorAA setVariable ["CaptureCoef", 0.05];
+_sectorAA setVariable ["CostInfantry", 0.2];
+_sectorAA setVariable ["CostWheeled", 0.2];
+_sectorAA setVariable ["CostTracked", 0.2];
+_sectorAA setVariable ["CostWater", 0.2];
+_sectorAA setVariable ["CostAir", 0.2];
+_sectorAA setVariable ["CostPlayers", 0.2];
+_sectorAA setVariable ["DefaultOwner", -1];
+_sectorAA setVariable ["TaskOwner", 3];
+_sectorAA setVariable ["TaskTitle", "Anti Air"];
+_sectorAA setVariable ["taskDescription", "Seize ANTI AIR position<br/><br/>Reward:<br/>Anti air defence<br/>Respawn position"];
+_sectorAA setVariable ["ScoreReward", 0];
+_sectorAA setVariable ["Sides", [sideE, sideW]];
+_sectorAA setVariable ["objectArea", [75, 75, 0, false]];
 
-			 if ((_this select 1) == sideE) exitWith  
-			 {
-				if(getMarkerColor resAE!='''')exitWith{};
-				_mrkRbE = createMarker [resAE, posAA];
-				_mrkRbE setMarkerShape ''ICON'';
-				_mrkRbE setMarkerType ''empty'';
-				_mrkRbE setMarkerText ''Anti Air'';
-				deleteMarker resAW;
-				if(!isNull objAAW)then
-				{
-					{objAAW deleteVehicleCrew _x} forEach crew objAAW;
-					deleteVehicle objAAW;
-				};
-				if(count aaE!=0)then
-				{
-					_vSel = selectRandom aaE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
-					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
-					_vSel = selectRandom aaW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
-					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
-				};
-				[objAAE] call wrm_fnc_parachute;
-				objAAE lockDriver true;
-				_grpAAE=createGroup [sideE, true];			
-				for ''_i'' from 1 to (objAAE emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-					_unit moveInGunner objAAE;
-				};
-				for ''_i'' from 1 to (objAAE emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-					_unit moveInCommander objAAE;
-				};
-				objAAE allowCrewInImmobile true;
-				publicvariable ''objAAE'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objAAE],true];
-				defE pushBackUnique _grpAAE;
-				[posAA,sideE] call wrm_fnc_V2secDefense;
-				[] execVM ''warmachine\arti_event_handlers.sqf'';
-			 };
+//OnOwnerChange callback - simplified
+_sectorAA setVariable ["OnOwnerChange", "
+	if ((_this select 1) == sideW) then {
+		if (getMarkerColor 'resAW' != '') exitWith {};
+		createMarker ['resAW', posAA]; 'resAW' setMarkerShape 'ICON'; 'resAW' setMarkerType 'empty'; 'resAW' setMarkerText 'Anti Air';
+		deleteMarker 'resAE';
+		if (getMarkerColor 'mAA' != '') then {'mAA' setMarkerColor 'ColorBlue';} else {if (getMarkerColor 'mAA_neutral' != '') then {'mAA_neutral' setMarkerColor 'ColorBlue';};};
+		if (!isNull objAAE) then {{objAAE deleteVehicleCrew _x} forEach crew objAAE; deleteVehicle objAAE;};
+		if (count aaW != 0) then {
+			_vSel = selectRandom aaW; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, 'NONE']; [objAAW, [_tex, 1]] call bis_fnc_initVehicle;
+		} else {
+			_vSel = selectRandom aaE; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, 'NONE']; [objAAW, [_tex, 1]] call bis_fnc_initVehicle;
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
-	'];
-	this setVariable ['CaptureCoef','0.05']; 	
-	this setVariable ['CostInfantry','0.2'];
-	this setVariable ['CostWheeled','0.2'];
-	this setVariable ['CostTracked','0.2'];
-	this setVariable ['CostWater','0.2'];
-	this setVariable ['CostAir','0.2'];
-	this setVariable ['CostPlayers','0.2'];
-	this setVariable ['DefaultOwner','-1'];
-	this setVariable ['TaskOwner','3'];
-	this setVariable ['TaskTitle','Anti Air'];
-	this setVariable ['taskDescription','Seize ANTI AIR position<br/><br/>Reward:<br/>Anti air defence<br/>Respawn position'];
-	this setVariable ['ScoreReward','0'];
-	this setVariable ['Sides',[sideE,sideW]];
-	this setVariable ['objectArea',[75,75,0,false]];
-
+		[objAAW] call wrm_fnc_parachute; objAAW lockDriver true;
+		_grpAAW = createGroup [sideW, true];
+		for '_i' from 1 to (objAAW emptyPositions 'Gunner') do {_unit = _grpAAW createUnit [crewW, posAA, [], 0, 'NONE']; _unit moveInGunner objAAW;};
+		for '_i' from 1 to (objAAW emptyPositions 'Commander') do {_unit = _grpAAW createUnit [crewW, posAA, [], 0, 'NONE']; _unit moveInCommander objAAW;};
+		objAAW allowCrewInImmobile true; publicVariable 'objAAW'; z1 addCuratorEditableObjects [[objAAW], true]; defW pushBackUnique _grpAAW;
+		[posAA, sideW] call wrm_fnc_V2secDefense;
+	};
+	if ((_this select 1) == sideE) then {
+		if (getMarkerColor 'resAE' != '') exitWith {};
+		createMarker ['resAE', posAA]; 'resAE' setMarkerShape 'ICON'; 'resAE' setMarkerType 'empty'; 'resAE' setMarkerText 'Anti Air';
+		deleteMarker 'resAW';
+		if (getMarkerColor 'mAA' != '') then {'mAA' setMarkerColor 'ColorRed';} else {if (getMarkerColor 'mAA_neutral' != '') then {'mAA_neutral' setMarkerColor 'ColorRed';};};
+		if (!isNull objAAW) then {{objAAW deleteVehicleCrew _x} forEach crew objAAW; deleteVehicle objAAW;};
+		if (count aaE != 0) then {
+			_vSel = selectRandom aaE; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, 'NONE']; [objAAE, [_tex, 1]] call bis_fnc_initVehicle;
+		} else {
+			_vSel = selectRandom aaW; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, 'NONE']; [objAAE, [_tex, 1]] call bis_fnc_initVehicle;
+		};
+		[objAAE] call wrm_fnc_parachute; objAAE lockDriver true;
+		_grpAAE = createGroup [sideE, true];
+		for '_i' from 1 to (objAAE emptyPositions 'Gunner') do {_unit = _grpAAE createUnit [crewE, posAA, [], 0, 'NONE']; _unit moveInGunner objAAE;};
+		for '_i' from 1 to (objAAE emptyPositions 'Commander') do {_unit = _grpAAE createUnit [crewE, posAA, [], 0, 'NONE']; _unit moveInCommander objAAE;};
+		objAAE allowCrewInImmobile true; publicVariable 'objAAE'; z1 addCuratorEditableObjects [[objAAE], true]; defE pushBackUnique _grpAAE;
+		[posAA, sideE] call wrm_fnc_V2secDefense;
+	};
+	if (AIon > 0) then {[] call wrm_fnc_V2aiMove;};
 "];
 
+sectorAA = _sectorAA;
 publicVariable "sectorAA";
 
-[sectorAA] call BIS_fnc_moduleSector; //initialize sector
+//Create neutral marker for Anti Air sector
+createMarker ["mAA_neutral", posAA];
+"mAA_neutral" setMarkerShape "ICON";
+"mAA_neutral" setMarkerType "select";
+"mAA_neutral" setMarkerText "Anti Air";
+"mAA_neutral" setMarkerColor "ColorBlack";
 
-//Priskirti sektoriaus task'us visiems žaidėjams
-private _sectorName = sectorAA getVariable ["name", "A: Anti Air"];
-private _taskID_AA = format ["BIS_sector_%1", _sectorName];
-if ([_taskID_AA] call BIS_fnc_taskExists) then {
-    {
-        if (isPlayer _x && (side _x == sideW || side _x == sideE)) then {
-            [_taskID_AA, [_x]] call BIS_fnc_taskAssign;
-        };
-    } forEach allPlayers;
-} else {
-    //Fallback: bandyti kitus galimus task ID
-    private _altTaskID = format ["TaskSector_%1", sectorAA];
-    if ([_altTaskID] call BIS_fnc_taskExists) then {
-        {
-            if (isPlayer _x && (side _x == sideW || side _x == sideE)) then {
-                [_altTaskID, [_x]] call BIS_fnc_taskAssign;
-            };
-        } forEach allPlayers;
-    };
+//DIAGNOSTIKA: Patikrinti ar sektorius buvo sukurtas
+if (DBG) then {
+	diag_log format ["[SECTOR_CREATION] Anti Air sector created at %1, object: %2", posAA, _sectorAA];
+};
+if (!alive _sectorAA) then {
+	systemChat "[SEKTORIAI] Anti Air sektorius nesukurtas!";
+	diag_log "[SECTOR_CREATION] ERROR: Anti Air sector creation failed";
 };
 
-//sector Artillery
-"ModuleSector_F" createUnit [posArti,createGroup sideLogic,"
 
+//ARTILLERY SECTOR - SIMPLIFIED VERSION
+//ARTILLERY SECTOR - SIMPLIFIED VERSION
+private _sectorArti = createGroup sideLogic createUnit ["ModuleSector_F", posArti, [], 0, "NONE"];
+_sectorArti setVariable ["BIS_fnc_initModules_disableAutoActivation", false];
+_sectorArti setVariable ["name", "B: Artillery"];
+_sectorArti setVariable ["Designation", "B"];
+_sectorArti setVariable ["OwnerLimit", "1"];
+_sectorArti setVariable ["CaptureCoef", 0.05];
+_sectorArti setVariable ["CostInfantry", 0.2];
+_sectorArti setVariable ["CostWheeled", 0.2];
+_sectorArti setVariable ["CostTracked", 0.2];
+_sectorArti setVariable ["CostWater", 0.2];
+_sectorArti setVariable ["CostAir", 0.2];
+_sectorArti setVariable ["CostPlayers", 0.2];
+_sectorArti setVariable ["DefaultOwner", -1];
+_sectorArti setVariable ["TaskOwner", 3];
+_sectorArti setVariable ["TaskTitle", "Artillery"];
+_sectorArti setVariable ["taskDescription", "Seize ARTILLERY position<br/><br/>Reward:<br/>Artillery support<br/>Respawn position"];
+_sectorArti setVariable ["ScoreReward", 0];
+_sectorArti setVariable ["Sides", [sideE, sideW]];
+_sectorArti setVariable ["objectArea", [75, 75, 0, false]];
+_sectorArti setVariable ["taskType", "Attack"];
 	sectorArti=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
 	this setVariable ['name','B: Artillery'];
@@ -1601,6 +1580,13 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 				_mrkRaW setMarkerType ''empty'';
 				_mrkRaW setMarkerText ''Artillery'';
 				deleteMarker resBE;
+				if(getMarkerColor ''mArti'' != '''') then {
+					''mArti'' setMarkerColor ''ColorBlue'';
+				} else {
+					if(getMarkerColor ''mArti_neutral'' != '''') then {
+						''mArti_neutral'' setMarkerColor ''ColorBlue'';
+					};
+				};
 				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
@@ -1656,6 +1642,13 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 				_mrkRaE setMarkerType ''empty'';
 				_mrkRaE setMarkerText ''Artillery'';
 				deleteMarker resBW;
+				if(getMarkerColor ''mArti'' != '''') then {
+					''mArti'' setMarkerColor ''ColorRed'';
+				} else {
+					if(getMarkerColor ''mArti_neutral'' != '''') then {
+						''mArti_neutral'' setMarkerColor ''ColorRed'';
+					};
+				};
 				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 2, false];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 2, false];
@@ -1721,39 +1714,110 @@ if ([_taskID_AA] call BIS_fnc_taskExists) then {
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
 	this setVariable ['taskType','Attack'];
+	
 
-"];
-
-//DIAG: Pridėti diag_log prieš waitUntil pradžią
-diag_log "[SECTOR_INIT] Waiting for sectorArti to be defined";
-waitUntil {!(isNil 'sectorArti')};
 publicVariable "sectorArti";
 
-[sectorArti] call BIS_fnc_moduleSector; //initialize sector
+//Sukuriame neutralų marker'į Artillery sektoriui
+createMarker ["mArti_neutral", posArti];
+"mArti_neutral" setMarkerShape "ICON";
+"mArti_neutral" setMarkerType "select";
+"mArti_neutral" setMarkerText "Artillery";
+"mArti_neutral" setMarkerColor "ColorBlack";
 
-//Priskirti sektoriaus task'us visiems žaidėjams
-private _sectorName = sectorArti getVariable ["name", "B: Artillery"];
-private _taskID_Arti = format ["BIS_sector_%1", _sectorName];
-if ([_taskID_Arti] call BIS_fnc_taskExists) then {
-    {
-        if (isPlayer _x && (side _x == sideW || side _x == sideE)) then {
-            [_taskID_Arti, [_x]] call BIS_fnc_taskAssign;
-        };
-    } forEach allPlayers;
-} else {
-    //Fallback: bandyti kitus galimus task ID
-    private _altTaskID = format ["TaskSector_%1", sectorArti];
-    if ([_altTaskID] call BIS_fnc_taskExists) then {
-        {
-            if (isPlayer _x && (side _x == sideW || side _x == sideE)) then {
-                [_altTaskID, [_x]] call BIS_fnc_taskAssign;
-            };
-        } forEach allPlayers;
-    };
+
+
+_sectorArti setVariable ["OnOwnerChange", "
+	if ((_this select 1) == sideW) then {
+		if (getMarkerColor 'resBW' != '') exitWith {};
+		createMarker ['resBW', posArti]; 'resBW' setMarkerShape 'ICON'; 'resBW' setMarkerType 'empty'; 'resBW' setMarkerText 'Artillery';
+		deleteMarker 'resBE';
+		if (getMarkerColor 'mArti' != '') then {'mArti' setMarkerColor 'ColorBlue';} else {if (getMarkerColor 'mArti_neutral' != '') then {'mArti_neutral' setMarkerColor 'ColorBlue';};};
+		[objArtiE, supArtiV2] remoteExec ['BIS_fnc_removeSupportLink', 2, false];
+		[SupReqE, SupArtiV2] remoteExec ['BIS_fnc_removeSupportLink', 2, false];
+		[SupReqW, SupArtiV2] remoteExec ['BIS_fnc_addSupportLink', 2, false];
+		if (!isNull objArtiE) then {{objArtiE deleteVehicleCrew _x} forEach crew objArtiE; deleteVehicle objArtiE;};
+		if (count artiW != 0) then {
+			_vSel = selectRandom artiW; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, 'NONE']; [objArtiW, [_tex, 1]] call bis_fnc_initVehicle;
+		} else {
+			_vSel = selectRandom artiE; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, 'NONE']; [objArtiW, [_tex, 1]] call bis_fnc_initVehicle;
+		};
+		[objArtiW] call wrm_fnc_parachute; objArtiW lockDriver true;
+		_grpArtiW = createGroup [sideW, true];
+		for '_i' from 1 to (objArtiW emptyPositions 'Gunner') do {_unit = _grpArtiW createUnit [crewW, posArti, [], 0, 'NONE']; _unit moveInGunner objArtiW;};
+		for '_i' from 1 to (objArtiW emptyPositions 'Commander') do {_unit = _grpArtiW createUnit [crewW, posArti, [], 0, 'NONE']; _unit moveInCommander objArtiW;};
+		objArtiW allowCrewInImmobile true; [objArtiW, supArtiV2] remoteExec ['BIS_fnc_addSupportLink', 2, false]; publicVariable 'objArtiW'; z1 addCuratorEditableObjects [[objArtiW], true]; defW pushBackUnique _grpArtiW;
+		[] spawn wrm_fnc_V2mortarW; [posArti, sideW] call wrm_fnc_V2secDefense;
+	};
+	if ((_this select 1) == sideE) then {
+		if (getMarkerColor 'resBE' != '') exitWith {};
+		createMarker ['resBE', posArti]; 'resBE' setMarkerShape 'ICON'; 'resBE' setMarkerType 'empty'; 'resBE' setMarkerText 'Artillery';
+		deleteMarker 'resBW';
+		if (getMarkerColor 'mArti' != '') then {'mArti' setMarkerColor 'ColorRed';} else {if (getMarkerColor 'mArti_neutral' != '') then {'mArti_neutral' setMarkerColor 'ColorRed';};};
+		[objArtiW, supArtiV2] remoteExec ['BIS_fnc_removeSupportLink', 2, false];
+		[SupReqW, SupArtiV2] remoteExec ['BIS_fnc_removeSupportLink', 2, false];
+		[SupReqE, SupArtiV2] remoteExec ['BIS_fnc_addSupportLink', 2, false];
+		if (!isNull objArtiW) then {{objArtiW deleteVehicleCrew _x} forEach crew objArtiW; deleteVehicle objArtiW;};
+		if (count artiE != 0) then {
+			_vSel = selectRandom artiE; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, 'NONE']; [objArtiE, [_tex, 1]] call bis_fnc_initVehicle;
+		} else {
+			_vSel = selectRandom artiW; _typ = if (_vSel isEqualType []) then {_vSel select 0} else {_vSel}; _tex = if (_vSel isEqualType []) then {_vSel select 1} else {''};
+			objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, 'NONE']; [objArtiE, [_tex, 1]] call bis_fnc_initVehicle;
+		};
+		[objArtiE] call wrm_fnc_parachute; objArtiE lockDriver true;
+		_grpArtiE = createGroup [sideE, true];
+		for '_i' from 1 to (objArtiE emptyPositions 'Gunner') do {_unit = _grpArtiE createUnit [crewE, posArti, [], 0, 'NONE']; _unit moveInGunner objArtiE;};
+		for '_i' from 1 to (objArtiE emptyPositions 'Commander') do {_unit = _grpArtiE createUnit [crewE, posArti, [], 0, 'NONE']; _unit moveInCommander objArtiE;};
+		objArtiE allowCrewInImmobile true; [objArtiE, supArtiV2] remoteExec ['BIS_fnc_addSupportLink', 2, false]; publicVariable 'objArtiE'; z1 addCuratorEditableObjects [[objArtiE], true]; defE pushBackUnique _grpArtiE;
+		[] spawn wrm_fnc_V2mortarE; [posArti, sideE] call wrm_fnc_V2secDefense;
+	};
+	if (AIon > 0) then {[] call wrm_fnc_V2aiMove;};
+"];
+
+sectorArti = _sectorArti;
+publicVariable "sectorArti";
+
+//Create neutral marker for Artillery sector
+createMarker ["mArti_neutral", posArti];
+"mArti_neutral" setMarkerShape "ICON";
+"mArti_neutral" setMarkerType "select";
+"mArti_neutral" setMarkerText "Artillery";
+"mArti_neutral" setMarkerColor "ColorBlack";
+
+//DIAGNOSTIKA: Patikrinti ar sektorius buvo sukurtas
+if (DBG) then {
+	diag_log format ["[SECTOR_CREATION] Artillery sector created at %1, object: %2", posArti, _sectorArti];
+};
+if (!alive _sectorArti) then {
+	systemChat "[SEKTORIAI] Artillery sektorius nesukurtas!";
+	diag_log "[SECTOR_CREATION] ERROR: Artillery sector creation failed";
 };
 
-//sector CAS Tower
-"ModuleSector_F" createUnit [posCas,createGroup sideLogic,"
+//CAS TOWER SECTOR - SIMPLIFIED VERSION
+private _sectorCas = createGroup sideLogic createUnit ["ModuleSector_F", posCas, [], 0, "NONE"];
+_sectorCas setVariable ["BIS_fnc_initModules_disableAutoActivation", false];
+_sectorCas setVariable ["name", "C: CAS Tower"];
+_sectorCas setVariable ["Designation", "C"];
+_sectorCas setVariable ["OwnerLimit", "1"];
+_sectorCas setVariable ["CaptureCoef", 0.05];
+_sectorCas setVariable ["CostInfantry", 0.2];
+_sectorCas setVariable ["CostWheeled", 0.2];
+_sectorCas setVariable ["CostTracked", 0.2];
+_sectorCas setVariable ["CostWater", 0.2];
+_sectorCas setVariable ["CostAir", 0.2];
+_sectorCas setVariable ["CostPlayers", 0.2];
+_sectorCas setVariable ["DefaultOwner", -1];
+_sectorCas setVariable ["TaskOwner", 3];
+_sectorCas setVariable ["TaskTitle", "CAS Tower"];
+_sectorCas setVariable ["taskDescription", "Seize CAS TOWER position<br/><br/>Reward:<br/>Close air support<br/>Respawn position"];
+_sectorCas setVariable ["ScoreReward", 0];
+_sectorCas setVariable ["Sides", [sideE, sideW]];
+_sectorCas setVariable ["objectArea", [75, 75, 0, false]];
+
+_sectorCas setVariable ["OnOwnerChange", "
 	sectorCas=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
 	this setVariable ['name','C: CAS Tower'];
@@ -1793,6 +1857,13 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 				_mrkRcW setMarkerType ''empty'';
 				_mrkRcW setMarkerText ''CAS Tower''; 
 				deleteMarker resCE;
+				if(getMarkerColor ''mCas'' != '''') then {
+					''mCas'' setMarkerColor ''ColorBlue'';
+				} else {
+					if(getMarkerColor ''mCas_neutral'' != '''') then {
+						''mCas_neutral'' setMarkerColor ''ColorBlue'';
+					};
+				};
 				[posCas,sideW] call wrm_fnc_V2secDefense;
 			 };
 			 
@@ -1827,6 +1898,13 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 				_mrkRcE setMarkerType ''empty'';
 				_mrkRcE setMarkerText ''CAS Tower'';
 				deleteMarker resCW;
+				if(getMarkerColor ''mCas'' != '''') then {
+					''mCas'' setMarkerColor ''ColorRed'';
+				} else {
+					if(getMarkerColor ''mCas_neutral'' != '''') then {
+						''mCas_neutral'' setMarkerColor ''ColorRed'';
+					};
+				};
 				[posCas,sideE] call wrm_fnc_V2secDefense;
 			 };
 		};
@@ -1847,12 +1925,16 @@ if ([_taskID_Arti] call BIS_fnc_taskExists) then {
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
 
-"];
-
 publicVariable "sectorCas";
 
-//CAS sektorius inicializuojamas iš karto kaip originalo versijoje
-[sectorCas] call BIS_fnc_moduleSector; //initialize sector
+//Sukuriame neutralų marker'į CAS Tower sektoriui
+createMarker ["mCas_neutral", posCas];
+"mCas_neutral" setMarkerShape "ICON";
+"mCas_neutral" setMarkerType "select";
+"mCas_neutral" setMarkerText "CAS Tower";
+"mCas_neutral" setMarkerColor "ColorBlack";
+
+
 
 //create tower
 objCas = createVehicle [selectRandom tower, posCas];

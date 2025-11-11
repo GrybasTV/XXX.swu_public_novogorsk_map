@@ -80,5 +80,6 @@ class wrm
 		class V2entityPlaced {};
 		class extractFactionItems {}; //Automatiškai ištraukia itemus iš karių loadout'ų
 		class V2syncSupportProvidersClient {}; //Kliento funkcija, kuri patikrina ir atnaujina support provider'ius prisijungiant (JIP)
+		class V2createSupportMarker {}; //Kurti support marker'ius žemėlapyje (artillery, CAS, anti-air)
 	};
 };
