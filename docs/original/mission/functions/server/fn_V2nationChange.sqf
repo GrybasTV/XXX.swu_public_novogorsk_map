@@ -39,8 +39,8 @@ call
 //voice
 _voices=[];
 //_cfgV="((getText(_x >> 'displayName') find _conV >= 0)&&(getText(_x >> 'displayName') find 'VR' == -1))" configClasses (configFile>>"cfgVoice");
-if (_conV isEqualType [])
-then {_voices = _conV;}
+if (voiceW isEqualType [])
+then {_voices = voiceW;}
 else {
 		_cfgV="((str(getArray(_x >> 'identityTypes')) find _conV >= 0))" configClasses (configFile>>"cfgVoice");
 		{

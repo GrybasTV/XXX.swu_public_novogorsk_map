@@ -47,45 +47,21 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	hint "Waiting for Factions synchronisation";
 	systemChat "Waiting for Factions synchronisation";
 	_wait=true;
-	private _timeout = time + 60; //1 minutės timeout
-	while {_wait && time < _timeout} do
+	while {_wait} do
 	{
 		if(({side _x==west} count (playableunits-AllPlayers))==0)then{_wait=false;};
 		if(({side _x==east} count (playableunits-AllPlayers))==0)then{_wait=false;};
 		sleep 0.1;
 	};
-	if (time >= _timeout && _wait) then {
-		if(DBG)then{diag_log "[FACTION_SYNC] ABORTED - timeout reached, AI units may not be properly synchronized"};
-		systemChat "Faction synchronization timeout - continuing anyway";
-		hintSilent "";
-	};
-
-	// Nustatyti respawn laiką pagal parametrus (asp12)
-	private _resTime = "asp12" call BIS_fnc_getParamValue;
-	call
-	{
-		if (_resTime == 0) exitWith {rTime = 5;};
-		if (_resTime == 1) exitWith {rTime = 30;};
-		if (_resTime == 2) exitWith {rTime = 60;};
-		if (_resTime == 3) exitWith {rTime = 120;};
-		if (_resTime == 4) exitWith {rTime = 180;};
-		if (_resTime == 5) exitWith {rTime = 200;};
-		// Fallback - jei kažkas negerai, naudoti 60 sekundžių
-		rTime = 60;
-	};
-	setPlayerRespawnTime rTime;
-	hintSilent "";
+	rTime=5;
+	setPlayerRespawnTime rTime;	
+	hintSilent "";	
 	systemChat "Factions loaded";
 	[] execVM "V2clearLoadouts.sqf";
-	private _timeout2 = time + 30; //30 sekundžių timeout
-	while{playerSide!=independent && time < _timeout2}do
+	while{playerSide!=independent}do
 	{
 		player joinAsSilent [_grp,_no];
 		sleep 1;
-	};
-	if (time >= _timeout2 && playerSide != independent) then {
-		if(DBG)then{diag_log "[PLAYER_SIDE_CHANGE] ABORTED - timeout reached, player side may not be properly set to independent"};
-		systemChat "Player side change timeout - continuing anyway";
 	};
 	
 	if(didJip)then
@@ -108,13 +84,7 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	//add to zeus
 	[z1,[[player],true]] remoteExec ["addCuratorEditableObjects", 2, false];
 		
-	//Patikrinti, ar žaidėjas jau gyvas - jei taip, nereikia laukti
-	if (!alive player) then {
-		//Jei žaidėjas nėra gyvas, laukti su timeout'u
-		private _timeout = time + 30; //30 sekundžių timeout
-		waitUntil {alive player || time > _timeout};
-		if (time > _timeout) exitWith {}; //Jei timeout'as pasiektas, išeiti
-	};
+	waitUntil{alive player};
 	[player] call wrm_fnc_V2nationChange;
 	
 	//leader
@@ -148,29 +118,11 @@ if(((sideW==independent)&&(playerSide==west))||((sideE==independent)&&(playerSid
 	systemChat "Player Side Changed";
 }else
 {
-	// Nustatyti respawn laiką pagal parametrus (asp12)
-	private _resTime = "asp12" call BIS_fnc_getParamValue;
-	call
-	{
-		if (_resTime == 0) exitWith {rTime = 5;};
-		if (_resTime == 1) exitWith {rTime = 30;};
-		if (_resTime == 2) exitWith {rTime = 60;};
-		if (_resTime == 3) exitWith {rTime = 120;};
-		if (_resTime == 4) exitWith {rTime = 180;};
-		if (_resTime == 5) exitWith {rTime = 200;};
-		// Fallback - jei kažkas negerai, naudoti 60 sekundžių
-		rTime = 60;
-	};
+	rTime=5;
 	setPlayerRespawnTime rTime;
 	systemChat "Factions loaded";
 	[] execVM "V2clearLoadouts.sqf";
-	//Patikrinti, ar žaidėjas jau gyvas - jei taip, nereikia laukti
-	if (!alive player) then {
-		//Jei žaidėjas nėra gyvas, laukti su timeout'u
-		private _timeout = time + 30; //30 sekundžių timeout
-		waitUntil {alive player || time > _timeout};
-		if (time > _timeout) exitWith {}; //Jei timeout'as pasiektas, išeiti
-	};
+	waitUntil{alive player};
 	sleep 1;
 	[player] call wrm_fnc_V2nationChange;
 };

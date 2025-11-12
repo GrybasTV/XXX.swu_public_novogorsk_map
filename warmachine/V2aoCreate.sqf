@@ -7,14 +7,41 @@ if(DBG)then{};
 */
 if(AOcreated==2)exitWith{systemchat "Already searching";};
 
-if(missType==1)then
+// Saugumo patikrinimas: užtikriname, kad factionW ir factionE yra apibrėžti
+// Tai reikalinga, kad išvengtume klaidų, kai šie kintamieji nėra inicializuoti
+if (isNil "factionW") then { factionW = "NATO"; };
+if (isNil "factionE") then { factionE = "CSAT"; };
+
+// Saugumo patikrinimas: užtikriname, kad missType yra apibrėžtas
+if (isNil "missType") then { missType = 1; };
+
+// Apibrėžiame bazės pavadinimus pagal misijos tipą (tik jei jie dar neapibrėžti)
+// Tai reikalinga, nes V2startServer.sqf apibrėžia šiuos kintamuosius tik vėliau
+if (isNil "nameBW1") then 
 {
-	nameBW2 = format ["%1 Infantry base",factionW];
-	nameBE2 = format ["%1 Infantry base",factionE];
-} else
+	if(missType==1)then
+	{
+		nameBW1 = format ["%1 Infantry base",factionW];
+		nameBE1 = format ["%1 Infantry base",factionE];
+	} else
+	{
+		nameBW1 = format ["%1 Armor base",factionW];
+		nameBE1 = format ["%1 Armor base",factionE];
+	};
+};
+
+// Apibrėžiame nameBW2 ir nameBE2 tik jei jie dar neapibrėžti
+if (isNil "nameBW2") then 
 {
-	nameBW2 = format ["%1 Armor base",factionW];
-	nameBE2 = format ["%1 Armor base",factionE];
+	if(missType==1)then
+	{
+		nameBW2 = format ["%1 Infantry base",factionW];
+		nameBE2 = format ["%1 Infantry base",factionE];
+	} else
+	{
+		nameBW2 = format ["%1 Armor base",factionW];
+		nameBE2 = format ["%1 Armor base",factionE];
+	};
 };
 
 _aoSize = 1;
@@ -65,32 +92,31 @@ if(count posArti < 2)exitWith{hint parseText format ["ERROR<br/>No suitable terr
 if(!(posArti isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))exitWith{hint parseText format ["ERROR<br/>No suitable terrain for<br/>ARTILLERY<br/>position was found<br/><br/>Select another location<br/>LMB"]; AOcreated = 0;};
 
 //create marker
-_mrkArti = createMarker ["mArti", posArti];
-_mrkArti setMarkerShape "ICON";
-_mrkArti setMarkerType "select";
-_mrkArti setMarkerText "Artillery";
-_mrkArti setMarkerColor "ColorBlack";
+_mrkArti = createMarkerLocal ["mArti", posArti];
+_mrkArti setMarkerShapeLocal "ICON";
+_mrkArti setMarkerTypeLocal "select";
+_mrkArti setMarkerTextLocal "Artillery";
+_mrkArti setMarkerColorLocal "ColorBlack";
 aoMarkers pushBackUnique _mrkArti;
 
 //range 0
-_mrkArtiRng = createMarker ["mArtiRng0", posArti];
-_mrkArtiRng setMarkerShape "ELLIPSE";
-_mrkArtiRng setMarkerSize [(artiRange select 0),(artiRange select 0)];
-_mrkArtiRng setMarkerColor "ColorBlack";
-_mrkArtiRng setMarkerBrush "Border";
+_mrkArtiRng = createMarkerLocal ["mArtiRng0", posArti];
+_mrkArtiRng setMarkerShapeLocal "ELLIPSE";
+_mrkArtiRng setMarkerSizeLocal [(artiRange select 0),(artiRange select 0)];
+_mrkArtiRng setMarkerColorLocal "ColorBlack";
+_mrkArtiRng setMarkerBrushLocal "Border";
 aoMarkers pushBackUnique _mrkArtiRng;
 
 //range 1
-_mrkArtiRng = createMarker ["mArtiRng1", posArti];
-_mrkArtiRng setMarkerShape "ELLIPSE";
-_mrkArtiRng setMarkerSize [(artiRange select 1),(artiRange select 1)];
-_mrkArtiRng setMarkerColor "ColorBlack";
-_mrkArtiRng setMarkerBrush "Border";
-//if(modA=="CSLA")then{_mrkArtiRng setMarkerAlpha 0};
+_mrkArtiRng = createMarkerLocal ["mArtiRng1", posArti];
+_mrkArtiRng setMarkerShapeLocal "ELLIPSE";
+_mrkArtiRng setMarkerSizeLocal [(artiRange select 1),(artiRange select 1)];
+_mrkArtiRng setMarkerColorLocal "ColorBlack";
+_mrkArtiRng setMarkerBrushLocal "Border";
+//if(modA=="CSLA")then{_mrkArtiRng setMarkerAlphaLocal 0};
 aoMarkers pushBackUnique _mrkArtiRng;
 
 systemchat "Artillery position found";
-publicVariable "posArti";
 
 //create vehicle
 if(DBG)then
@@ -124,15 +150,14 @@ if(count posCas < 2)exitWith{hint parseText format ["ERROR<br/>No suitable terra
 if(!(posCas isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))exitWith{hint parseText format ["ERROR<br/>No suitable terrain for<br/>CAS TOWER<br/>position was found<br/><br/>Select another location<br/>LMB"]; AOcreated = 0;};
 
 //create marker
-_mrkCas = createMarker ["mCas", posCas];
-_mrkCas setMarkerShape "ICON";
-_mrkCas setMarkerType "select";
-_mrkCas setMarkerText "CAS Tower";
-_mrkCas setMarkerColor "ColorBlack";
+_mrkCas = createMarkerLocal ["mCas", posCas];
+_mrkCas setMarkerShapeLocal "ICON";
+_mrkCas setMarkerTypeLocal "select";
+_mrkCas setMarkerTextLocal "CAS Tower";
+_mrkCas setMarkerColorLocal "ColorBlack";
 aoMarkers pushBackUnique _mrkCas;
 
 systemchat "CAS Tower position found";
-publicVariable "posCas";
 
 //create tower
 if(DBG)then
@@ -170,15 +195,14 @@ if(count posAA < 2)exitWith{hint parseText format ["ERROR<br/>No suitable terrai
 if(!(posAA isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))exitWith{hint parseText format ["ERROR<br/>No suitable terrain for<br/>ANTI AIR<br/>position was found<br/><br/>Select another location<br/>LMB"]; AOcreated = 0;};
 
 //create marker
-_mrkAA = createMarker ["mAA", posAA];
-_mrkAA setMarkerShape "ICON";
-_mrkAA setMarkerType "select";
-_mrkAA setMarkerText "Anti Air";
-_mrkAA setMarkerColor "ColorBlack";
+_mrkAA = createMarkerLocal ["mAA", posAA];
+_mrkAA setMarkerShapeLocal "ICON";
+_mrkAA setMarkerTypeLocal "select";
+_mrkAA setMarkerTextLocal "Anti Air";
+_mrkAA setMarkerColorLocal "ColorBlack";
 aoMarkers pushBackUnique _mrkAA;
 
 systemchat "Anti Air position found";
-publicVariable "posAA";
 
 //create vehicle
 if(DBG)then
@@ -220,7 +244,7 @@ if(_round == 1) then
 	//BASE 1 WEST
 	posBaseW1=[];
 	_i=0;
-	while {(count posBaseW1 < 2)&&(_i<3)} do
+	while {(count posBaseW1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (105-10*_i)];
 		_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (105-10*_i)];
@@ -236,7 +260,7 @@ if(_round == 1) then
 	//BASE 2 WEST
 	posBaseW2=[];
 	_i=0;
-	while {(count posBaseW2 < 2)&&(_i<3)} do
+	while {(count posBaseW2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (255+10*_i)];
 		_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (255+10*_i)];
@@ -271,7 +295,7 @@ if (_round == 2) then
 	//BASE 1 WEST
 	posBaseW1=[];
 	_i=0;
-	while {(count posBaseW1 < 2)&&(_i<3)} do
+	while {(count posBaseW1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (105-10*_i)];
 		_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (105-10*_i)];
@@ -287,7 +311,7 @@ if (_round == 2) then
 	//BASE 2 WEST
 	posBaseW2=[];
 	_i=0;
-	while {(count posBaseW2 < 2)&&(_i<3)} do
+	while {(count posBaseW2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (255+10*_i)];
 		_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (255+10*_i)];
@@ -310,19 +334,19 @@ if (_round == 2) then
 if(_round == 3)then{hint parseText format ["ERROR<br/>No suitable terrain for<br/>%1 BASES<br/>was found<br/><br/>Select another location<br/>LMB<br/><br/>Or select and change bases position<br/>Shift+LMB",factionW]; AOcreated = 0;};
 
 //create marker
-_mrB1W = createMarker ["mB1W", posBaseW1];
-_mrB1W setMarkerShape "ICON";
-_mrB1W setMarkerType "select";
-_mrB1W setMarkerText nameBW1;
-_mrB1W setMarkerColor colorW;
+_mrB1W = createMarkerLocal ["mB1W", posBaseW1];
+_mrB1W setMarkerShapeLocal "ICON";
+_mrB1W setMarkerTypeLocal "select";
+_mrB1W setMarkerTextLocal nameBW1;
+_mrB1W setMarkerColorLocal colorW;
 aoMarkers pushBackUnique _mrB1W;
 
 //create marker
-_mrB2W = createMarker ["mB2W", posBaseW2];
-_mrB2W setMarkerShape "ICON";
-_mrB2W setMarkerType "select";
-_mrB2W setMarkerText nameBW2;
-_mrB2W setMarkerColor colorW;
+_mrB2W = createMarkerLocal ["mB2W", posBaseW2];
+_mrB2W setMarkerShapeLocal "ICON";
+_mrB2W setMarkerTypeLocal "select";
+_mrB2W setMarkerTextLocal nameBW2;
+_mrB2W setMarkerColorLocal colorW;
 aoMarkers pushBackUnique _mrB2W;
 
 _objDir2 = "Land_HelipadEmpty_F" createVehicle posArti;
@@ -341,7 +365,7 @@ if (_round == 1) then
 	//BASE 1 EAST
 	posBaseE1=[];
 	_i=0;
-	while {(count posBaseE1 < 2)&&(_i<3)} do
+	while {(count posBaseE1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (105-10*_i)];
 		_posT = _objDir2 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (105-10*_i)];
@@ -357,7 +381,7 @@ if (_round == 1) then
 	//BASE 2 EAST
 	posBaseE2=[];
 	_i=0;
-	while {(count posBaseE2 < 2)&&(_i<3)} do
+	while {(count posBaseE2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (255+10*_i)];
 		_posT = _objDir2 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (255+10*_i)];
@@ -391,7 +415,7 @@ if (_round == 2) then
 	//BASE 1 EAST
 	posBaseE1=[];
 	_i=0;
-	while {(count posBaseE1 < 2)&&(_i<3)} do
+	while {(count posBaseE1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (105-10*_i)];
 		_posT = _objDir2 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (105-10*_i)];
@@ -407,7 +431,7 @@ if (_round == 2) then
 	//BASE 2 EAST
 	posBaseE2=[];
 	_i=0;
-	while {(count posBaseE2 < 2)&&(_i<3)} do
+	while {(count posBaseE2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (255+10*_i)];
 		_posT = _objDir2 getRelPos [(((artiRange select 1)*_aoSize)*0.6), (255+10*_i)];
@@ -430,19 +454,19 @@ if (_round == 2) then
 if(_round == 3)then{hint parseText format ["ERROR<br/>No suitable terrain for<br/>%1 BASES<br/>was found<br/><br/>Select another location<br/>LMB<br/><br/>Or select and change bases position<br/>Shift+LMB",factionE];};
 
 //create marker
-_mrB1E = createMarker ["mB1E", posBaseE1];
-_mrB1E setMarkerShape "ICON";
-_mrB1E setMarkerType "select";
-_mrB1E setMarkerText nameBE1;
-_mrB1E setMarkerColor colorE;
+_mrB1E = createMarkerLocal ["mB1E", posBaseE1];
+_mrB1E setMarkerShapeLocal "ICON";
+_mrB1E setMarkerTypeLocal "select";
+_mrB1E setMarkerTextLocal nameBE1;
+_mrB1E setMarkerColorLocal colorE;
 aoMarkers pushBackUnique _mrB1E;
 
 //create marker
-_mrB2E = createMarker ["mB2E", posBaseE2];
-_mrB2E setMarkerShape "ICON";
-_mrB2E setMarkerType "select";
-_mrB2E setMarkerText nameBE2;
-_mrB2E setMarkerColor colorE;
+_mrB2E = createMarkerLocal ["mB2E", posBaseE2];
+_mrB2E setMarkerShapeLocal "ICON";
+_mrB2E setMarkerTypeLocal "select";
+_mrB2E setMarkerTextLocal nameBE2;
+_mrB2E setMarkerColorLocal colorE;
 aoMarkers pushBackUnique _mrB2E;
 
 if(_round == 3)exitWith{AOcreated = 0;};

@@ -23,15 +23,23 @@ _veh=vehicle _player;
 if(progress<2)exitWith{};
 
 _zone=[]; _side=sideE;
+// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+_plHWDefined = !isNil "plHW";
+_plHEDefined = !isNil "plHE";
+
 if(_veh isKindOf "air")then
 {
-	_zone=[getPos plhW]+rHeliTrW+rHeliArW;
-	if(side _player==sideE)then{_zone=[getPos plhE]+rHeliTrE+rHeliArE; _side=sideW;};
+	if(_plHWDefined) then {
+		_zone=[getPos plHW]+rHeliTrW+rHeliArW;
+	};
+	if(side _player==sideE && _plHEDefined)then{_zone=[getPos plHE]+rHeliTrE+rHeliArE; _side=sideW;};
 };
 if(_veh isKindOf "landVehicle")then
 {
-	_zone=[(getPos plhW),posBaseW1,posBaseW2];
-	if(side _player==sideE)then{_zone=[(getPos plhE),posBaseE1,posBaseE2]; _side=sideW;};
+	if(_plHWDefined) then {
+		_zone=[(getPos plHW),posBaseW1,posBaseW2];
+	};
+	if(side _player==sideE && _plHEDefined)then{_zone=[(getPos plHE),posBaseE1,posBaseE2]; _side=sideW;};
 };
 
 _exit=true;

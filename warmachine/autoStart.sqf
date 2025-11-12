@@ -3,57 +3,19 @@
 */
 _a = _this select 0;
 if !(isServer) exitWith {}; //runs on the server/host
+
+
 aStart=1; publicVariable "aStart";
-//wait until any player conect
-_t=0;
-while {_t==0} do
-{
-	//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
-	private _cachedPlayers = allPlayers;
-	{
-		if(count _cachedPlayers == 0)exitWith{};
-		_t=1;
-	} forEach _cachedPlayers;
-	sleep 1;
+// Wait until there is at least one human player who is fully initialized and alive.
+waitUntil {
+    sleep 1;
+    !((allPlayers - entities "HeadlessClient_F") isEqualTo []) &&
+    {
+        private _player = (allPlayers - entities "HeadlessClient_F") select 0;
+        !isNull _player && alive _player
+    }
 };
-//JIP
-_j=0;
-while {_j==0} do
-{
-	//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
-	private _cachedPlayers = allPlayers;
-	{
-		if(isNull _x)exitWith{};
-		_j=1;
-	} forEach _cachedPlayers;
-	sleep 1;
-};
-//player has respawned - tik DELAYED režime (jei reikia laukti)
-if (_a == 1) then { //DELAYED mode
-	_p=0;
-	private _timeout = time + 30; //30 sekundžių timeout DELAYED režime
-	while {_p==0 && time < _timeout} do
-	{
-		//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
-		private _cachedPlayers = allPlayers select {alive _x};
-		{
-			if(!alive _x)exitWith{};
-			_p=1;
-		} forEach _cachedPlayers;
-		sleep 1;
-	};
-	//Jei timeout'as pasiektas, tęsti bet kokiu atveju
-	if (time >= _timeout && _p == 0) then {
-		//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
-		if (count (allPlayers select {alive _x}) > 0) then {
-			_p = 1;
-		};
-	};
-	sleep 2; //Trumpesnis delay DELAYED režime
-} else {
-	//IMMEDIATE režime - jokių papildomų laukimų
-	sleep 1;
-};
+sleep 5;
 _tx1="";
 call
 {
@@ -63,14 +25,18 @@ call
 };
 if (_a==1) then
 {
-	//FIX: Pašalintas 3 minučių countdown - misija pradedama iškart po 10 sekundžių countdown
-	//Jei reikia laukti, galima pridėti trumpą delay, bet ne 3 minutes
-	//Jei admin nori atšaukti, gali naudoti STOP COUNTDOWN action menu
 	if (aStart==0) exitWith {};
 	if (progress>0) exitWith {};
-	//Pranešti, kad misija bus pradėta po 10 sekundžių
-	[parseText format ["Mission will start automatically in 10 seconds%1",_tx1]] remoteExec ["hint", 0, false];
-	sleep 1; //Trumpas delay, kad žaidėjai matytų pranešimą
+	[parseText format ["Mission will start in 3 min. automatically%1",_tx1]] remoteExec ["hint", 0, false];
+	sleep 60;
+	if (aStart==0) exitWith {};
+	if (progress>0) exitWith {};
+	[parseText format ["Mission will start in 2 min. automatically%1",_tx1]] remoteExec ["hint", 0, false];
+	sleep 60;
+	if (aStart==0) exitWith {};
+	if (progress>0) exitWith {};
+	[parseText format ["Mission will start in 1 min. automatically%1",_tx1]] remoteExec ["hint", 0, false];
+	sleep 60;
 	if (aStart==0) exitWith {};
 	if (progress>0) exitWith {};
 };

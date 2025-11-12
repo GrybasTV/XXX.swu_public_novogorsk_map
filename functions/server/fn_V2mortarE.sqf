@@ -17,13 +17,9 @@
 	Execution:
 		[] spawn wrm_fnc_V2mortarE;
 */
-//Inicijuojame mortar masyvus (saugumas - jei neapibrėžti frakcijų failuose)
-if(isNil "mortW")then{mortW = [];};
-if(isNil "mortE")then{mortE = [];};
-
 if((count mortW==0)&&(count mortE==0)) exitWith {};
 
-[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 if(!isNull objMortW)then
 {
 	{objMortW deleteVehicleCrew _x} forEach crew objMortW;
@@ -61,7 +57,7 @@ objMortE allowCrewInImmobile true;
 { _x addMPEventHandler
 	["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 } forEach (crew objMortE);
-[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];				
+[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];				
 publicvariable "objMortE";
 sleep 1;
 z1 addCuratorEditableObjects [[objMortE],true];

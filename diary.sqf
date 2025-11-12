@@ -67,7 +67,7 @@ player createDiaryRecord
 MISSION GENERATOR - Create mission. Opens setup dialog window. Select area of operation, set up mission parameters, start mission.<br/><br/>
 BECOME SQUAD LEADER - You can become leader of your squad.<br/><br/>
 LEAVE LEADER POSITION - To leave the squad leader position.<br/><br/>
-AIR DROP -  Squad leader can request an airdrop. Supplybox | Car | Truck.<br/><br/>
+AIR DROP -  Squad leader can request an airdrop. Supplybox | Car | Truck | Patrol boat | Small boat.<br/><br/>
 FORTIFICATION - As a squad leader, you can build fortifications.<br/><br/>
 UAV | UGV request -  Squad leader can request UAV and UGV. Use UAV terminal to operate the vehicle. (Arma 3 default factions)<br/><br/>
 REARM - You can rearm, repair and refuel vehicles at the bases.<br/><br/>

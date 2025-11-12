@@ -1,26 +1,6 @@
 //Author: IvosH
 waitUntil {!isNull player}; //JIP
 
-//FIX: Nustatyti respawn timer anksčiau, prieš pirmą respawn
-//Prieš misijos inicijavimą naudojamas description.ext respawnDelay (100 sekundžių)
-//Reikia nustatyti rTime pagal config parametrus anksčiau
-private _resTime = "asp12" call BIS_fnc_getParamValue;
-private _initialRTime = 100; //Default reikšmė iš description.ext
-call
-{
-	if (_resTime == 0) exitWith {_initialRTime = 5;};
-	if (_resTime == 1) exitWith {_initialRTime = 30;};
-	if (_resTime == 2) exitWith {_initialRTime = 60;};
-	if (_resTime == 3) exitWith {_initialRTime = 120;};
-	if (_resTime == 4) exitWith {_initialRTime = 180;};
-	if (_resTime == 5) exitWith {_initialRTime = 200;};
-};
-//Nustatyti respawn timer anksčiau, kad žaidėjas negautų 100 sekundžių respawn laiko
-if (isNil "rTime") then {
-	rTime = _initialRTime;
-};
-setPlayerRespawnTime _initialRTime;
-
 //variables setup
 lUpdate = 0;
 suppUsed=0;
@@ -71,12 +51,3 @@ if ("param2" call BIS_fnc_getParamValue > 0) then
 
 null = [] execVM "admin\radio.sqf"; //admin menu
 systemChat "Admin menu loaded";
-
-//Sinhronizuoti support provider'ius JIP žaidėjams
-//Ši funkcija užtikrina, kad JIP žaidėjai gautų teisingus CAS lėktuvus ir artilerijos prieigą
-//Laukti, kol misija bus pradėta (progress > 1)
-[] spawn {
-	waitUntil {progress > 1};
-	sleep 2; //Laukti, kol bus inicializuoti support provider'iai
-	[] call wrm_fnc_V2syncSupportProvidersClient;
-};

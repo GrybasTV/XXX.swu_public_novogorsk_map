@@ -4,9 +4,6 @@ player setSpeaker (speaker _corpse);
 [player, (speaker _corpse)] remoteExec ["setSpeaker",0,false];
 [player, (face _corpse)] remoteExec ["setFace",0,false];
 
-//Pritaikyti loadout'ą pagal žaidėjo klasę (Ukraine 2025 / Russia 2025)
-[player] call wrm_fnc_V2loadoutChange;
-
 [z1,[[player],true]] remoteExec ["addCuratorEditableObjects", 2, false]; //add unit to zeus
 
 //variables setup
@@ -125,7 +122,7 @@ pushAction = player addAction
 [
 	"Push boat", //title
 	{
-		[cursorTarget,player,(cursorTarget getRelDir player)] remoteExec ["wrm_fnc_pushVeh", 0, false];
+		[cursorTarget,player,(cursorTarget getRelDir player)] remoteExec ["wrm_fnc_pushVeh", 0, true];
 	}, //script
 	nil, 6, true, true, "", //arguments, priority, showWindow, hideOnUse, shortcut,
 	"(cursorTarget isKindOf ""ship"") && (cursorTarget distance player<10) && (isTouchingGround cursortarget)", //condition,

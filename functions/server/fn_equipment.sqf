@@ -94,48 +94,12 @@ call
 		sleep 0.2;
 		call
 		{
-			//Javelin (US)
 			if((secondaryWeapon _unit=="rhs_weap_fgm148")&&(count secondaryWeaponMagazine _unit==0))
 			exitWith{_unit addSecondaryWeaponItem "rhs_fgm148_magazine_AT";};
-			//Stinger (US)
 			if((secondaryWeapon _unit=="rhs_weap_fim92")&&(count secondaryWeaponMagazine _unit==0))
 			exitWith{_unit addSecondaryWeaponItem "rhs_fim92_mag";};
-			//Igla (RU)
 			if((secondaryWeapon _unit=="rhs_weap_igla")&&(count secondaryWeaponMagazine _unit==0))
 			exitWith{_unit addSecondaryWeaponItem "rhs_mag_9k38_rocket";};
-			//RPG-7 (RU/UA)
-			if((secondaryWeapon _unit=="rhs_weap_rpg7")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_rpg7_PG7VL_mag";};
-			//RPG-26 (RU/UA)
-			if((secondaryWeapon _unit=="rhs_weap_rpg26")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_rpg26_mag";};
-			//RPG-18 (RU/UA)
-			if((secondaryWeapon _unit=="rhs_weap_rshg2")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_rshg2_mag";};
-			//M72A7 (US/UA)
-			if((secondaryWeapon _unit=="rhs_weap_m72a7")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_m72a7_mag";};
-			//M136 (US/UA)
-			if((secondaryWeapon _unit=="rhs_weap_M136")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_m136_mag";};
-			//M136 HP (US/UA)
-			if((secondaryWeapon _unit=="rhs_weap_M136_hp")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_m136_hp_mag";};
-			//M136 HEAT (US/UA)
-			if((secondaryWeapon _unit=="rhs_weap_M136_hedp")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_m136_hedp_mag";};
-			//SMAW (US/UA)
-			if((secondaryWeapon _unit=="rhs_weap_smaw")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_mag_smaw_HEAA";};
-			//Metis (RU)
-			if((secondaryWeapon _unit=="rhs_weap_9k115")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_mag_9k115_2";};
-			//Kornet (RU)
-			if((secondaryWeapon _unit=="rhs_weap_9k133")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_mag_9k133_2";};
-			//Strela (RU)
-			if((secondaryWeapon _unit=="rhs_weap_strela")&&(count secondaryWeaponMagazine _unit==0))
-			exitWith{_unit addSecondaryWeaponItem "rhs_mag_9k32_rocket";};
 		};
 	};
 	

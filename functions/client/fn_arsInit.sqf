@@ -180,29 +180,14 @@ call
 
 		//items ALL
 		_itms=["Binocular","Medikit","FirstAidKit","ToolKit","MineDetector","ItemCompass","ItemGPS","ItemMap","ItemRadio","ItemWatch","Rangefinder",_uav];
-		//Ukraine 2025 / Russia 2025 - pridėti naujų modų items
-		if(factionW=="Ukraine 2025" || factionE=="Russia 2025")then
 		{
-			//RHS items + naujų modų items (RUS_, UA_, UKR_)
+			_cr=_x;
+			_cfgIt= "((str _x find 'rhs' >= 0)&&(getText (_x >> '_generalMacro') find _cr >= 0))" configClasses (configFile>>"cfgWeapons");
 			{
-				_cr=_x;
-				_cfgIt= "(((str _x find 'rhs' >= 0)&&(getText (_x >> '_generalMacro') find _cr >= 0))||((str _x find 'RUS_' >= 0)||(str _x find 'UA_' >= 0)||(str _x find 'UKR_' >= 0))&&(getText (_x >> '_generalMacro') find _cr >= 0))" configClasses (configFile>>"cfgWeapons");
-				{
-					_it = configName (_x);
-					_itms pushBack _it;
-				} forEach _cfgIt;
-			} forEach ['optic_','acc_','muzzle_','bipod_','NVGoggles','Laserdesignator','Rangefinder','Binocular'];
-		}else
-		{
-			{
-				_cr=_x;
-				_cfgIt= "((str _x find 'rhs' >= 0)&&(getText (_x >> '_generalMacro') find _cr >= 0))" configClasses (configFile>>"cfgWeapons");
-				{
-					_it = configName (_x);
-					_itms pushBack _it;
-				} forEach _cfgIt;
-			} forEach ['optic_','acc_','muzzle_','bipod_','NVGoggles','Laserdesignator','Rangefinder','Binocular'];
-		};
+				_it = configName (_x);
+				_itms pushBack _it;
+			} forEach _cfgIt;
+		} forEach ['optic_','acc_','muzzle_','bipod_','NVGoggles','Laserdesignator','Rangefinder','Binocular'];
 
 		//Laserdesignators
 		{
@@ -216,27 +201,11 @@ call
 
 		//uniforms
 		_unif=[]; 
-		_cfgUn = []; //inicijuojame prieš if-else (saugumas)
-		_extractedItems = []; //inicijuojame ištrauktus itemus (naudojame Ukraine 2025 / Russia 2025)
-		//Ukraine 2025 / Russia 2025 - automatiškai ištraukti aprangas iš karių loadout'ų
-		if(factionW=="Ukraine 2025" || factionE=="Russia 2025")then
-		{
-			//Naudojame automatinį itemų ištraukimą iš karių loadout'ų (iškviesime vieną kartą)
-			_extractedItems = [_sde] call wrm_fnc_extractFactionItems;
-		};
-		
-		//RHS aprangos (standartinės) + naujų frakcijų aprangos (jei yra)
 		_cfgUn= "((str _x find 'rhs_uniform' >= 0)&&(getText(_x >> 'dlc')==_dlc))" configClasses (configFile>>"cfgWeapons");
 		{
 			_wp = configName (_x);
 			_unif pushBack _wp;
 		} forEach _cfgUn;
-		
-		//+ Naujų frakcijų aprangos (iš karių loadout'ų)
-		if(count _extractedItems > 0)then
-		{
-			_unif = _unif + (_extractedItems select 0);
-		};
 
 		//googles
 		_ggl=[]; 
@@ -248,7 +217,6 @@ call
 
 		//helmets, vests
 		_helm=[]; 
-		//RHS šalmai/vests (standartiniai) + naujų frakcijų šalmai/vests (jei yra)
 		{
 			_cr=_x;
 			_cfgIt= "((getText (_x >> '_generalMacro') find _cr >= 0)&&(getText(_x >> 'dlc')==_dlc))" configClasses (configFile>>"cfgWeapons");
@@ -257,46 +225,26 @@ call
 				_helm pushBack _it;
 			} forEach _cfgIt;
 		} forEach ['H_HelmetB','Vest_Camo_Base'];
-		
-		//+ Naujų frakcijų šalmai ir vests (iš karių loadout'ų)
-		if(count _extractedItems > 0)then
-		{
-			_helm = _helm + (_extractedItems select 1) + (_extractedItems select 2);
-		};
 		_itms=_itms+_ggl+_unif+_helm;
 		[_box,_itms,false,false] call BIS_fnc_addVirtualItemCargo; //add Items to the arsenal
 
 		//backpacks
 		_back=[];
-		//RHS backpacks (standartiniai) + naujų frakcijų backpacks (jei yra)
 		_cfgBp= "((getText (_x >> 'vehicleClass') == 'Backpacks')&&(getText(_x >> 'dlc')==_dlc))" configClasses (configFile>>"cfgVehicles");
 		{
 			_wp = configName (_x);
 			_back pushBack _wp;
 		} forEach _cfgBp;
-		
-		//+ Naujų frakcijų backpacks (iš karių loadout'ų)
-		if(count _extractedItems > 0)then
-		{
-			_back = _back + (_extractedItems select 3);
-		};
 		[_box,_back,false,false] call BIS_fnc_addVirtualBackpackCargo; //add Backpacks to the arsenal
 		
 		//Magazines, ammo
 		[_box,([_box] call BIS_fnc_getVirtualMagazineCargo)] call BIS_fnc_removeVirtualMagazineCargo;
 		_ammo=["Laserbatteries"];
-		//RHS ammo (standartinė) + naujų frakcijų ammo (jei yra)
 		_cfgAm= "((str _x find 'rhs_' >= 0)||(getText(_x >> 'author')=='Red Hammer Studios'))" configClasses (configFile>>"CfgMagazines");
 		{
 			_wp = configName (_x);
 			_ammo pushBack _wp;
 		} forEach _cfgAm;
-		
-		//+ Naujų frakcijų ammo (iš karių loadout'ų)
-		if(count _extractedItems > 0)then
-		{
-			_ammo = _ammo + (_extractedItems select 6);
-		};
 		[_box,_ammo,false,false] call BIS_fnc_addVirtualMagazineCargo; //add Magazines to the arsenal
 	};
 	
@@ -429,7 +377,7 @@ call
 				_it = configName (_x);
 				_itms pushBack _it;
 			} forEach _cfgIt;
-		} forEach ['optic_','acc_','muzzle_','bipod_','Binocular','ToolKit','Medikit','NVGoggles','Laserdesignator','Rangefinder']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
+		} forEach ['optic_','acc_','muzzle_','bipod_','Binocular','ToolKit','Medikit','NVGoggles','Laserdesignator','Rangefinder']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
 		{
 			_cr=_x;
 			_cfgIt= "((str _x find 'gm_' >= 0)&&(getText (_x >> 'descriptionShort') find _cr >= 0))" configClasses (configFile>>"cfgWeapons");
@@ -520,7 +468,7 @@ call
 				_it = configName (_x);
 				_itms pushBack _it;
 			} forEach _cfgIt;
-		} forEach ['optic_','acc_','muzzle_','bipod_','Binocular','ToolKit','medikit','NVGoggles','Laserdesignator','Rangefinder','itemmap','ItemRadio','ItemWatch','minedetector','itemcompass','firstaidkit']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
+		} forEach ['optic_','acc_','muzzle_','bipod_','Binocular','ToolKit','medikit','NVGoggles','Laserdesignator','Rangefinder','itemmap','ItemRadio','ItemWatch','minedetector','itemcompass','firstaidkit']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
 		{
 			_cr=_x;
 			_cfgIt= "((str _x find 'vn_' >= 0)&&((getText (_x >> 'descriptionShort') find _cr >= 0)||(getText (_x >> 'descriptionUse') find _cr >= 0)))" configClasses (configFile>>"cfgWeapons");
@@ -613,7 +561,7 @@ call
 				_itms pushBack _it;
 			} forEach _cfgIt;
 		} forEach ['optic_','acc_','muzzle_','bipod_','Binocular','toolkit','medikit','NVGoggles','_Goggles','ItemRadio','R129',
-		'Laserdesignator','Rangefinder']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
+		'Laserdesignator','Rangefinder']; //funguje pouze Binocular (ostatn� ponech�no pro p��pad updatu DLC)
 		{
 			_cr=_x;
 			_cfgIt= "(

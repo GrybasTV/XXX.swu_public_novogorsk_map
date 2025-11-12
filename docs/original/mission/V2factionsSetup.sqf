@@ -75,7 +75,7 @@ call
 		};
 		
 		//SPE
-		if(island=="NORMANDY"||island=="MORTAIN")then
+		if(island=="NORMANDY")then
 		{			
 			modA = "SPE";
 			sideE = independent;

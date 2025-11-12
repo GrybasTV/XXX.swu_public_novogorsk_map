@@ -35,112 +35,6 @@ if(_unit in playableUnits)then
 
 if(progress<2)exitWith{};
 
-//AI Respawn Delay Sistema - tik ne-vehicle AI
-if (!(_unit in playableUnits)) then {
-    // Tikrinti ar sistema įjungta
-    private _aiDelayEnabled = ("asp14" call BIS_fnc_getParamValue) == 1;
-    if (!_aiDelayEnabled) exitWith {}; // Jei išjungta - nedelsiant visiems
-
-    private _playerDelay = [30, 60, 120, 120, 200] select ("asp12" call BIS_fnc_getParamValue);
-    private _playerDelay = _playerDelay max 30;
-
-    // Tikriname ar tai vehicle crew
-    private _isVehicleCrew = false;
-    if (!isNull objectParent _unit) then {
-        _isVehicleCrew = true;
-    };
-
-    // Jei vehicle crew - nedelsiant respawn (transportas turi būti su įgula)
-    if (_isVehicleCrew) exitWith {};
-
-    // Gauname konfigūruotus delay'us
-    private _squadDelayMultiplier = [0.1, 0.25, 0.5, 0.75, 1.0, 2.0] select ("asp15" call BIS_fnc_getParamValue);
-    private _combatDelayMultiplier = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0] select ("asp16" call BIS_fnc_getParamValue);
-    private _baseDefenseDelayMultiplier = [0.0, 0.25, 0.5, 0.75, 1.0, 2.0] select ("asp17" call BIS_fnc_getParamValue);
-
-    // Base Defense AI - dinaminis delay pagal bazės būklę
-    private _baseDelay = _playerDelay;
-    if (_unit in (defW + defE)) then {
-        // Nustatyti bazės poziciją pagal grupę
-        private _basePos = [];
-        private _enemySide = sideE;
-        private _friendlySide = sideW;
-        
-        if (_unit in defW) then {
-            // Rasti kurią bazę gina (W1 ar W2)
-            if (count defW > 0 && {_unit in units (defW select 0)}) then {
-                _basePos = posBaseW1;
-            } else {
-                _basePos = posBaseW2;
-            };
-            _enemySide = sideE;
-            _friendlySide = sideW;
-        } else {
-            // EAST base defense
-            if (count defE > 0 && {_unit in units (defE select 0)}) then {
-                _basePos = posBaseE1;
-            } else {
-                _basePos = posBaseE2;
-            };
-            _enemySide = sideW;
-            _friendlySide = sideE;
-        };
-        
-        // Tikrinti ar bazė puolama (ta pati logika kaip "BASE UNDER ATTACK")
-        private _en = [];
-        {if((side _x==_enemySide)&&((_x distance _basePos)<250))then{_en pushBackUnique _x;};} forEach allUnits;
-        private _df = [];
-        {if((side _x==_friendlySide)&&((_x distance _basePos)<250))then{_df pushBackUnique _x;};} forEach allUnits;
-        
-        // Tikrinti ar bazė contestinama (priešai bazėje - negalima spawn'inti)
-        private _enemiesInBase = [];
-        {if((side _x==_enemySide)&&((_x distance _basePos)<100))then{_enemiesInBase pushBackUnique _x;};} forEach allUnits;
-        private _baseContested = (count _enemiesInBase) > 0;
-        
-        // Jei bazė contestinama - negalima spawn'inti (išvengti spawn priešais žaidėjus)
-        if (_baseContested) then {
-            // Bazė contestinama - visai negalima spawn'inti kol bazė neužvaldyta
-            // Vienetas neatsiras kol priešai nepaliks bazės
-            _baseDelay = -1; // Flag kad praleisti respawn
-        } else if((count _df)<((count _en)*1.5) && (count _en) > 0) then {
-            // Bazė puolama bet necontestinama - nedelsiant respawn (gynėjai už bazės ribų)
-            _baseDelay = 0; // Bazė puolama - nedelsiant!
-        } else {
-            // Bazė saugi - naudoti konfigūruotą delay
-            _baseDelay = _baseDelay * _baseDefenseDelayMultiplier;
-        };
-    };
-
-    // Jei bazė contestinama - praleisti respawn (neatsiras kol bazė neužvaldyta)
-    if (_baseDelay < 0) exitWith {}; // Bazė contestinama - negalima spawn'inti
-
-    // Nustatyti galutinį delay pagal AI tipą (jei ne base defense)
-    if (!(_unit in (defW + defE))) then {
-        // Tikrinti ar tai squad AI (maži būriai) ar combat groups
-        private _isSquadAI = (count units group _unit) <= 4;
-        if (_isSquadAI) then {
-            _baseDelay = _playerDelay * _squadDelayMultiplier;
-        } else {
-            _baseDelay = _playerDelay * _combatDelayMultiplier;
-        };
-    };
-
-    // Progress scaling
-    private _progressMultiplier = 1 + (progress * 0.2);
-    _baseDelay = _baseDelay * _progressMultiplier;
-
-    // Proximity bonus
-    private _nearPlayers = {(_x distance _unit) < 200} count allPlayers;
-    _baseDelay = _baseDelay + (_nearPlayers * 10);
-
-    // Squad wipe penalty
-    if ({alive _x} count units group _unit == 0) then {
-        _baseDelay = _baseDelay * 1.3;
-    };
-
-    sleep _baseDelay;
-};
-
 //unit is AI
 params [["_grp",[]],["_ldrPl",[]],["_players",[]],["_ldrAI",[]],["_AIs",[]]];
 _placed=false; _grp=[];_ldrPl=[];_players=[];_ldrAI=[];_AIs=[];
@@ -255,10 +149,7 @@ if(({alive _x} count units group _unit) > 1)then
 					_c=false;
 					{
 						if(_c)exitWith{};
-						//_x gali būti stringas arba masyvas [type, texture] - reikia patikrinti
-						_vehType = if (_x isEqualType []) then {_x select 0} else {_x};
-						//Naudoti _man, ne player, nes tai serverio funkcija
-						if(typeOf vehicle _man == _vehType)then{_seat=["Driver","Gunner","Commander","Cargo"];_c=true;};
+						if(typeOf vehicle player == _x)then{_seat=["Driver","Gunner","Commander","Cargo"];_c=true;};
 					} forEach _vehicles;
 				};
 			};
@@ -273,12 +164,6 @@ if(({alive _x} count units group _unit) > 1)then
 };
 if(_placed)exitWith
 {
-	//Pritaikyti loadout ir nation change AI squado nariams (jei ne playableUnits)
-	if(!(_unit in playableUnits))then
-	{
-		[_unit] call wrm_fnc_V2loadoutChange;
-		[_unit] call wrm_fnc_V2nationChange;
-	};
 	sleep 0.1;
 	if(_unit==leader _unit)then{[] call wrm_fnc_V2aiMove;};
 	if(DBG)then{[format ["%1 - Vehicle respawn",(group _unit)]] remoteExec ["systemChat", 0, false];};
@@ -294,12 +179,6 @@ if(_secBW2&&(getMarkerColor _resBaseW!=""))then //armors
 };
 if(_placed)exitWith
 {
-	//Pritaikyti loadout ir nation change AI squado nariams (jei ne playableUnits)
-	if(!(_unit in playableUnits))then
-	{
-		[_unit] call wrm_fnc_V2loadoutChange;
-		[_unit] call wrm_fnc_V2nationChange;
-	};
 	sleep 0.1;
 	if(_unit==leader _unit)then{[] call wrm_fnc_V2aiMove;};
 	if(DBG)then{[format ["%1 - %2 respawn",(group _unit),_nameBW2]] remoteExec ["systemChat", 0, false];};
@@ -314,12 +193,6 @@ if(_secBW1&&(getMarkerColor _resFobW!=""))then //transport
 };
 if(_placed)exitWith
 {
-	//Pritaikyti loadout ir nation change AI squado nariams (jei ne playableUnits)
-	if(!(_unit in playableUnits))then
-	{
-		[_unit] call wrm_fnc_V2loadoutChange;
-		[_unit] call wrm_fnc_V2nationChange;
-	};
 	sleep 0.1;
 	if(_unit==leader _unit)then{[] call wrm_fnc_V2aiMove;};
 	if(DBG)then{[format ["%1 - %2 respawn",(group _unit),_nameBW1]] remoteExec ["systemChat", 0, false];};
@@ -366,12 +239,6 @@ if(resType>0)then
 };
 if(_placed)exitWith
 {
-	//Pritaikyti loadout ir nation change AI squado nariams (jei ne playableUnits)
-	if(!(_unit in playableUnits))then
-	{
-		[_unit] call wrm_fnc_V2loadoutChange;
-		[_unit] call wrm_fnc_V2nationChange;
-	};
 	sleep 0.1;
 	if(_unit==leader _unit)then{[] call wrm_fnc_V2aiMove;};
 	if(DBG)then{[format ["%1 - Squad respawn",(group _unit)]] remoteExec ["systemChat", 0, false];};
@@ -438,12 +305,6 @@ if(({alive _x} count units group _unit) > 1)then
 };
 if(_placed)exitWith
 {
-	//Pritaikyti loadout ir nation change AI squado nariams (jei ne playableUnits)
-	if(!(_unit in playableUnits))then
-	{
-		[_unit] call wrm_fnc_V2loadoutChange;
-		[_unit] call wrm_fnc_V2nationChange;
-	};
 	sleep 0.1;
 	if(_unit==leader _unit)then{[] call wrm_fnc_V2aiMove;};
 	if(DBG)then{[format ["%1 - Sector respawn",(group _unit)]] remoteExec ["systemChat", 0, false];};

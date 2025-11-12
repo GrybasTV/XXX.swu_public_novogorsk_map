@@ -47,6 +47,28 @@ Faktas, kad {} apibrėžia Code duomenų tipą, yra esminis SQF programavimo kal
 
 Variklis ignoruoja tarpus (įskaitant tabuliaciją ir tuščias eilutes) vykdymo metu. Tarpai ir komentarai tarnauja tik kodo skaitomumui ir ateities nuorodoms.
 
+#### 4. Dažnos Sintaksės Klaidos ir Sprendimai
+
+**"Error Missing ]" Klaida**: Ši klaida dažniausiai rodoma ne ten, kur yra tikroji problema. Ji atsiranda dėl neuždarytų masyvų arba sudėtingų string struktūrų aukščiau klaidos eilutės.
+
+**Priežastys ir sprendimai:**
+- **OnOwnerChange Callback'ai**: String formato callback'ai su sudėtingu escaping'u gali sukelti šią klaidą. **Rekomenduojama naudoti code block formatą**:
+  ```sqf
+  // NETEISINGA - gali sukelti "Error Missing ]":
+  _sector setVariable ["OnOwnerChange", "
+      if(getMarkerColor ''marker'' != '''') then { ... };
+  "];
+
+  // TEISINGA - code block formatas:
+  _sector setVariable ["OnOwnerChange", {
+      if(getMarkerColor 'marker' != '') then { ... };
+  }];
+  ```
+
+- **String Escaping Problema**: Sudėtinguose string'uose su keliomis escaping lygiuotėmis gali atsirasti klaidų. Naudokite code block'us vietoj sudėtingų string'ų.
+
+- **Masyvų Užbaigimas**: Visada patikrinkite, kad visi `[`, `(`, ir `{` turi atitinkamus uždarymo simbolius `]`, `)`, ir `}`.
+
 ### C. Duomenų Tipų Naudojimas ir Paruošimas
 
 SQF palaiko platų duomenų tipų spektrą, įskaitant Array, Boolean, Code, Config, Object, Number, String, HashMap ir specializuotus tipus, tokius kaip Position (Vector3D). Patyrę kūrėjai naudoja HashMap kaip pažengusį duomenų tipą efektyviam raktų-verčių saugojimui, o tai ypač svarbu sudėtingiems misijų rėmams.
@@ -84,6 +106,37 @@ Kai SQF kodas bando perskaityti ar atnaujinti privatų kintamąjį (pvz., _num =
 Vienas dažnas programavimo klaidas sukeliantis faktas yra tai, kad privatūs kintamieji, kurie vėliau naudojami scenarijuje, turi būti inicializuoti už kontrolinio bloko ribų, net jei jie vėliau nustatomi tame bloke. Pavyzdžiui, jei kintamasis yra apibrėžtas tik if sąlygoje, ir ta sąlyga netampa true, kintamasis neegzistuos scenarijaus apimtyje pasibaigus if blokui. Štai kodėl private _living = false; turėtų būti nustatytas prieš if (alive player) then { _living = true; };. Kitu atveju, bandymas prieiti prie kintamojo po kontrolinio bloko sukels vykdymo klaidą.
 
 Speciali taisyklė galioja private raktažodžiui ir params komandai: jie visada sukuria privatų kintamąjį tik dabartinėje apimtyje, ignoruodami standartinį paieškos mechanizmą apimties kamine.
+
+#### 3. Saugus Neapibrėžtų Kintamųjų Valdymas
+
+**Svarbu suprasti**: Komandos `isNil` ir `typeName` yra saugios naudoti su neapibrėžtais kintamaisiais. `isNil` grąžina `true`, jei kintamasis yra neapibrėžtas, o `typeName` grąžina `"NOTHING"` neapibrėžtam kintamajam, ir abu nekelia klaidų.
+
+Tačiau **kritiškai svarbu** yra tai, kad kintamieji turi būti inicializuoti prieš naudojant juos **bet kurioje kitose operacijose** (pvz., masyvo elementų pasiekimas, funkcijų iškvietimai, aritmetinės operacijos). Pavyzdžiui:
+
+```sqf
+// TEISINGA - isNil yra saugus su neapibrėžtu kintamuoju
+if (isNil "_myVar") then {
+    _myVar = 0; // Inicializuojame, jei neapibrėžtas
+};
+
+// KLAIDA - bandymas naudoti neapibrėžtą kintamąjį kitose operacijose
+_myVar = _myVar + 1; // Jei _myVar nebuvo inicializuotas aukščiau, tai sukels klaidą
+```
+
+**Saugus Masyvų Elementų Pasiekimas**: Naudojant `param` funkciją vietoj `select` yra rekomenduojama praktika, nes `param` leidžia nurodyti numatytąją reikšmę, jei indeksas neegzistuoja:
+
+```sqf
+// NETEISINGA - select sukels klaidą, jei indeksas neegzistuoja
+_myValue = _myArray select 5; // Klaida, jei masyvas turi mažiau nei 6 elementų
+
+// TEISINGA - param grąžina numatytąją reikšmę, jei indeksas neegzistuoja
+_myValue = _myArray param [5, nil]; // Grąžina nil, jei indeksas neegzistuoja
+if (!isNil "_myValue") then {
+    // Naudojame _myValue
+};
+```
+
+**Praktinė Rekomendacija**: Visada inicializuokite kintamuosius su numatytomis reikšmėmis prieš bet kokius patikrinimus ar naudojimą, ypač jei jie gali būti naudojami skirtingose kodo vietose. Tai užtikrina, kad kodas veiktų net jei kontrolinio bloko sąlyga netampa true.
 
 ### C. Apimties Izoliacijos Įtaka
 
@@ -231,16 +284,215 @@ Nors tai misijos ir kliento nustatymas, mažinant kliento matymo atstumą, suma�
 
 ---
 
-## VII. Išvados: Audito Sistema ir Tolimesnė Plėtra
+## VII. Išsamus Techninės Analizės Pranešimas apie Nuolatinius Dirbtinio Intelekto Gedimus ir Desinchronizaciją „Arma 3" Daugelio Žaidėjų Režime: SQF ir Variklio Klaidas Mažinančios Strategijos
+
+Šis dokumentas skirtas detalizuoti dažniausias dirbtinio intelekto (DI) strigčių, „nematomumo" ir dalinės funkcionalumo praradimo priežastis „Arma 3" daugelio žaidėjų aplinkoje. Analizė apima „ArmA" variklio apribojimus, netinkamos SQF kodo praktikos įtaką ir kritinės tinklo bei DI vietinės (locality) konfigūracijos svarbą.
+
+### I. Esminė Veikimo Analizė: Užburtas Žemo Serverio FPS ir Desinchronizacijos Rato
+
+„Arma 3" stabilumas daugelio žaidėjų režime tiesiogiai priklauso nuo serverio simuliacijos ciklo (Server FPS). DI strigtys ir kitos anomalijos, tokios kaip lėktuvo sustojimas ore, yra ne DI klaidų, o kritiškai sumažėjusios serverio našumo pasekmė.
+
+#### A. „ArmA" Variklio Vykdymo Modelis: Suplanuota, Nesuplanuota ir Simuliacijos Kadras
+
+Variklio stabilumui būtina suprasti, kaip skriptai sąveikauja su simuliacijos kadru per dvi pagrindines vykdymo aplinkas.
+
+##### 1. Suplanuota Aplinka (Scheduled Environment)
+
+Skriptai, paleisti komandomis, tokiomis kaip spawn ar execVM, veikia suplanuotoje aplinkoje. Ši aplinka taiko griežtą 3 milisekundžių (ms) vykdymo trukmės limitą. Jei skriptas viršija šį laiką, jis sustabdomas (yields) ir atidedamas vėlesniam vykdymui, kad kitos sistemos (įskaitant DI skaičiavimus ir fizikos atnaujinimus) gautų laiko. Šioje aplinkoje leidžiama naudoti atidėjimo komandas, tokias kaip sleep ir waitUntil.
+
+##### 2. Nesuplanuota Aplinka (Unscheduled Environment)
+
+Nesuplanuotoje aplinkoje vykdomas kritinis kodas, pavyzdžiui, įvykių tvarkyklės (Event Handlers) arba CBA Per Frame Handlers (PFHs). Šie skriptai veikia linijiniu būdu ir privalo būti užbaigti per vieną simuliacijos kadrą. Jiems netaikomi trukmės apribojimai, tačiau privaloma pabrėžti, kad sustabdymo komandos (sleep, waitUntil) šioje aplinkoje yra griežtai draudžiamos, nes jos tiesiogiai užblokuotų simuliacijos kadrą, sukeldamos serverio strigimą (frame-stall).
+
+##### 3. Simuliatoriaus Išsekimo Mechanizmas (Scheduler Starvation)
+
+Kritiškai svarbu suvokti, kad serverio našumo žlugimas dažnai kyla iš suplanuotos aplinkos perkrovos. Per didelis skaičius gijų, sukurtų naudojant spawn ir execVM, užpildo suplanuotą gijų eilę. Jei šios gijos vykdo neoptimizuotus, ilgai trunkančius ciklus be pakankamo atidėjimo (sleep), jos nuolat eikvoja savo 3ms laiko dalį. Šis gijų eilės prisotinimas atideda variklio gebėjimą atlikti visus būtinus simuliacijos atnaujinimus, įskaitant DI judėjimą, fizikos patikras ir tinklo apdorojimą. Šio proceso rezultatas yra tiesioginis serverio simuliacijos greičio (Server FPS) kritimas, kuris vėliau pasireiškia kaip DI mikčiojimas, teleportavimas ir objektų sustojimas ore – tai paaiškina vartotojo aprašytą „užšalusio lėktuvo" scenarijų.
+
+#### B. Serverio Simuliacijos Kadro Dažnis (Server FPS) ir DI Integritetas
+
+Serverio FPS yra esminis veikimo rodiklis. Jis nustato, kaip dažnai serveris apdoroja pasaulio būseną ir siunčia atnaujimus klientams.
+
+##### 1. Kritinės Slenksčio Reikšmės
+
+Serveris, veikiantis maždaug 15 FPS, yra laikomas minimaliai žaidžiamu, tačiau DI atsakas jau yra pastebimai prastas. Ideali situacija – palaikyti 20 FPS ar aukštesnį serverio simuliacijos greitį. Kai serverio FPS nukrenta iki kritiškai žemo lygio (pvz., 1-10 FPS), serveris yra laikomas perkrautu. Tokio apkrovimo metu DI pradeda mikčioti, teleportuotis arba tampa nereaguojantis, padarant žaidimą neįmanomą.
+
+##### 2. Sinchronizacijos Užstrigimas
+
+DI anomalijos ir sustoję objektai dažnai kyla dėl sinchronizacijos trūkumo tarp serverio autoritetingos būsenos ir kliento numatomos būsenos. Kadangi „ArmA" variklis sinchronizuoja kliento ekrano atvaizdavimo kadrą su simuliacijos apdorojimo ciklu, žemas Serverio FPS reiškia, kad serverio pasaulio būsena smarkiai atsilieka nuo kliento. Klientas privalo sparčiai koreguoti savo vietinę simuliaciją, kai pavėluoti duomenys pagaliau pasiekia. Šios korekcijos pasireiškia kaip desinchronizacija ir teleportavimas. Tai paaiškina, kodėl dalis DI gali atrodyti „nematoma" arba sustingusi: kliento vietinis vaizdas ir serverio tikroji autoritetinga pozicija smarkiai išsiskiria.
+
+#### C. Pagrindiniai Serverio Apkrovos Šaltiniai (CPU Viršutinės Išlaidos)
+
+Aukštos serverio apkrovos prisideda prie Server FPS kritimo. Tai kyla dėl intensyvių skaičiavimo poreikių, kuriuos sukelia tam tikros variklio ypatybės:
+
+- Fizinių Objektų Perteklius: Per didelis fizika pagrįstų objektų, ypač transporto priemonių nuolaužų, skaičius žymiai padidina serverio skaičiavimo apkrovą.
+- Brangios Komandos: Dažnas ir neapgalvotas komandų, tokių kaip nearObjects ir ypač nearestObjects, naudojimas yra pagrindinis CPU našumo žudikas.
+
+### II. Pažangi SQF Kodo Optimizacija ir Simuliatoriaus Valdymas
+
+Prastai parašyti SQF skriptai yra dažniausia nestabilumo ir serverio FPS kritimo priežastis daugelio žaidėjų misijose. Optimizacija turi būti orientuota į skripto inicijavimą, kintamųjų apibrėžimą ir masyvo apdorojimą.
+
+#### A. SQF Gerosios Praktikos Didelio Našumo Aplinkoje
+
+Norint išlaikyti simuliatoriaus sveikatą, būtina atsisakyti neefektyvių programavimo įpročių.
+
+- Išankstinis Kompiliavimas Prieš execVM: Dažnai paleidžiant tą patį skriptą per execVM, žaidimas priverstas kiekvieną kartą nuskaityti failą iš disko, kas sukuria didelį I/O ir vykdymo režijos (overhead).
+- Mažinimas: Skriptą reikia kompiliuoti vieną kartą misijos inicijavimo metu (pvz., `cm​yFunction=compilepreprocessFileLineNumbers"myFile.sqf";). Vėliau skambinti tik šiam kompiliuotam kintamajam.
+- Kintamųjų Aprėptis (Scoping): Būtina naudoti privačius (lokalius) kintamuosius, kurie žymimi pabraukimo ženklu (pvz., _uniform), kiek tik įmanoma, vietoj globalių kintamųjų. Tai sumažina kintamojo ieškojimo kaštus ir išvengia konfliktų tarp lygiagrečių gijų.
+
+#### B. Brangūs Išteklius Eikvojantys SQF Komandos
+
+Serverio stabilumas priklauso nuo to, ar skriptai vengia skaičiavimo sudėtingumo, ypač cikluose, vykdomuose suplanuotoje aplinkoje.
+
+- Padėties Skenavimo Kaštai: Komanda nearestObjects yra labai brangi CPU atžvilgiu. Priežastis yra ta, kad ji ne tik grąžina netoliese esančius objektus, bet ir atlieka visą masyvo rūšiavimą pagal atstumą. Rūšiuojant, pavyzdžiui, 7000 objektų, gali prireikti iki 100ms, o tai akimirksniu sunaikina 3ms simuliacijos kvotą, sukeldama serverio strigimą.
+- Mažinimas: Jei atstumas nėra kritiškai svarbus (t. y., nereikia objektų surūšiuoti), vietoje nearestObjects būtina naudoti nearObjects. Pastaroji komanda yra iš esmės ta pati, bet neprideda brangaus rūšiavimo etapo, todėl veikia daug efektyviau.
+- Ciklo Optimizacija: Dideli for ar while ciklai turi būti minimizuojami. Masyvo operacijoms rekomenduojama naudoti specializuotas komandas, tokias kaip apply, count, findIf, arba select, kurios dažnai yra optimizuotos variklio viduje ir veikia greičiau nei bendriniai forEach ciklai.
+
+Neatidumas rūšiavimo kaštams yra dažnas našumo nuosmukio šaltinis. Kai misijų kūrėjai naudoja nearestObjects paprastam artumo patikrinimui (pvz., „ar yra koks nors priešas netoliese?"), jie iššaukia didelę 100ms baudos išlaidą, kuri sukelia kaskadinį serverio vėlavimą. Tai reiškia, kad visi esami skriptai turėtų būti kruopščiai peržiūrimi, o nearestObjects pakeisti į nearObjects, išskyrus atvejus, kai atstumo rūšiavimas yra absoliučiai būtinas.
+
+**Lentelė III: SQF Komandų Našumo Hierarchija ir Mažinimo Strategijos**
+
+| Komanda/Operacija | Kontekstas | Našumo Poveikis | Optimizacijos Rekomendacija |
+|-------------------|------------|-----------------|----------------------------|
+| nearestObjects | Didelio spindulio užklausos | Sunkus (Rūšiavimo režija, gali sustabdyti 100ms) | Naudoti nearObjects, jei rūšiavimas nereikalingas. Atrinkti rezultatus rankiniu būdu. |
+| Pasikartojantis execVM | Dažnai kviečiami skriptai | Aukštas (I/O failų skaitymo režija) | Kompiliuoti skriptą vieną kartą, naudojant compile preprocessFileLineNumbers, ir kviesti kaip funkciją. |
+| for / while ciklai | Vykdoma suplanuotoje aplinkoje be sleep | Aukštas (Gali išsekinti simuliatorių, jei > 3ms) | Įterpti sleep arba pertvarkyti kaip būsenos mašinas (FSM) arba kadrų tvarkykles (PFHs) kritiniams nestabdymo poreikiams. |
+| Globalūs Kintamieji | Dažnas skaitymas/rašymas | Vidutinis (Aprėpties paieškos kaštai) | Naudoti privačius (lokalius) kintamiesiems (_variable), užtikrinant greitą vietinę paiešką. |
+
+### III. Desinchronizacija („Desync") ir „Nematomumo" Fenomenas
+
+Vartotojo aprašytas DI tapimas „nematomu" yra klasikinis tinklo desinchronizacijos simptomas, kai kliento numanoma objekto būsena smarkiai skiriasi nuo serverio autoritetingos būsenos.
+
+#### A. DI Nematomumas: Lokalinės Būsenos Gedimo Simptomas
+
+DI nematomas, nes serveris nepajėgia pakankamai greitai atnaujinti kliento būsenos, todėl kliento simuliacija patiria didelių padėties klaidų.
+
+- Kliento Tinklo Apribojimas: Jei padėties klaida yra kritiškai didelė, kliento atvaizdavimo variklis gali tiesiog manyti, kad DI vienetas yra per toli arba už kliento vietinio tinklo burbulo ribų, remiantis pasenusiais duomenimis.
+- Būsenos Skyrimas: Esant stipriai desinchronizacijai, DI vienetai gali pasirodyti esantys kitoje vietoje, nei juos mato klientas (teleportavimas). Nors pataikymo registracija dažnai atliekama kliento pusėje, o serveris vėliau priima žalą, didelis atsilikimas (lag) daro žaidimą neįmanomą, o lėktuvai gali sustingti vietoje.
+
+#### B. Tinklo Konfigūracijos Derinimas basic.cfg Faile
+
+Serverio tinklo konfigūracijos optimizavimas yra gyvybiškai svarbus siekiant užtikrinti, kad kritiniai padėties duomenys (Negarantuoti pranešimai) būtų efektyviai supakuoti ir prioritetizuoti.
+
+- MaxMsgSend: Šis parametras kontroliuoja maksimalų agreguotų paketų skaičių, kurį galima išsiųsti per vieną simuliacijos ciklą. Padidinus šią vertę (pvz., nuo numatytosios 128 iki 256 ar 384), serveriai, turintys daug DI ar žaidėjų, gali išstumti daugiau atnaujinimų per kadrą, taip padidindami pralaidumą ir potencialiai sumažindami vėlavimą.
+- MinBandwidth / MaxBandwidth: Šie parametrai apibrėžia serverio prielaidas apie turimą išsiuntimo pralaidumą. Nustatyti juos per optimistiškai gali padidinti CPU apkrovą ir vėlavimą, nes serveris bandys išsiųsti daugiau pranešimų nei gali apdoroti, todėl pranešimai bus atmesti.
+- MaxSizeNonguaranteed: Tai maksimalus naudingosios apkrovos dydis (baitais) negarantuotiems paketams. Kadangi DI judėjimo atnaujinimai siunčiami Negarantuotais paketais, šio dydžio optimizavimas (pvz., padidinimas nuo 256 iki 512 baitų) padeda supakuoti daugiau judėjimo duomenų į kiekvieną paketą.
+- Mažas Serverio FPS sukelia „užšalusio lėktuvo" efektą, nes ne-garantuoti padėties atnaujinimai atsilieka. Jei MaxSizeNonguaranteed yra per mažas, serveris, net esant žemam Server FPS, turi sukurti daugybę individualių paketų, kad perduotų bendrą padėties informaciją. Strategiškai padidinus MaxSizeNonguaranteed užtikrinama, kad ribotas serverio ciklas bus panaudotas efektyviai supakuoti ir perduoti atidėtus DI judėjimo duomenis, taip sumažinant desinchronizacijos sunkumą.
+
+**Lentelė IV: Rekomenduojami Tinklo Konfigūracijos Parametrai (basic.cfg)**
+
+| Parametras | Kritinė Paskirtis | BIS Numatytasis | Rekomenduojamas Diapazonas (Didelis Našumas) |
+|------------|-------------------|----------------|---------------------------------------------|
+| MaxMsgSend | Agreguoti paketai per kadrą (pralaidumas) | 128 | 256 - 384 |
+| MaxSizeNonguaranteed | Pozicijos atnaujinimų naudingoji apkrova (baitais) | 256 | 256 - 512 |
+| MinBandwidth | Garantuotas serverio pralaidumas (bps) | 131072 | Konservatyvus (pvz., 400000000) |
+| MinErrorToSendNear | Minimali klaidos riba artimiems atnaujinimams | 0.01 | Padidinta (pvz., 0.02 - 0.04) gali sumažinti mikroatnaujinimus |
+
+### IV. DI Kelio Radimo Gedimų Diagnostika ir Taisymas (Įstrigę Vienetai)
+
+DI vienetai, ypač transporto priemonės, nuolat susiduria su sunkumais naviguojant sudėtingoje vietovėje, o tai sukelia nuolatinį įstrigimą ir misijos užstrigimą.
+
+#### A. Dažni Gedimo Būdai ir DI Keistenybės
+
+- Transporto Priemonių Navigacijos Užstrigimas: DI vairuotojai, ypač didelėse transporto priemonėse, nuolat kovoja su apsisukimais (U-turns). Jie gali sustoti minutėms, o paskui staiga automatiškai užbaigti likusį maršrutą, praleisdami tarpinius kelio taškus, nes variklis tiesiog atsisako skaičiuoti kelią. Šis elgesys yra ypač pastebimas esant „SAFE" arba „CARELESS" elgsenos režimams.
+- Fizikos Objektai: DI vairuotojai stengiasi išvengti mažų fizikos (PhysX) objektų. Ši savybė, nors ir skirta pagerinti navigaciją, gali priversti DI sustoti ar rinktis neįprastus kelius, jei aplinkoje yra per daug mažų interaktyvių objektų.
+- Pėstininkų Įstrigimas: Pėstininkai dažnai įstringa pastatuose, ant neįprastų paviršių (pvz., stogų) ar aplink sudėtingas reljefo ypatybes, pavyzdžiui, dideles uolas.
+- Nepatikimos Vietinės Komandos: Nati vvariklio komanda canmove yra nepakankama tikram įstrigimo aptikimui, nes ji tikrina tik transporto priemonės žalos būklę, o ne jos fizinę galimybę judėti (pvz., užstrigus ant bėgių).
+- Šis faktas tiesiogiai jungia DI lokalitetą su serverio našumu. Kai DI transporto priemonė užstringa (pvz., nepavykus apsisukti) ir praleidžia kelio taškus, ji patenka į užstrigusią, bet aktyvią būseną. Serveris vis dar skiria CPU ciklus bandymams apskaičiuoti kelią ar atlikti fizikos patikras nejudančiam objektui. Šis eikvojamas skaičiavimo ciklas dar labiau sumažina Serverio FPS. Taigi, pradinė kelio radimo klaida (strigimas) virsta matoma desinchronizacija (sustingimu) dėl kritinio serverio našumo sumažėjimo.
+
+#### B. Įstrigimo Aptikimo ir Atkūrimo Skriptų Įgyvendinimas
+
+Kadangi variklis neturi patikimo vietinio įstrigimo aptikimo, misijų kūrėjai privalo įdiegti tinkintą stebėjimo sistemą, paprastai veikiančią suplanuotoje aplinkoje.
+
+- Aptikimo Metodologija: Padėties Deltos Sekimas: Patikimiausias būdas yra periodiškai stebėti vieneto poziciją (getPosATL) tam tikru intervalu. Jei vieneto nuvažiuotas atstumas (_distanceMoved) yra mažesnis už minimalų slenkstį (pvz., 1 metras) per keletą iš eilės einančių patikrinimų, vienetas paskelbiamas įstrigusiu.
+- Korekciniai Veiksmai (SQF Įgyvendinimas):
+  - Krypties Pakeitimas Transporto Priemonėms: Jei transporto priemonė užstrigo ties kelio tašku dėl nepavykusio apsisukimo, priverstinis krypties pakeitimas (setDir) dažnai atblokuoja DI ir leidžia jam tęsti judėjimą.
+  - Repozicionavimas: Teleportavimas į žinomą saugią vietą naudojant setPos arba setPosATL yra galutinis atkūrimo mechanizmas. Šį metodą reikia naudoti atsargiai, kad nebūtų pažeistas misijos įsitraukimas.
+  - Gyvavimo Laiko (TTL) Apsauga: Misijoms, kuriose įstrigęs DI trukdo užbaigti tikslą, galima nustatyti TTL skaitiklį, kuriam pasibaigus DI vienetas nusižudo (arba deleteVehicle). Tai apsaugo misiją nuo visiško sustojimo.
+
+**Lentelė V: DI Įstrigimo Aptikimo ir Ištaisymo Logika**
+
+| Fazė | Funkcija/Žingsnis | Intervalas/Slenkstis | SQF Komandos/Koncepcija |
+|------|-------------------|---------------------|-------------------------|
+| Aptikimas | Pradinės Padėties Nustatymas | Kiekvieno vieneto inicijavimas | _startPos = getPosATL _unit; |
+| Aptikimas | Deltos Sekimas (Periodinis) | Vykdyti kas 5-10 sekundžių | _distanceMoved = _unit distance _lastCheckedPos; |
+| Diagnozė | Įstrigimo Patvirtinimas | Atstumas < 1 metras 3 ar daugiau patikrinimų iš eilės | if (_distanceMoved < 1 && _stuckCounter >= 3) |
+| Taisymas 1 | Transporto Priemonės Krypties Atstatymas | Jei transporto priemonė įstrigusi (ypač ties kelio taškais) | _unit setDir (getDir _unit + 180); ir pakartotinis doMove |
+| Taisymas 2 | Priverstinis Repozicionavimas | Jei vienetas vis dar įstrigęs po judėjimo atstatymo | _unit setPos (_unit findEmptyPosition); |
+| Taisymas 3 | Misijos Apsauga (Fail-safe) | Jei vieneto negalima pajudinti/nužudyti | TTL pabaiga, vedanti prie _unit setDamage 1; |
+
+### V. DI Lokaliteto Valdymas Naudojant „Headless Clients" (HC) ir Dinaminę Simuliaciją
+
+Vartotojo stebėjimas, kad „dalis serverio DI veikia, kita ne", yra aiškus nesubalansuoto apdorojimo krūvio arba neteisingo DI lokaliteto valdymo simptomas. Ši problema reikalauja serverio DI skaičiavimo perkėlimo į „Headless Clients" (HC) ir naudojant Dinaminę Simuliaciją (DS).
+
+#### A. „Headless Client" (HC) Architektūra ir Funkcija
+
+HC yra specialus, neatvaizduojantis kliento egzempliorius, skirtas išskirtinai DI skaičiavimų perkėlimui nuo pagrindinio dedikuoto serverio (Dedicated Server, DS).
+
+- Krūvio Balansavimas: HC yra būtinas siekiant paskirstyti didžiulį DI skaičiavimo krūvį atskiram procesoriaus branduoliui ar mašinai. Tai yra pagrindinis metodas, siekiant palaikyti Serverio FPS virš kritinės 20 FPS ribos.
+- HC Konfigūracija: HC turi būti apibrėztas misijoje (Game Logic -> Virtual Entities -> Headless Client) ir nurodytas serverio konfigūracijoje (server.cfg) pagal IP adresą, kad būtų leidžiamas prisijungimas.
+
+#### B. DI Nuosavybės Perdavimo Įgyvendinimas
+
+Kad DI skaičiavimai veiktų HC, serveris turi perduoti DI grupės „nuosavybę" arba „lokalitetą" HC klientui.
+
+- Svarbiausia Komanda: setGroupOwner: Norint tinkamai perkelti DI grupių nuosavybę, būtina naudoti komandą setGroupOwner _group _HC_client_ID;. Grupės lyderis negali būti žaidėjas.
+- Pasenusi Komanda setOwner: Nuo „Arma 3" v1.40, komanda setOwner neturėtų būti naudojama standartinių DI vienetų ar grupių nuosavybės perkėlimui, išskyrus „Agentus". Neteisingos komandos naudojimas dažnai sukelia skriptų gedimus ir nebeveikiančią DI logiką.
+- Problemos, kai „dalis DI veikia, kita ne", dažnai rodo nepavykusį DI lokaliteto perdavimą. Veikiantys DI vienetai yra tie, kurių nuosavybė sėkmingai perkelta HC. Sugedę vienetai yra tie, kurie: a) yra palikti ant perkrauto dedikuoto serverio, nesuvokus poreikio perkelti nuosavybę; arba b) patyrė „lokaliteto nukrypimą" – jie išėjo už HC aktyvios apdorojimo zonos ribų, ir automatinis perdavimas atgal į serverį ar kitą HC nepavyko. Ši lokaliteto nesėkmė sukelia DI vidaus FSM (Finite State Machine) logikos sustojimą, dėl kurio DI vienetas tampa nereaguojantis arba sustingsta.
+
+#### C. Dinaminė Simuliacija (DS) kaip Papildomas Krūvio Mažinimas
+
+Dinaminė Simuliacija yra antrasis optimizavimo sluoksnis, skirtas sumažinti aktyviai simuliuojamų objektų skaičių, papildantis HC krūvio balansavimą.
+
+- Veikimas: DS selektyviai išjungia toli nuo žaidėjų esančių objektų/DI grupių simuliaciją, užkertant kelią nereikalingam išteklių eikvojimui. Neaktyvuotos esybės sustoja.
+- Įgyvendinimas: DS yra įjungta pagal numatytuosius nustatymus, tačiau jai reikia nurodyti, kurioms grupėms ją taikyti. Ji gali būti valdoma globaliai (enableDynamicSimulationSystem true;) ir konfigūruojama pagal atstumą (pvz., "Group" setDynamicSimulationDistance 1000;).
+- Strateginis Panaudojimas: DS turėtų būti taikoma didelėms, statinėms DI grupėms ar tolimiems aplinkos objektams. Tai užtikrina, kad net esant didelei HC apkrovai, serveris nebandys apdoroti simuliacijos atnaujinimų tūkstančiams nereikalingų, tolimų vienetų.
+
+### VI. Išvados ir Išsamus Mažinimo Kontrolinis Sąrašas
+
+Klaidos „Arma 3" daugelio žaidėjų režime, ypač susijusios su DI strigimu ir desinchronizacija, yra sudėtinės ir kyla iš variklio simuliatoriaus apribojimų, sustiprintų neoptimizuotu SQF kodu ir netinkamu DI lokaliteto valdymu. Stabilus žaidimas reikalauja spręsti visus šiuos lygmenis vienu metu.
+
+#### A. Veiksmų Sintezė
+
+Pagrindinis gedimo kelias – nuo SQF neefektyvumo iki simuliatoriaus išsekimo, kuris sukelia žemą Serverio FPS, o tai galiausiai pasireiškia kaip desinchronizacija ir DI lokaliteto gedimai (pvz., „užšalęs lėktuvas" ar „nematomas DI") – turi būti nutrauktas per kruopštų kodo optimizavimą ir infrastruktūros derinimą.
+
+Kritiniai Veiksmai DI ir Našumo Atkūrimui:
+
+- SQF Optimizacija:
+  - Kompiliacija: Įsitikinti, kad pasikartojančiai kviečiami skriptai yra kompiliuojami vieną kartą, siekiant išvengti execVM režijos.
+  - Ciklai: Vengti brangių komandų, ypač nearestObjects, keičiant jas į nearObjects arba kitus optimizuotus masyvo tvarkymo metodus.
+  - Lokaliniai Kintamieji: Maksimizuoti privačių (lokalių) kintamųjų (_variable) naudojimą, užtikrinant greitą vietinę paiešką.
+- Tinklo Konfigūracijos Patikslinimas:
+  - Pranešimų Srautai: Padidinti MaxMsgSend ir MaxSizeNonguaranteed parametrus basic.cfg faile, siekiant efektyviai supakuoti ir išsiųsti DI padėties atnaujinimus, ypač esant žemam Server FPS.
+  - Pralaidumas: Nustatyti konservatyvius MinBandwidth ir MaxBandwidth vertes, kad serveris nebandytų išsiųsti daugiau duomenų, nei gali apdoroti, taip išvengiant atmestų pranešimų ir papildomo CPU krūvio.
+- DI Lokalitetas ir Krūvio Balansavimas:
+  - HC Privalomas: Naudoti „Headless Client" (HC) DI skaičiavimams perkelti. HC konfigūracija turi būti atlikta tiek misijoje, tiek server.cfg.
+  - Teisingas Nuosavybės Perdavimas: Visiškai atsisakyti setOwner DI grupėms ir vietoje to naudoti autoritetingą komandą setGroupOwner, kuri veikia tik iš serverio.
+  - Dinaminė Simuliacija: Įjungti ir konfigūruoti Dinaminę Simuliaciją (DS), kad tolimi DI vienetai būtų laikinai išjungti, taip sumažinant serverio apdorojimo krūvį.
+- DI Strigimo Atkūrimas:
+  - Delta Skriptai: Įdiegti tinkintus SQF skriptus, kurie stebi DI padėties delta (pokytį) tam tikru intervalu, siekiant aptikti įstrigusius vienetus.
+  - Automatinis Atkūrimas: Įstrigus DI, taikyti korekcinius veiksmus: transporto priemonėms keisti kryptį (setDir), o pėstininkams – priverstinai perkelti juos į saugią vietą (setPos). Įgyvendinti TTL mechanizmus, kad būtų išvengta misijos užstrigimo dėl nepasiekiamo DI.
+
+#### B. Stebėsenos ir Diagnostikos Priemonės
+
+Norint efektyviai valdyti ir optimizuoti serverį, reikia nuolatinio stebėjimo:
+
+- Serverio FPS Stebėjimas: Nuolat stebėti Serverio FPS naudojant #monitor komandą derinimo konsolėje arba bendruomenės skriptus, tokius kaip show_fps.sqf. Kritinis Serverio FPS kritimas žemiau 20 reikalauja nedelsiant mažinti DI skaičių ar optimizuoti kodą.
+- Skripto Gijų Stebėjimas: Komanda diag_activeScripts leidžia sekti aktyvių gijų skaičių suplanuotoje aplinkoje. Aukštas šis skaičius rodo skriptų prisotinimą ir didelę riziką simuliatoriui išsekti.
+- Lokaliteto Vizualizacija: Naudoti bendruomenės įrankius, kurie vizualizuoja DI nuosavybę (t. y., kurie vienetai priklauso serveriui, o kurie – HC). Tai padeda nustatyti lokaliteto nukrypimo ar nesėkmės vietas, kur DI veikia tik iš dalies.
+
+---
+
+## VIII. Išvados: Audito Sistema ir Tolimesnė Plėtra
 
 Ekspertinis misijų ir modifikacijų kodo auditas reikalauja ne tik funkcinio veikimo patikrinimo, bet ir griežto atitikimo "Arma 3" našumo bei stabilumo reikalavimams. Toliau pateikiamas patikrinimo sąrašas, skirtas patvirtinti kritinius SQF faktus ir geriausias praktikas.
 
 ### A. SQF Dokumento Validavimo Patikrinimo Sąrašas
 
-- **Sintaksė**: Ar visos išraiškos užbaigtos su ; arba , (preferuojamas ;) ?
+- **Sintaksė**: Ar visos išraiškos užbaigtos su ; arba , (preferuojamas ;) ? Ar nėra "Error Missing ]" klaidų dėl neuždarytų masyvų ar sudėtingų string struktūrų?
 - **Vykdymas**: Ar sustabdymo komandos (sleep, uiSleep, waitUntil) naudojamos tik suplanotuose kontekstuose, t. y., tik po spawn ar execVM?
-- **Apimtis**: Ar scenarijų blokai, paleisti per spawn ar įvykių tvarkykles (kurios naudoja izoliuotą apimtį), tinkamai perduoda parametrus per _this, užuot kliavusios paveldimais privatiais kintamaisiais? Ar privatūs kintamieji, reikalingi po kontrolinio bloko, yra inicializuoti už jo ribų?
+- **Apimtis**: Ar scenarijų blokai, paleisti per spawn ar įvykių tvarkykles (kurios naudoja izoliuotą apimtį), tinkamai perduoda parametrus per _this, užuot kliavusios paveldimais privatiais kintamaisiais? Ar privatūs kintamieji, reikalingi po kontrolinio bloko, yra inicializuoti už jo ribų? Ar naudojama `param` funkcija vietoj `select` saugesniam masyvo elementų pasiekimui?
 - **Tinklo protokolas**: Ar BIS_fnc_MP yra visiškai pakeista remoteExec arba remoteExecCall?
+- **Callback'ai**: Ar OnOwnerChange ir kiti event handler'iai naudoja code block formatą `{ ... }` vietoj string formato su sudėtingu escaping'u?
 - **Optimizavimas**: Ar masyvo operacijos naudoja optimizuotas komandas (select, apply, findIf), o ne bendrą forEach, kai tai įmanoma? Ar yra minimizuojamas aktyvių suplanuotų gijų (sukurtų per spawn/execVM) skaičius?
 - **Našumas**: Ar naudojami efektyvūs duomenų tipai (HashMap) ir optimizuoti algoritmai?
 
@@ -250,8 +502,30 @@ Nors SQF išlieka pagrindine kalba "Arma 3" platformoje, kūrėjai turėtų prip
 
 ---
 
-**Paskutinis Atnaujinimas**: 2025-11-10
-**Versija**: 4.0
+**Paskutinis Atnaujinimas**: 2025-11-11
+**Versija**: 5.1
+**Pakeitimai v5.1**:
+- Pridėtas naujas poskyris "Saugus Neapibrėžtų Kintamųjų Valdymas" su išsamią informacija apie `isNil` ir `typeName` saugumą
+- Dokumentuota, kad `isNil` ir `typeName` yra saugūs naudoti su neapibrėžtais kintamaisiais (patikrinta internete)
+- Pridėta informacija apie `param` funkcijos pranašumus prieš `select` masyvo elementų pasiekimui
+- Išplėsta praktinė rekomendacija apie kintamųjų inicializavimą prieš naudojimą kitose operacijose
+- Pridėti praktiniai pavyzdžiai, demonstruojantys teisingą ir neteisingą kintamųjų naudojimą
+
+**Pakeitimai v5.0**:
+- Pridėta išsami VII skyrius apie DI gedimus ir desinchronizaciją daugelio žaidėjų režime
+- Detaliai išanalizuoti serverio FPS ir simuliatoriaus išsekimo mechanizmai
+- Dokumentuoti SQF optimizacijos strategijos didelio našumo aplinkoje
+- Išplėsta informacija apie nearestObjects vs nearObjects našumo skirtumus
+- Pridėtos lentelės apie tinklo konfigūracijos parametrus ir DI įstrigimo taisymą
+- Išsamiai aprašytas Headless Clients ir Dinaminės Simuliacijos naudojimas
+- Įtrauktas išsamių kontrolinių sąrašų ir diagnostikos priemonių skyrius
+
+**Pakeitimai v4.1**:
+- Pridėta informacija apie dažnas sintaksės klaidas, ypač "Error Missing ]"
+- Dokumentuoti OnOwnerChange callback'ų formatai ir jų poveikis sintaksės klaidoms
+- Pridėti praktiniai pavyzdžiai apie code block vs string formatų naudojimą
+- Išplėsta sintaksės taisyklių sekcija su konkrečiais sprendimais
+
 **Pakeitimai v4.0**:
 - Pilnai perrašyta dokumentacija į išsamią ekspertinio SQF audito sistemą
 - Įtraukti techniniai faktai apie SQF architektūrą ir evoliuciją

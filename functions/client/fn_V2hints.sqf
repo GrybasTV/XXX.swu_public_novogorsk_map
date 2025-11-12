@@ -8,15 +8,7 @@
 */
 if (!hasInterface) exitWith {};
 waitUntil {!isNull player}; //JIP
-//Patikrinti, ar žaidėjas jau gyvas - jei taip, nereikia laukti
-if (!alive player) then {
-	//Jei žaidėjas nėra gyvas, laukti, kol jis respawn'ins
-	//Pridėti timeout'ą, kad ne lauktų neribotai
-	private _timeout = time + 30; //30 sekundžių timeout
-	waitUntil {alive player || time > _timeout}; //player has respawned arba timeout
-	if (time > _timeout) exitWith {}; //Jei timeout'as pasiektas, išeiti
-};
-//Jei žaidėjas jau gyvas, tiesiog tęsti
+waitUntil {alive player}; //player has respawned
 
 _i=_this select 0;
 

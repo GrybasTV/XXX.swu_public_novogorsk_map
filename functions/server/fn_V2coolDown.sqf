@@ -20,13 +20,7 @@ Execution:
 	[1] spawn wrm_fnc_V2coolDown;
 */
 
-//Patikrinti, ar funkcija gavo parametrus
-//Funkcija gali būti kviečiama su vienu parametru (pvz., [1]) arba su trim parametrais (per-squad sistema: [11, playerUID, side])
-if (isNil "_this" || {typeName _this != "ARRAY"} || {count _this == 0}) exitWith {};
-private _tpe = _this select 0;
-
-//Patikrinti, ar _tpe yra skaičius
-if (isNil "_tpe" || {typeName _tpe != "SCALAR"}) exitWith {};
+_tpe=_this select 0;
 
 call
 {
@@ -60,20 +54,20 @@ call
 				"", //condition,  (Optional)
 				0, //radius, (Optional) -1disable, 15max
 				false, //unconscious, (Optional)
-				"" //selection (Optional)
+				"" //selection]; (Optional)
 			];
 		};
 	};
 	
-	//UAV - atskiras 3 minučių cooldown (180 sekundžių)
+	//UAV
 	if(_tpe==5)exitWith
 	{
-		uavWr=180; //3 minutės cooldown
+		uavWr=arTime; 
 		publicvariable "uavWr";
 		while {uavWr>0} do 
 		{
-			sleep 1;
-			uavWr=uavWr-1;
+			sleep 10;
+			uavWr=uavWr-10;
 			publicvariable "uavWr";
 		};
 		uavWr=0;
@@ -81,12 +75,12 @@ call
 	};
 	if(_tpe==6)exitWith
 	{
-		uavEr=180; //3 minutės cooldown
+		uavEr=arTime; 
 		publicvariable "uavEr";
 		while {uavEr>0} do 
 		{
-			sleep 1;
-			uavEr=uavEr-1;
+			sleep 10;
+			uavEr=uavEr-10;
 			publicvariable "uavEr";
 		};
 		uavEr=0;
@@ -118,87 +112,6 @@ call
 		};
 		ugvEr=0;
 		publicvariable "ugvEr";	
-	};
-	
-	//Per-squad dronų cooldown (Ukraine 2025 / Russia 2025)
-	//Parametrai: [cooldownType, playerUID, side]
-	if(_tpe==11)exitWith //UAV WEST per-squad
-	{
-		//Patikrinti, ar yra antrasis parametras (playerUID)
-		if (count _this < 2) exitWith {};
-		_playerUID = _this select 1;
-		if (isNil "_playerUID" || {typeName _playerUID != "STRING"}) exitWith {};
-		_cooldownTime = droneCooldownTime;
-
-		[format ["[UAV COOLDOWN] Starting cooldown for WEST player %1: %2 seconds", _playerUID, _cooldownTime]] remoteExec ["systemChat", 0, false];
-
-		//Rasti žaidėjo droną masyve
-		_index = -1;
-		{
-			if((_x select 0) == _playerUID)exitWith{_index = _forEachIndex;};
-		}forEach uavSquadW;
-
-		if(_index >= 0)then
-		{
-			_uavData = uavSquadW select _index;
-			uavSquadW set [_index, [_playerUID, objNull, _cooldownTime]];
-			publicvariable "uavSquadW"; //Sinchronizuoti pradžią
-
-			//Cooldown loop - OPTIMALIZACIJA: nenaudoti publicVariable loop'e
-			while {(uavSquadW select _index) select 2 > 0} do
-			{
-				sleep 10;
-				_currentCooldown = (uavSquadW select _index) select 2;
-				uavSquadW set [_index, [_playerUID, objNull, _currentCooldown - 10]];
-				//Čia nekviečiame publicVariable - mažiname network overhead
-			};
-
-			//Cooldown baigtas
-			uavSquadW set [_index, [_playerUID, objNull, 0]];
-			publicvariable "uavSquadW"; //Sinchronizuoti pabaigą
-			[format ["[UAV COOLDOWN] Cooldown finished for WEST player %1", _playerUID]] remoteExec ["systemChat", 0, false];
-		} else {
-			["[UAV COOLDOWN] ERROR: Could not find WEST player entry for cooldown"] remoteExec ["systemChat", 0, false];
-		};
-	};
-	if(_tpe==12)exitWith //UAV EAST per-squad
-	{
-		//Patikrinti, ar yra antrasis parametras (playerUID)
-		if (count _this < 2) exitWith {};
-		_playerUID = _this select 1;
-		if (isNil "_playerUID" || {typeName _playerUID != "STRING"}) exitWith {};
-		_cooldownTime = droneCooldownTime;
-
-		[format ["[UAV COOLDOWN] Starting cooldown for EAST player %1: %2 seconds", _playerUID, _cooldownTime]] remoteExec ["systemChat", 0, false];
-
-		//Rasti žaidėjo droną masyve
-		_index = -1;
-		{
-			if((_x select 0) == _playerUID)exitWith{_index = _forEachIndex;};
-		}forEach uavSquadE;
-
-		if(_index >= 0)then
-		{
-			_uavData = uavSquadE select _index;
-			uavSquadE set [_index, [_playerUID, objNull, _cooldownTime]];
-			publicvariable "uavSquadE"; //Sinchronizuoti pradžią
-
-			//Cooldown loop - OPTIMALIZACIJA: nenaudoti publicVariable loop'e
-			while {(uavSquadE select _index) select 2 > 0} do
-			{
-				sleep 10;
-				_currentCooldown = (uavSquadE select _index) select 2;
-				uavSquadE set [_index, [_playerUID, objNull, _currentCooldown - 10]];
-				//Čia nekviečiame publicVariable - mažiname network overhead
-			};
-
-			//Cooldown baigtas
-			uavSquadE set [_index, [_playerUID, objNull, 0]];
-			publicvariable "uavSquadE"; //Sinchronizuoti pabaigą
-			[format ["[UAV COOLDOWN] Cooldown finished for EAST player %1", _playerUID]] remoteExec ["systemChat", 0, false];
-		} else {
-			["[UAV COOLDOWN] ERROR: Could not find EAST player entry for cooldown"] remoteExec ["systemChat", 0, false];
-		};
 	};
 
 	//AirDrop
@@ -283,6 +196,58 @@ call
 		};
 	};
 
-	//Boat air drop - pašalinta, nenaudojame	
+	//Boat air drop
+	if(_tpe==11)exitWith
+	{	
+		sleep arTime;
+		boatTrUsed = 0;
+		if(player==leader player)then
+		{
+			systemChat "Boat airdrop is available";
+			if(airDrop==1)then
+			{
+				BoatTrAction = player addAction 
+				[
+					"- Boat airdrop", //title
+					{
+						openMap [true, false];
+						["BoatTrDrop"] spawn wrm_fnc_removeDrop;
+						hint "Select BOAT airdrop location";
+						["BoatTrDrop", "onMapSingleClick", 
+							{
+								if(surfaceIsWater _pos)then
+								{
+									_boat = createVehicle [selectRandom boatTr, [_pos select 0, _pos select 1, 60], [], 0, "NONE"]; //create boat
+									[_boat] call wrm_fnc_parachute;
+									_boat setDir (getPos player getDir _pos);
+									[z1,[[_boat],true]] remoteExec ["addCuratorEditableObjects", 2, false]; //add unit to zeus
+									if((count divEw!=0)&&(count divEe!=0))then
+									{
+										{_boat addItemCargoGlobal [_x, 1];} forEach divE; //add diving gear to cargo
+										_boat addWeaponCargoGlobal [divW, 1];
+										_boat addMagazineCargoGlobal [divM, 3];
+									};
+									boatTrUsed = 1;
+									player removeAction BoatTrAction;
+									["BoatTrDrop", "onMapSingleClick"] call BIS_fnc_removeStackedEventHandler;
+									[11] spawn wrm_fnc_V2coolDown;
+									hint "Boat deployed";
+								}else{hint "Select position above water";};
+							}
+						] call BIS_fnc_addStackedEventHandler;
+					}, //script
+					nil, //arguments (Optional)
+					0.4, //priority (Optional)
+					false, //showWindow (Optional)
+					true, //hideOnUse (Optional)
+					"", //shortcut, (Optional) 
+					"", //condition,  (Optional)
+					0, //radius, (Optional) -1disable, 15max
+					false, //unconscious, (Optional)
+					"" //selection]; (Optional)
+				];
+			};
+		};
+	};	
 	
 };

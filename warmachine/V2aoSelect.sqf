@@ -21,20 +21,20 @@ call
 	{
 		call
 		{
-			if ((_posLMB distance (getMarkerPos "mArti"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mArti"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mCas"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mCas"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mAA"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mAA"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mB1W"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB1W"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mB2W"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB2W"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mB1E"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB1E"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
-			if ((_posLMB distance (getMarkerPos "mB2E"))<200)
-			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB2E"; mrk setMarkerType "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mArti"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mArti"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mCas"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mCas"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mAA"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mAA"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mB1W"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB1W"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mB2W"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB2W"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mB1E"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB1E"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
+			if ((_posLMB distance (getMarkerPos "mB2E"))<200) 
+			exitWith {["AOselect", "onMapSingleClick", {[_pos] execVM "warmachine\V2aoChange.sqf";}] call BIS_fnc_addStackedEventHandler; mrk="mB2E"; mrk setMarkerTypeLocal "mil_end_noShadow"; hint "Select new position by LMB click";};
 		};
 	}; 
 	if (_altLMB) exitWith {};

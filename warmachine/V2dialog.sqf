@@ -86,10 +86,8 @@ _menu42 =
 	["Enabled","Hurry up, rush for the objectives"]
 ];
 //Fog
-_menu51 = 
+_menu51 =
 [
-	["Random","Fog is selected randomly"],
-	["Yes","Lower visibility"],
 	["No","Good visibility"]
 ];
 //Time limit

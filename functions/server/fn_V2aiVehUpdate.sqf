@@ -21,45 +21,21 @@
 
 if !( isServer ) exitWith {}; //run on the dedicated server or server host
 
-//Inicijuojame mortar masyvus (saugumas - jei neapibrėžti frakcijų failuose)
-if(isNil "mortW")then{mortW = [];};
-if(isNil "mortE")then{mortE = [];};
-
 objAAWr=false; objArtiWr=false; objAAEr=false; objArtiEr=false; objMortWr=false; objMortEr=false;//sector vehicles
 if(missType>1&&AIon>0)then
 {
 	aiVehWr=false; aiArmWr=false; aiCasWr=false; aiVehEr=false; aiArmEr=false; aiCasEr=false;
-	//Armor 2 lygio vienetai dabar kontroliuojami Prestige sistemos (fn_V2strategicAiBalance.sqf)
-	aiArmWr2=false; aiArmEr2=false; //Pridėti Armor 2 lygio vėliavėlių inicializaciją
+	if (AIon>2) then {aiArmWr2=false; aiArmEr2=false;};
 }; //AI vehicles
 
 //infinite loop
-//MODIFICATION: Pridėtas error handling ir timeout'ai, kad sistema neužstrigtų
 for "_i" from 0 to 1 step 0 do 
 {
 	sleep 30; //30 sec default
 	
-	//Error handling: patikrinti, ar visi reikalingi kintamieji yra apibrėžti
-	if(isNil "missType" || isNil "AIon")then{
-		if(DBG)then{["ERROR: fn_V2aiVehUpdate - missType arba AIon neapibrėžti"] remoteExec ["systemChat", 0, false];};
-		sleep 60; //Palaukti ilgiau, jei yra problemų
-		//Tęsti loop'ą - skip'inti likusį kodą šioje iteracijoje
-	}else{
-	
 	//AI vehicles (autonomous, spawned at the base)
 	if(missType>1&&AIon>0)then
 	{
-		//Error handling: patikrinti, ar funkcija gali būti iškviesta
-		private _spawnError = false;
-		{
-			//Patikrinti, ar vehicle objektas egzistuoja prieš tikrinant jo būklę
-			if(isNil "_x")then{_spawnError = true;};
-		} forEach [aiVehW, aiArmW, aiCasW, aiVehE, aiArmE, aiCasE];
-		
-		if(_spawnError)then{
-			if(DBG)then{["ERROR: fn_V2aiVehUpdate - vehicle objektai neapibrėžti"] remoteExec ["systemChat", 0, false];};
-			sleep 60; //Palaukti ilgiau, jei yra problemų
-		}else{
 		call
 		{
 			if(aiVehWr)exitWith{};
@@ -139,11 +115,9 @@ for "_i" from 0 to 1 step 0 do
 				if(!canMove aiCasE)exitWith{[6] spawn wrm_fnc_V2aiVehicle; aiCasEr=true;};
 			};
 		};
-		}; //Uždaryti error handling bloką
 	};
 	
 	//AAW (sector vehicles)
-	//MODIFICATION: Pridėtas error handling
 	call
 	{
 		if(!(getMarkerColor resAW!=""))exitWith{};
@@ -193,7 +167,7 @@ for "_i" from 0 to 1 step 0 do
 		if(!someAmmo objArtiE)exitWith{[10] spawn wrm_fnc_V2aiVehicle; objArtiEr=true;};
 	};
 	
-	if ((count mortW > 0)||(count mortE > 0)) then
+	if ((count mortW>0)||(count mortE>0)) then
 	{
 		//MortarW
 		call
@@ -222,5 +196,4 @@ for "_i" from 0 to 1 step 0 do
 	};
 
 	if(DBG)then{["AI Vehicles update"] remoteExec ["systemChat", 0, false];};
-	}; //Uždaryti else bloką
 };

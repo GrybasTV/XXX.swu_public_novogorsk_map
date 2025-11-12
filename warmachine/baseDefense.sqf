@@ -38,69 +38,32 @@ if(
 		{
 			[_x] call wrm_fnc_V2loadoutChange;
 			[_x] call wrm_fnc_V2nationChange;
-		} forEach units _grp;
+		}forEach units _grp;
 		defW pushBackUnique _grp;
-		{
-			_x addMPEventHandler ["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
+		{ _x addMPEventHandler
+			["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 		} forEach (units _grp);
 		z1 addCuratorEditableObjects [(units _grp),true];
-		if (!isNil "_grp" && !isNull _grp) then {
-			[_x,_grp] spawn wrm_fnc_V2defBase;
-		};
-	} forEach [posBaseW1, posBaseW2];
+		[_x,_grp] spawn wrm_fnc_V2defBase;
+	}forEach [posBaseW1, posBaseW2];
 
-} else
+}else
 {
 	{
-		_pos = _x; //Pozicija iš forEach [posBaseW1, posBaseW2]
-		_toSpawn = [];
-		while {(count _toSpawn < 8)} do {
+		_toSpawn=[];
+		while{(count _toSpawn<8)}do
+		{
 			_toSpawn pushBackUnique (selectRandom unitsW);
 		};
-
-		//Patikrinti, ar custom klasės (Ukraine 2025 / Russia 2025)
-		_isCustomClass = false;
-		if (count _toSpawn > 0) then {
-			_firstUnit = _toSpawn select 0;
-			if ((str _firstUnit find "UA_Azov_" >= 0) || (str _firstUnit find "UA_" >= 0) || (str _firstUnit find "RUS_MSV_" >= 0) || (str _firstUnit find "RUS_spn_" >= 0) || (str _firstUnit find "RUS_" >= 0)) then {
-				_isCustomClass = true;
-			};
-		};
-
-		//Iš anksto apibrėžiame _grp kaip grpNull, kad išvengtume "undefined variable" klaidos
-		private _grp = grpNull;
-
-		if (_isCustomClass) then {
-			//Custom klasės - naudoti createUnit (veikia taip pat kaip RHS su BIS_fnc_spawnGroup)
-			_grp = createGroup [sideW, true];
-			{
-				_unit = _grp createUnit [_x, _pos, [], 0, "NONE"];
-				[_unit] call wrm_fnc_V2loadoutChange;
-				[_unit] call wrm_fnc_V2nationChange;
-			} forEach _toSpawn;
-			_grp deleteGroupWhenEmpty true;
-		} else {
-			//Vanilla/RHS klasės - naudoti BIS_fnc_spawnGroup
-			_grp = [_pos, sideW, _toSpawn, [], [], [], [], [6, 0.5]] call BIS_fnc_spawnGroup;
-			if (!isNull _grp) then {
-				_grp deleteGroupWhenEmpty true;
-				{
-					[_x] call wrm_fnc_V2loadoutChange;
-					[_x] call wrm_fnc_V2nationChange;
-				} forEach units _grp;
-			};
-		};
-
-		//Bendri veiksmai su sukurta grupe
-		if (!isNull _grp) then {
-			defW pushBackUnique _grp;
-			{
-				_x addMPEventHandler ["MPKilled", { [(_this select 0), sideW] spawn wrm_fnc_killedEH; }];
-			} forEach (units _grp);
-			z1 addCuratorEditableObjects [(units _grp), true];
-			[_pos, _grp] spawn wrm_fnc_V2defBase;
-		};
-	} forEach [posBaseW1, posBaseW2];
+		_grp = [_x, sideW, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
+		_grp deleteGroupWhenEmpty true;
+		defW pushBackUnique _grp;
+		{ _x addMPEventHandler
+			["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
+		} forEach (units _grp);
+		z1 addCuratorEditableObjects [(units _grp),true];
+		[_x,_grp] spawn wrm_fnc_V2defBase;
+	}forEach [posBaseW1, posBaseW2];
 };
 
 //EAST
@@ -122,69 +85,32 @@ if(
 		{
 			[_x] call wrm_fnc_V2loadoutChange;
 			[_x] call wrm_fnc_V2nationChange;
-		} forEach units _grp;
+		}forEach units _grp;
 		defE pushBackUnique _grp;
-		{
-			_x addMPEventHandler ["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
+		{ _x addMPEventHandler
+			["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 		} forEach (units _grp);
 		z1 addCuratorEditableObjects [(units _grp),true];
-		if (!isNil "_grp" && !isNull _grp) then {
-			[_x,_grp] spawn wrm_fnc_V2defBase;
-		};
-	} forEach [posBaseE1, posBaseE2];
+		[_x,_grp] spawn wrm_fnc_V2defBase;
+	}forEach [posBaseE1, posBaseE2];
 
-} else
+}else
 {
 	{
-		_pos = _x; //Pozicija iš forEach [posBaseE1, posBaseE2]
-		_toSpawn = [];
-		while {(count _toSpawn < 8)} do {
+		_toSpawn=[];
+		while{(count _toSpawn<8)}do
+		{
 			_toSpawn pushBackUnique (selectRandom unitsE);
 		};
-
-		//Patikrinti, ar custom klasės (Ukraine 2025 / Russia 2025)
-		_isCustomClass = false;
-		if (count _toSpawn > 0) then {
-			_firstUnit = _toSpawn select 0;
-			if ((str _firstUnit find "UA_Azov_" >= 0) || (str _firstUnit find "UA_" >= 0) || (str _firstUnit find "RUS_MSV_" >= 0) || (str _firstUnit find "RUS_spn_" >= 0) || (str _firstUnit find "RUS_" >= 0)) then {
-				_isCustomClass = true;
-			};
-		};
-
-		//Iš anksto apibrėžiame _grp kaip grpNull, kad išvengtume "undefined variable" klaidos
-		private _grp = grpNull;
-
-		if (_isCustomClass) then {
-			//Custom klasės - naudoti createUnit (veikia taip pat kaip RHS su BIS_fnc_spawnGroup)
-			_grp = createGroup [sideE, true];
-			{
-				_unit = _grp createUnit [_x, _pos, [], 0, "NONE"];
-				[_unit] call wrm_fnc_V2loadoutChange;
-				[_unit] call wrm_fnc_V2nationChange;
-			} forEach _toSpawn;
-			_grp deleteGroupWhenEmpty true;
-		} else {
-			//Vanilla/RHS klasės - naudoti BIS_fnc_spawnGroup
-			_grp = [_pos, sideE, _toSpawn, [], [], [], [], [6, 0.5]] call BIS_fnc_spawnGroup;
-			if (!isNull _grp) then {
-				_grp deleteGroupWhenEmpty true;
-				{
-					[_x] call wrm_fnc_V2loadoutChange;
-					[_x] call wrm_fnc_V2nationChange;
-				} forEach units _grp;
-			};
-		};
-
-		//Bendri veiksmai su sukurta grupe
-		if (!isNull _grp) then {
-			defE pushBackUnique _grp;
-			{
-				_x addMPEventHandler ["MPKilled", { [(_this select 0), sideE] spawn wrm_fnc_killedEH; }];
-			} forEach (units _grp);
-			z1 addCuratorEditableObjects [(units _grp), true];
-			[_pos, _grp] spawn wrm_fnc_V2defBase;
-		};
-	} forEach [posBaseE1, posBaseE2];
+		_grp = [_x, sideE, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
+		_grp deleteGroupWhenEmpty true;
+		defE pushBackUnique _grp;
+		{ _x addMPEventHandler
+			["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
+		} forEach (units _grp);
+		z1 addCuratorEditableObjects [(units _grp),true];
+		[_x,_grp] spawn wrm_fnc_V2defBase;
+	}forEach [posBaseE1, posBaseE2];
 };
 
 if(DBG)then{["Base defense spawned"] remoteExec ["systemChat", 0, false];};

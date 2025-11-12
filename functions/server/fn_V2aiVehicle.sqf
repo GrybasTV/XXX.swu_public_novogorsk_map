@@ -49,59 +49,51 @@ call
 		aiVehW setDamage 1;
 
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW1=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
-			while {_eBW1 && time < _timeout && _iterations < _maxIterations} do
+			while {_eBW1} do 
 			{
 				_eBW1=false;
-				//OPTIMIZATION: Naudojame cached masyvą vietoj allUnits - sumažina apkrovą 10-20 kartų
 				{
-					if ((_x distance posBaseW1) < 250) then {
-						_eBW1=true;
+					_unit=_x;
+					if (side _unit==sideE) then
+					{
+						if (_unit distance posBaseW1 < 250) then {_eBW1=true;};
 					};
-				} forEach _cachedEnemyUnits;
-				if (_eBW1) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-					//Atnaujinti cached masyvą kas 2 ciklus
-					if (_iterations % 2 == 0) then {
-						_cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
-					};
-				};
+				}  forEach allUnits;
+				if (_eBW1) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
+			//create new vehicle
 			_vSel = selectRandom CarArW;
-			
-			//Sukurti transporto priemonę su tinkamu crew
-			aiVehW = [_vSel, posW1, sideW, crewW, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+
+			aiVehW = createVehicle [_typ, posW1, [], 0, "NONE"];
+			[aiVehW,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiVehW;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehW);
@@ -136,61 +128,50 @@ call
 		aiArmW setDamage 1;
 
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW2=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
-			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
+			while {_eBW2} do 
 			{
 				_eBW2=false;
 				{
 					_unit=_x;
 					if (side _unit==sideE) then
 					{
-						if (_unit distance posBaseW2 < 250) then {_eBW2=true;}; //breakOut neegzistuoja SQF
+						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
 					};
-				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				}  forEach _cachedEnemyUnits;
-				if (_eBW2) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-				};
+				}  forEach allUnits;
+				if (_eBW2) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
-			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioW kontroliuoja tikimybę
-			_vSel = if (random 1 < armorSpawnRatioW) then {
-				selectRandom ArmorW1  // Armor 1 (lengva technika)
-			} else {
-				selectRandom ArmorW2  // Armor 2 (sunki technika)
-			};
+			//create new vehicle
+			_vSel = selectRandom (ArmorW1+ArmorW2);
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
 
-			//Sukurti transporto priemonę su tinkamu crew
-			aiArmW = [_vSel, posW2, sideW, crewW, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			aiArmW = createVehicle [_typ, posW2, [], 0, "NONE"];
+			[aiArmW,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiArmW;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW);
@@ -225,56 +206,50 @@ call
 		aiArmW2 setDamage 1;
 
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 			
 		if(coop==0 || coop==2) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBW2=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideE};
-			while {_eBW2 && time < _timeout && _iterations < _maxIterations} do 
+			while {_eBW2} do 
 			{
 				_eBW2=false;
 				{
 					_unit=_x;
 					if (side _unit==sideE) then
 					{
-						if (_unit distance posBaseW2 < 250) then {_eBW2=true;}; //breakOut neegzistuoja SQF
+						if (_unit distance posBaseW2 < 250) then {_eBW2=true;};
 					};
-				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				}  forEach _cachedEnemyUnits;
-				if (_eBW2) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-				};
+				}  forEach allUnits;
+				if (_eBW2) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
+			//create new vehicle
 			_vSel = selectRandom (ArmorW1+ArmorW2);
-			
-			//Sukurti transporto priemonę su tinkamu crew
-			aiArmW2 = [_vSel, posW2, sideW, crewW, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+
+			aiArmW2 = createVehicle [_typ, posW2, [], 0, "NONE"];
+			[aiArmW2,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiArmW2;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW2);
@@ -307,37 +282,45 @@ call
 		{if(alive _x)then{_x setDamage 1;};} forEach pltW;
 		
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 			
 		if(coop==0 || coop==2) then
 		{
-			//west armed vehicle su tinkamu crew (naudojame crewW vietoj predefined crew)
-			_vSel = selectRandom (HeliArW+PlaneW+HeliArW);
-			
-			//Sukurti transporto priemonę su tinkamu crew (FLY tipas orlaiviams)
-			aiCasW = [_vSel, plHW, sideW, crewW, "FLY"] call wrm_fnc_V2createVehicleWithCrew;
-			
-			{ _x addMPEventHandler
-				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
-			} forEach (crew aiCasW);
-			pltW = crew aiCasW;
-			(group driver aiCasW) move posCenter;
-			publicvariable "aiCasW";
+			//west armed vehicle
+			// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
+			if(!isNil "plHW") then {
+				_vSel = selectRandom (HeliArW+PlaneW+HeliArW);
+				_typ="";_tex="";
+				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+
+				aiCasW = createVehicle [_typ, plHW, [], 0, "FLY"];
+				[aiCasW,[_tex,1]] call bis_fnc_initVehicle;
+				createVehicleCrew aiCasW;	
+				{ _x addMPEventHandler
+					["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
+				} forEach (crew aiCasW);
+				pltW = crew aiCasW;
+				(group driver aiCasW) move posCenter;
+				publicvariable "aiCasW";
+			};
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiCasW],true];
 			if(DBG)then{["AI heli/jet west respawned"] remoteExec ["systemChat", 0, false];};
@@ -368,34 +351,31 @@ call
 		aiVehE setDamage 1;
 		
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE1=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
-			while {_eBE1 && time < _timeout && _iterations < _maxIterations} do 
+			while {_eBE1} do 
 			{
 				_eBE1=false;
 				{
@@ -404,20 +384,17 @@ call
 					{
 						if (_unit distance posBaseE1 < 250) then {_eBE1=true;};
 					};
-				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				}  forEach _cachedEnemyUnits;
-				if (_eBE1) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-				};
+				}  forEach allUnits;
+				if (_eBE1) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
+			//create new vehicle
 			_vSel = selectRandom CarArE;
-			
-			//Sukurti transporto priemonę su tinkamu crew
-			aiVehE = [_vSel, posE1, sideE, crewE, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+
+			aiVehE = createVehicle [_typ, posE1, [], 0, "NONE"];
+			[aiVehE,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiVehE;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehE);
@@ -435,8 +412,8 @@ call
 	{
 		//check condition again
 		sleep arTime; //9 min default
-		if(getMarkerColor resBaseEW!="")exitWith{aiArmEr=false;};
-
+		if(getMarkerColor resBaseEW!="")exitWith{aiArmEr=false;};		
+		
 		_liv=true;
 		call
 		{
@@ -447,39 +424,36 @@ call
 			if(({alive _x} count (crew aiArmE))==0)exitWith{_liv=false;};
 		};
 		if(_liv)exitWith{aiArmEr=false;};
-
+		
 		//destroy
 		aiArmE setDamage 1;
-
+		
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
-				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;
+				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
-
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
+			
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE2=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
-			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
+			while {_eBE2} do 
 			{
 				_eBE2=false;
 				{
@@ -488,25 +462,17 @@ call
 					{
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
-				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				}  forEach _cachedEnemyUnits;
-				if (_eBE2) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-				};
+				}  forEach allUnits;
+				if (_eBE2) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
-			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioE kontroliuoja tikimybę
-			_vSel = if (random 1 < armorSpawnRatioE) then {
-				selectRandom ArmorE1  // Armor 1 (lengva technika)
-			} else {
-				selectRandom ArmorE2  // Armor 2 (sunki technika)
-			};
+			//create new vehicle
+			_vSel = selectRandom (ArmorE1+ArmorE2);
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
 
-			//Sukurti transporto priemonę su tinkamu crew
-			aiArmE = [_vSel, posE2, sideE, crewE, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			aiArmE = createVehicle [_typ, posE2, [], 0, "NONE"];
+			[aiArmE,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiArmE;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE);
@@ -536,39 +502,36 @@ call
 			if(({alive _x} count (crew aiArmE2))==0)exitWith{_liv=false;};
 		};
 		if(_liv)exitWith{aiArmEr2=false;};
-
+		
 		//destroy
 		aiArmE2 setDamage 1;
-
+		
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
-				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;
+				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
-
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
+			
 		if(coop==0 || coop==1) then
 		{
 			//is base under attack?
-			//MODIFICATION: Pridėtas timeout'as ir maksimalus iteracijų skaičius, kad ciklas neužstrigtų
 			_eBE2=true;
-			private _timeout = time + 300; //Maksimalus laukimo laikas 5 minutės
-			private _maxIterations = 10; //Maksimalus iteracijų skaičius
-			private _iterations = 0;
-			//OPTIMIZATION: Cached masyvas su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-			private _cachedEnemyUnits = entities [["Man"], [], true, false] select {alive _x && side _x == sideW};
-			while {_eBE2 && time < _timeout && _iterations < _maxIterations} do 
+			while {_eBE2} do 
 			{
 				_eBE2=false;
 				{
@@ -577,25 +540,17 @@ call
 					{
 						if (_unit distance posBaseE2 < 250) then {_eBE2=true;};
 					};
-				//OPTIMIZATION: Pakeista į cached masyvą su entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-				}  forEach _cachedEnemyUnits;
-				if (_eBE2) then {
-					sleep 30;
-					_iterations = _iterations + 1;
-				};
+				}  forEach allUnits;
+				if (_eBE2) then {sleep 30;};
 			};
-			//Jei timeout'as arba maksimalus iteracijų skaičius pasiektas, tęsti toliau - geriau nei užstrigti
-			//create new vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
-			//PROPORCIONAL SPAWN PAGAL PRESTIGE LYGĮ: armorSpawnRatioE kontroliuoja tikimybę
-			_vSel = if (random 1 < armorSpawnRatioE) then {
-				selectRandom ArmorE1  // Armor 1 (lengva technika)
-			} else {
-				selectRandom ArmorE2  // Armor 2 (sunki technika)
-			};
+			//create new vehicle
+			_vSel = selectRandom (ArmorE1+ArmorE2);
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
 
-			//Sukurti transporto priemonę su tinkamu crew
-			aiArmE2 = [_vSel, posE2, sideE, crewE, "NONE"] call wrm_fnc_V2createVehicleWithCrew;
-			
+			aiArmE2 = createVehicle [_typ, posE2, [], 0, "NONE"];
+			[aiArmE2,[_tex,1]] call bis_fnc_initVehicle;
+			createVehicleCrew aiArmE2;
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE2);
@@ -628,38 +583,46 @@ call
 		{if(alive _x)then{_x setDamage 1;};} forEach pltE;
 		
 		//count players
-		//MODIFICATION: Pridėtas timeout'as, kad ciklas neužstrigtų
 		if(count allPlayers>0)then
 		{
 			_t=true;
-			private _timeout = time + 10; //Maksimalus laukimo laikas 10 sekundžių
-			while {_t && time < _timeout} do
+			while {_t} do
 			{
 				{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 				sleep 1;
 			};
-			//Jei timeout'as pasiektas, tęsti toliau - geriau nei užstrigti
 		};
 		_plw={side _x==sideW} count allplayers;
 		_ple={side _x==sideE} count allplayers;
-		//Coop nustatomas Prestige sistema (fn_V2strategicAiBalance.sqf)
-		//Originali logika čia pašalinta - dabar viskas centralizuota
+		call
+		{
+			if(AIon==1)exitWith{coop=0; publicvariable "coop";};
+			if((_plw>0)&&(_ple>0))exitWith{coop=0; publicvariable "coop";};
+			if((_plw==0)&&(_ple==0))exitWith{coop=0; publicvariable "coop";};
+			if(_plw>0)exitWith{coop=1; publicvariable "coop";};
+			if(_ple>0)exitWith{coop=2; publicvariable "coop";};
+		};
 			
 		if(coop==0 || coop==1) then
 		{
-			//east armed vehicle su tinkamu crew (naudojame crewE vietoj predefined crew)
-			_vSel = selectRandom (HeliArE+PlaneE+HeliArE);
-			
-			//Sukurti transporto priemonę su tinkamu crew (FLY tipas orlaiviams)
-			aiCasE = [_vSel, plHe, sideE, crewE, "FLY"] call wrm_fnc_V2createVehicleWithCrew;
-			
-			{ _x addMPEventHandler
-				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
-			} forEach (crew aiCasE);
-			publicvariable "aiCasE";
-			(group driver aiCasE) move posCenter;
-			pltE = crew aiCasE;
-			sleep 1;
+			//east armed vehicle
+			// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
+			if(!isNil "plHE") then {
+				_vSel = selectRandom (HeliArE+PlaneE+HeliArE);
+				_typ="";_tex="";
+				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+
+				aiCasE = createVehicle [_typ, plHE, [], 0, "FLY"];
+				[aiCasE,[_tex,1]] call bis_fnc_initVehicle;
+				createVehicleCrew aiCasE;
+				{ _x addMPEventHandler
+					["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
+				} forEach (crew aiCasE);
+				publicvariable "aiCasE";
+				(group driver aiCasE) move posCenter;
+				pltE = crew aiCasE;
+				sleep 1;
+			};
 			z1 addCuratorEditableObjects [[aiCasE],true];
 			if(DBG)then{["AI heli/jet east respawned"] remoteExec ["systemChat", 0, false];};
 		};
@@ -833,7 +796,7 @@ call
 		//respawn
 		if(!alive objArtiW)then
 		{						
-			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 			deleteVehicle objArtiW;
 			if(count artiW!=0)then
 			{
@@ -886,7 +849,7 @@ call
 		{			
 			if(({alive _x} count (crew objArtiW))>0)then
 			{
-				[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+				[objArtiW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 				{ objArtiW deleteVehicleCrew _x } forEach crew objArtiW;
 			};
 			
@@ -902,7 +865,7 @@ call
 				_unit moveInCommander objArtiW;
 			};
 			objArtiW allowCrewInImmobile true;
-			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
+			[objArtiW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objArtiW);
@@ -923,7 +886,7 @@ call
 		//respawn
 		if(!alive objArtiE)then
 		{						
-			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 			deleteVehicle objArtiE;
 			if(count artiE!=0)then
 			{
@@ -976,7 +939,7 @@ call
 		{			
 			if(({alive _x} count (crew objArtiE))>0)then
 			{
-				[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+				[objArtiE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 				{ objArtiE deleteVehicleCrew _x } forEach crew objArtiE;
 			};
 			
@@ -992,7 +955,7 @@ call
 				_unit moveInCommander objArtiE;
 			};
 			objArtiE allowCrewInImmobile true;
-			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
+			[objArtiE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objArtiE);
@@ -1009,15 +972,11 @@ call
 	{
 		sleep arTime; //9 min default
 		if(!(getMarkerColor resBW!=""))exitWith{objMortWr=false;};		
-		
-		//Inicijuojame mortar masyvus (saugumas - jei neapibrėžti frakcijų failuose)
-		if(isNil "mortW")then{mortW = [];};
-		if(isNil "mortE")then{mortE = [];};
 
 		//respawn
 		if(!alive objMortW)then
 		{						
-			[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+			[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 			deleteVehicle objMortW;
 			if(count mortW!=0)then
 			{
@@ -1070,7 +1029,7 @@ call
 		{			
 			if(({alive _x} count (crew objMortW))>0)then
 			{
-				[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+				[objMortW, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 				{ objMortW deleteVehicleCrew _x } forEach crew objMortW;
 			};
 			
@@ -1086,7 +1045,7 @@ call
 				_unit moveInCommander objMortW;
 			};
 			objMortW allowCrewInImmobile true;
-			[objMortW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
+			[objMortW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objMortW);
@@ -1102,16 +1061,12 @@ call
 	if(_par==12)exitWith
 	{
 		sleep arTime; //9 min default
-		if(!(getMarkerColor resBE!=""))exitWith{objMortEr=false;};		
-		
-		//Inicijuojame mortar masyvus (saugumas - jei neapibrėžti frakcijų failuose)
-		if(isNil "mortW")then{mortW = [];};
-		if(isNil "mortE")then{mortE = [];};
-
+		if(!(getMarkerColor resBE!=""))exitWith{objMortEr=false;};
+	
 		//respawn
 		if(!alive objMortE)then
 		{						
-			[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+			[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 			deleteVehicle objMortE;
 			if(count mortE!=0)then
 			{
@@ -1164,7 +1119,7 @@ call
 		{			
 			if(({alive _x} count (crew objMortE))>0)then
 			{
-				[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 2, false];
+				[objMortE, supArtiV2] remoteExec ["BIS_fnc_removeSupportLink", 0, true];
 				{ objMortE deleteVehicleCrew _x } forEach crew objMortE;
 			};
 			
@@ -1180,7 +1135,7 @@ call
 				_unit moveInCommander objMortE;
 			};
 			objMortE allowCrewInImmobile true;
-			[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 2, false];
+			[objMortE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew objMortE);

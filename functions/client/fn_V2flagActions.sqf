@@ -73,18 +73,31 @@ call
 			},5.5,"(flgDel==0||sideA == sideW)"]
 		];
 
-		if (missType == 3) then 
-		{
-			if(
-				(count HeliArW!=0) ||
-				((count PlaneW!=0)&&(planes==1)) ||
-				((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
-			)then 
-			{
-				_flgs pushBack flgJetW;
-				_act pushBack ["Teleport to the Air base",{player setPos (flgJetW getRelPos [3,180]);},5,""];
-			};
+	if (missType == 3) then 
+	{
+		// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+		// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
+		_plHWDefined = !isNil "plHW";
+		_plHEDefined = !isNil "plHE";
+		_plH1Defined = !isNil "plH1";
+		_plH2Defined = !isNil "plH2";
+		_planesCheck = false;
+		
+		// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
+		if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
+			_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
 		};
+		
+		if(
+			(count HeliArW!=0) ||
+			((count PlaneW!=0)&&(planes==1)) ||
+			((count PlaneW!=0)&&_planesCheck)	
+		)then 
+		{
+			_flgs pushBack flgJetW;
+			_act pushBack ["Teleport to the Air base",{player setPos (flgJetW getRelPos [3,180]);},5,""];
+		};
+	};
 	};
 	
 	if (side player == sideE) exitWith 
@@ -116,10 +129,23 @@ call
 
 		if (missType == 3) then 
 		{
+			// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+			// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
+			_plHWDefined = !isNil "plHW";
+			_plHEDefined = !isNil "plHE";
+			_plH1Defined = !isNil "plH1";
+			_plH2Defined = !isNil "plH2";
+			_planesCheck = false;
+			
+			// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
+			if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
+				_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
+			};
+			
 			if(
 				(count HeliArE!=0) ||
 				((count PlaneE!=0)&&(planes==1)) ||
-				((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+				((count PlaneE!=0)&&_planesCheck)	
 			)then
 			{
 				_flgs pushBack flgJetE;
@@ -144,6 +170,6 @@ call
 		_x select 3, //condition,  (Optional)
 		5, //radius, (Optional)
 		false, //unconscious, (Optional)
-		""]; //selection (Optional)
+		""]; //selection]; (Optional)
 	} forEach _act - [_act select _indx];
 } forEach _flgs;

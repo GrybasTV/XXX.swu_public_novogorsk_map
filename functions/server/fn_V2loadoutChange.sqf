@@ -1,9 +1,8 @@
 /*
 	Author: IvosH
-		MODIFIKUOTA VERSIJA: Pridėti Ukraine 2025 ir Russia 2025 mapping
 	
 	Description:
-		Change loadout of the unit/player (mission start and respawn)
+		Change loadout of the unit/player (mission start and respawn) 
 		
 	Parameter(s):
 		0: VARIABLE unit
@@ -21,23 +20,7 @@
 */
 _un=_this select 0;
 
-//Visiems vienetams (žaidėjams ir AI): priskirti loadout'ą pagal jų klasę (typeOf) jei jie jo neturi
-// Custom vienetai turi loadout'us iš config.cpp arba CfgRespawnInventory, kiti gauna iš čia
-private _currentLoadout = getUnitLoadout _un;
-private _hasLoadout = count _currentLoadout > 0 && {!((_currentLoadout select 0) isEqualTo [])};
-
-// Jei vienetas neturi loadout'o - priskirti pagal klasę
-if (!_hasLoadout) then {
-    _un setUnitLoadout (typeOf _un);
-};
-
-//Custom vienetų apdorojimas - pašalintas dėl TFAR konfliktų
-// Dabar naudojame tik bazinę logiką visiems vienetams
-// Custom vienetai gauna loadout'us iš savo config.cpp arba CfgRespawnInventory
-
-//Skip rest of script for players - they get loadouts from CfgRespawnInventory via RscDisplayRespawn menu
-if (isPlayer _un) exitWith {};
-
+if (isPlayer _un) exitWith {}; //unit is player script stops here
 _exit=false;
 waitUntil{side _un!=civilian};
 
@@ -55,7 +38,6 @@ call
 	{
 		call
 		{
-			//A3 NATO vienetai (originalūs)
 			if(typeOf _un=="B_Soldier_SL_F")exitWith{_gr= unitsW select 0;};
 			if(typeOf _un=="B_soldier_LAT_F")exitWith{_gr= unitsW select 1;};
 			if(typeOf _un=="B_soldier_AR_F")exitWith{_gr= unitsW select 2;};
@@ -75,8 +57,6 @@ call
 			if(typeOf _un=="B_recon_F")exitWith{_gr= unitsW select 16;};
 			if(typeOf _un=="B_recon_exp_F")exitWith{_gr= unitsW select 17;};
 			if(typeOf _un=="B_sniper_F")exitWith{_gr= unitsW select 18;};
-
-			//Ukraine 2025 vienetai (WEST) - handled above, skip here
 		};
 	};
 	
@@ -84,7 +64,6 @@ call
 	{
 		call
 		{
-			//A3 CSAT vienetai (originalūs)
 			if(typeOf _un=="O_Soldier_SL_F")exitWith{_gr= unitsE select 0;};
 			if(typeOf _un=="O_soldier_LAT_F")exitWith{_gr= unitsE select 1;};
 			if(typeOf _un=="O_soldier_AR_F")exitWith{_gr= unitsE select 2;};
@@ -104,19 +83,15 @@ call
 			if(typeOf _un=="O_recon_F")exitWith{_gr= unitsE select 16;};
 			if(typeOf _un=="O_recon_exp_F")exitWith{_gr= unitsE select 17;};
 			if(typeOf _un=="O_sniper_F")exitWith{_gr= unitsE select 18;};
-
-			//Russia 2025 vienetai (EAST) - handled above, skip here
 		};
 	};
 };
-						
+
 //change to custom loadout
 if(
 	(side _un==east && factionE=="CSAT" && env=="woodland")
 	//if custom then add condition here ||()
 )exitWith{_un setUnitLoadout (missionconfigfile >> "CfgRespawnInventory" >>_gr);};
-
-//Special handling removed - Ukraine 2025 and Russia 2025 units now use their class names directly
 
 //or change to "typeOf" loadout
 _un setUnitLoadout _gr;

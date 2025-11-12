@@ -21,8 +21,8 @@
 modA = "A3"; //mod used for units and vehicles (Deppends on the lobby parameters)
 sideW = west; //sides > west, east, independent
 sideE = east; 
-factionW = "NATO"; publicVariable "factionW"; //factions
-factionE = "CSAT"; publicVariable "factionE";
+factionW = "NATO"; //factions
+factionE = "CSAT";
 call
 {
 	//AUTO SELECT
@@ -75,7 +75,7 @@ call
 		};
 		
 		//SPE
-		if(island=="NORMANDY"||island=="MORTAIN")then
+		if(island=="NORMANDY")then
 		{			
 			modA = "SPE";
 			sideE = independent;
@@ -138,25 +138,7 @@ call
 			};	
 		};
 	};
-
-	//RHS: Ukraine 2025 vs. Russia 2025
-	if("param1" call BIS_fnc_getParamValue == 16)exitWith //16
-	{
-		modA = "RHS";
-		sideW = west;
-		sideE = east;
-		factionW = "Ukraine 2025"; publicVariable "factionW";
-		factionE = "Russia 2025"; publicVariable "factionE";
-		systemChat "[FACTION] Ukraine 2025 vs Russia 2025 selected";
-		systemChat format ["[FACTION] factionW: %1, factionE: %2", factionW, factionE];
-
-		//Ensure base names are defined for this faction
-		nameBW1 = "Ukraine 2025 Transport base"; publicvariable "nameBW1";
-		nameBW2 = "Ukraine 2025 Armor base"; publicvariable "nameBW2";
-		nameBE1 = "Russia 2025 Transport base"; publicvariable "nameBE1";
-		nameBE2 = "Russia 2025 Armor base"; publicvariable "nameBE2";
-	};
-
+	
 	//NATO vs. CSAT
 	if("param1" call BIS_fnc_getParamValue == 1)exitWith //1
 	{
@@ -267,8 +249,8 @@ call
 		if(!isClass(configfile >> "CfgMods" >> "RHS_AFRF"))
 		exitWith{hint "RHS-AFRF MOD not found. Default factions selected";};
 		modA = "RHS";
-		factionW = "USAF"; publicVariable "factionW";
-		factionE = "AFRF"; publicVariable "factionE";
+		factionW = "USAF";
+		factionE = "AFRF";
 	};
 	
 	//IFA3: Wehrmacht vs. Red army
@@ -298,7 +280,7 @@ call
 		if((!isClass(configfile >> "CfgMods" >> "IF"))&&(!isClass(configfile >> "CfgMods" >> "WW2")))
 		exitWith{hint "IFA3 MOD not found. Default factions selected";};
 		modA = "IFA3";
-		sideE = independent; 		
+		sideE = independent;
 		if(env=="desert")then
 		{
 			factionW = "Afrikakorps";
@@ -308,5 +290,19 @@ call
 			factionW = "Wehrmacht";
 			factionE = "UK Army";
 		};
+	};
+
+	//Ukraine 2025 vs. Russia 2025
+	if("param1" call BIS_fnc_getParamValue == 16)exitWith
+	{
+		if((!isClass(configfile >> "CfgMods" >> "RHS_USAF"))&&(!isClass(configfile >> "CfgMods" >> "RHS_AFRF")))
+		exitWith{hint "RHS-USAF and RHS-AFRF MOD not found. Required for Ukraine 2025 vs Russia 2025. Default factions selected";};
+		if(!isClass(configfile >> "CfgMods" >> "RHS_USAF"))
+		exitWith{hint "RHS-USAF MOD not found. Required for Ukraine 2025. Default factions selected";};
+		if(!isClass(configfile >> "CfgMods" >> "RHS_AFRF"))
+		exitWith{hint "RHS-AFRF MOD not found. Required for Russia 2025. Default factions selected";};
+		modA = "UA2025_RU2025";
+		factionW = "Ukraine 2025";
+		factionE = "Russia 2025";
 	};
 };

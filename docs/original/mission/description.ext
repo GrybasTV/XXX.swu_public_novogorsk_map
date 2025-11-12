@@ -51,9 +51,9 @@ corpseRemovalMaxTime = 200; //200
 
 //DELETE WRECKS
 wreckManagerMode = 3;
-wreckLimit = 15;
-wreckRemovalMinTime = 190;
-wreckRemovalMaxTime = 600;
+wreckLimit = 16; //16
+wreckRemovalMinTime = 200; //200
+wreckRemovalMaxTime = 600; //600
 
 saving = 0;
 taskManagement_propagate = 1;

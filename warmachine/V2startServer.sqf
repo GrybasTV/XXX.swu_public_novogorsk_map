@@ -129,14 +129,7 @@ if(AIon>0)then
 call
 {
 	//random
-	if (day == 0) exitWith {
-		_randomDaytime = selectRandom [2,3,4]; // Morning, Noon, Afternoon
-		call {
-			if (_randomDaytime == 2) exitWith {skiptime ((9 - daytime + 24) % 24);};
-			if (_randomDaytime == 3) exitWith {skiptime ((12 - daytime + 24) % 24);};
-			if (_randomDaytime == 4) exitWith {skiptime ((15 - daytime + 24) % 24);};
-		};
-	};
+	if (day == 0) exitWith {skiptime (((floor random 24) - daytime + 24) % 24);};
 	//Dawn
 	if (day == 1) exitWith {skiptime (((dawn select 1) - daytime + 24) % 24);};
 	//Morning, 9:00
@@ -402,51 +395,55 @@ publicVariable "posCenter";
 publicVariable "minDis";
 
 //sort plHs
-// Saugiai formuojame masyvą tik su egzistuojančiais kintamaisiais
-// Patikriname kiekvieną kintamąjį prieš jį įtraukdami į masyvą
+// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+// Pagal SQF geriausias praktikas: isNil yra saugus su neapibrėžtais kintamaisiais, bet !isNull reikalauja, kad kintamasis būtų apibrėžtas
 _plHs = [];
-if (!isNil "plH1") then {_plHs pushBack plH1;};
-if (!isNil "plH2") then {_plHs pushBack plH2;};
-if (!isNil "plH3") then {_plHs pushBack plH3;};
-if (plH >= 4 && !isNil "plH4") then {_plHs pushBack plH4;};
-if (plH >= 5 && !isNil "plH5") then {_plHs pushBack plH5;};
-
-//remove plHs too close
-{if ((_x distance posCenter)<minDis) then {_plHs=_plHs-[_x];};} forEach _plHs;
-
-//sort plHs for each side
-_plHsW=[]; _plHsE=[]; _disW=[]; _disE=[];
-
-// Patikriname, ar bazės pozicijos yra apibrėžtos prieš naudojimą
-if (count posBaseW1 < 2 || count posBaseW2 < 2 || count posBaseE1 < 2 || count posBaseE2 < 2) then
+if(!isNil "plH1") then {
+	if(!isNull plH1) then {_plHs pushBack plH1;};
+};
+if(!isNil "plH2") then {
+	if(!isNull plH2) then {_plHs pushBack plH2;};
+};
+if(!isNil "plH3") then {
+	if(!isNull plH3) then {_plHs pushBack plH3;};
+};
+call
 {
-	systemChat "ERROR: Base positions not defined properly - AO creation may have failed";
-} else
-{
-	// Patikriname, ar yra oro uostų pozicijų
-	if (count _plHs > 0) then
-	{
-		{
-			// Patikriname, ar _x nėra nil ir yra tinkamas naudoti distance funkcijai
-			// distance veikia su pozicijomis (masyvais) ir objektais
-			if (!isNil "_x") then
-			{
-				// Bandome apskaičiuoti atstumus tik jei _x yra tinkamas
-				_d1=posBaseW1 distance _x;
-				_d2=posBaseW2 distance _x;
-				_d3=posBaseE1 distance _x;
-				_d4=posBaseE2 distance _x;
-				call
-				{
-					if(_d1<_d2&&_d1<_d3&&_d1<_d4)exitwith{_plHsW pushBackUnique _x; _disW pushBackUnique _d1;};
-					if(_d2<_d1&&_d2<_d3&&_d2<_d4)exitwith{_plHsW pushBackUnique _x; _disW pushBackUnique _d2;};
-					if(_d3<_d1&&_d3<_d2&&_d3<_d4)exitwith{_plHsE pushBackUnique _x; _disE pushBackUnique _d3;};
-					if(_d4<_d1&&_d4<_d2&&_d4<_d3)exitwith{_plHsE pushBackUnique _x; _disE pushBackUnique _d4;};
-				};
-			};
-		} forEach _plHs;
+	if(plH==4 && !isNil "plH4") then {
+		if(!isNull plH4) then {_plHs pushBack plH4;};
+	};
+	if(plH==5 && !isNil "plH5") then {
+		if(!isNull plH5) then {_plHs pushBack plH5;};
 	};
 };
+
+//remove plHs too close
+// Patikriname, ar visi elementai yra apibrėžti prieš naudojant forEach
+// Filtruojame masyvą, pašalindami nil arba neapibrėžtus elementus
+_plHsFiltered = [];
+{
+	// Patikriname, ar elementas yra apibrėžtas (nėra nil) ir nėra null objektas
+	// isNil neveikia su _x forEach cikle, todėl naudojame typeName arba tiesiog patikriname ar objektas egzistuoja
+	if(!isNull _x && {_x distance posCenter >= minDis}) then {
+		_plHsFiltered pushBack _x;
+	};
+} forEach _plHs;
+_plHs = _plHsFiltered;
+
+//sort plHs for each side
+// Pašalintas call blokas, kad _x kintamasis būtų pasiekiamas forEach cikle
+_plHsW=[]; _plHsE=[]; _disW=[]; _disE=[];
+{
+	_d1=posBaseW1 distance _x;
+	_d2=posBaseW2 distance _x;
+	_d3=posBaseE1 distance _x;
+	_d4=posBaseE2 distance _x;
+	// Nustatome, kuriai pusei priklauso šis plH, pagal artimiausią bazę
+	if(_d1<_d2&&_d1<_d3&&_d1<_d4)exitWith{_plHsW pushBackUnique _x; _disW pushBackUnique _d1;};
+	if(_d2<_d1&&_d2<_d3&&_d2<_d4)exitWith{_plHsW pushBackUnique _x; _disW pushBackUnique _d2;};
+	if(_d3<_d1&&_d3<_d2&&_d3<_d4)exitWith{_plHsE pushBackUnique _x; _disE pushBackUnique _d3;};
+	if(_d4<_d1&&_d4<_d2&&_d4<_d3)exitWith{_plHsE pushBackUnique _x; _disE pushBackUnique _d4;};
+} forEach _plHs;
 
 //selection, select an airfield with the best position
 _index=0;
@@ -454,36 +451,72 @@ if (count _plHsW > 0) then
 {
 	minW = selectMin _disW;
 	{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
-	plHW = _plHsW select _index;
+	// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
+	plHW = _plHsW param [_index, objNull];
+	if(isNull plHW) then {
+		plHW = nil;
+	};
 };
 if (count _plHsE > 0) then 
 {
 	minE = selectMin _disE;
 	{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
-	plHE = _plHsE select _index;
+	// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
+	plHE = _plHsE param [_index, objNull];
+	if(isNull plHE) then {
+		plHE = nil;
+	};
 };
 if (count _plHsW <= 0) then 
 {
-	_plHsW = _plHsE - [plHE];
-	_disW = _disE - [minE];
-	minW = selectMin _disW;
-	{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
-	plHW = _plHsW select _index;
+	// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
+	if(!isNil "plHE" && count _plHsE > 0) then {
+		_plHsW = _plHsE - [plHE];
+		_disW = _disE - [minE];
+		if(count _disW > 0) then {
+			minW = selectMin _disW;
+			{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
+			// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
+			plHW = _plHsW param [_index, objNull];
+			if(isNull plHW) then {
+				plHW = nil;
+			};
+		};
+	};
 };
 if (count _plHsE <= 0) then 
 {
-	_plHsE = _plHsW - [plHW];
-	_disE = _disW - [minW];
-	minE = selectMin _disE;
-	{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
-	plHE = _plHsE select _index;
+	// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
+	if(!isNil "plHW" && count _plHsW > 0) then {
+		_plHsE = _plHsW - [plHW];
+		_disE = _disW - [minW];
+		if(count _disE > 0) then {
+			minE = selectMin _disE;
+			{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
+			// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
+			plHE = _plHsE param [_index, objNull];
+			if(isNull plHE) then {
+				plHE = nil;
+			};
+		};
+	};
 };
-publicVariable "plHW";
-publicVariable "plHE";
+// PublicVariable tik jei kintamieji yra apibrėžti
+if(!isNil "plHW") then {
+	publicVariable "plHW";
+};
+if(!isNil "plHE") then {
+	publicVariable "plHE";
+};
 
 //COMBAT SUPPORT modules
-{_x setPos (plHW getRelPos [20, 90]);} forEach [SupCasHW, SupCasBW];
-{_x setPos (plHE getRelPos [20, 90]);} forEach [SupCasHE, SupCasBE];
+// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+if(!isNil "plHW") then {
+	{_x setPos (plHW getRelPos [20, 90]);} forEach [SupCasHW, SupCasBW];
+};
+if(!isNil "plHE") then {
+	{_x setPos (plHE getRelPos [20, 90]);} forEach [SupCasHE, SupCasBE];
+};
 {[_x,["bis_supp_cooldown", arTime]] remoteExec ["setVariable",0,false];} forEach [SupCasHW,SupCasBW,SupCasHE,SupCasBE]; //set coolDown time == arTime
 
 _HeliArW=[];
@@ -519,53 +552,78 @@ if(modA=="IFA3")then
 if(missType==3)then
 {
 	//respawn
+	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+	_plHWDefined = !isNil "plHW";
+	_plHEDefined = !isNil "plHE";
+	_plH1Defined = !isNil "plH1";
+	_plH2Defined = !isNil "plH2";
+	_planesCheck = false;
+	
+	// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
+	if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
+		_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
+	};
+	
 	if(
 		(count HeliArW!=0) ||
 		((count PlaneW!=0)&&(planes==1)) ||
-		((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+		((count PlaneW!=0)&&_planesCheck)	
 	)
-	then{[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base",factionW])] call BIS_fnc_addRespawnPosition;};
+	then{
+		if(_plHWDefined) then {
+			[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base",factionW])] call BIS_fnc_addRespawnPosition;
+		};
+	};
 	if(
 		(count HeliArE!=0) ||
 		((count PlaneE!=0)&&(planes==1)) ||
-		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+		((count PlaneE!=0)&&_planesCheck)	
 	)
-	then{[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base",factionE])] call BIS_fnc_addRespawnPosition;};
+	then{
+		if(_plHEDefined) then {
+			[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base",factionE])] call BIS_fnc_addRespawnPosition;
+		};
+	};
 	
-	if ((planes==1) || ((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))) then
+	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+	if ((planes==1) || _planesCheck) then
 	{ 
 		//plane west
 		if(count PlaneW!=0)then
 		{
-			[parseText format ["Creating vehicles<br/>%1 Plane",factionW]] remoteExec ["hint", 0, false];
-			_pSelW = selectRandom PlaneW;
-			_pPosW = getPos plHW;
-			_pVehW = _pSelW createVehicle _pPosW;
-			_pVehW setDir getDir plHW;
-			_nme = format ["%1%2",_pSelW,(_pPosW select 0)];
-			[_nme,"plane",_pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
-			z1 addCuratorEditableObjects [[_pVehW],true];	
-			[_pVehW,arTime,0,-1,{params ["_pVehW"]; removeFromRemainsCollector [_pVehW];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-			removeFromRemainsCollector [_pVehW];
-			_pVehW allowDammage false;
-			_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
+			if(!isNil "plHW") then {
+				[parseText format ["Creating vehicles<br/>%1 Plane",factionW]] remoteExec ["hint", 0, false];
+				_pSelW = selectRandom PlaneW;
+				_pPosW = getPos plHW;
+				_pVehW = _pSelW createVehicle _pPosW;
+				_pVehW setDir getDir plHW;
+				_nme = format ["%1%2",_pSelW,(_pPosW select 0)];
+				[_nme,"plane",_pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+				z1 addCuratorEditableObjects [[_pVehW],true];	
+				[_pVehW,arTime,0,-1,{params ["_pVehW"]; removeFromRemainsCollector [_pVehW];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+				removeFromRemainsCollector [_pVehW];
+				_pVehW allowDammage false;
+				_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
+			};
 		};
 
 		//plane east
 		if(count PlaneE!=0)then
 		{
-			[parseText format ["Creating vehicles<br/>%1 Plane",factionE]] remoteExec ["hint", 0, false];
-			_pSelE = selectRandom PlaneE;
-			_pPosE = getPos plHe;
-			_pVehE = _pSelE createVehicle _pPosE;
-			_pVehE setDir getDir plHe;
-			_nme = format ["%1%2",_pSelE,(_pPosE select 0)];
-			[_nme,"plane",_pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
-			z1 addCuratorEditableObjects [[_pVehE],true];
-			[_pVehE,arTime,0,-1,{params ["_pVehE"]; removeFromRemainsCollector [_pVehE];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-			removeFromRemainsCollector [_pVehE];
-			_pVehE allowDammage false;
-			_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
+			if(!isNil "plHE") then {
+				[parseText format ["Creating vehicles<br/>%1 Plane",factionE]] remoteExec ["hint", 0, false];
+				_pSelE = selectRandom PlaneE;
+				_pPosE = getPos plHE;
+				_pVehE = _pSelE createVehicle _pPosE;
+				_pVehE setDir getDir plHE;
+				_nme = format ["%1%2",_pSelE,(_pPosE select 0)];
+				[_nme,"plane",_pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+				z1 addCuratorEditableObjects [[_pVehE],true];
+				[_pVehE,arTime,0,-1,{params ["_pVehE"]; removeFromRemainsCollector [_pVehE];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+				removeFromRemainsCollector [_pVehE];
+				_pVehE allowDammage false;
+				_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
+			};
 		};
 		
 	};
@@ -573,49 +631,53 @@ if(missType==3)then
 	//gunship west
 	if(count HeliArW!=0)then
 	{
-		_res = plHW getRelPos [25, 90];
-		if((count PlaneW==0)||(!((planes==1)||((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2))))))then{_res = getPos plHW;};
-		//helipad
-		_h = "Land_HelipadCircle_F" createVehicle _res;
-		_h setDir getDir plHW;
-		//vehicle
-		_vSel = selectRandom HeliArW;
-		_typ="";_tex="";
-		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-		_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
-		[_veh,_res,300] call wrm_fnc_V2clearArea;
-		[_veh,[_tex,1]] call bis_fnc_initVehicle;
-		_veh setDir getDir plHW;
-		_veh setVectorUp surfaceNormal _res;			
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
-		z1 addCuratorEditableObjects [[_veh],true];
-		[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-		removeFromRemainsCollector [_veh];
+		if(_plHWDefined) then {
+			_res = plHW getRelPos [25, 90];
+			if((count PlaneW==0)||(!((planes==1)||_planesCheck)))then{_res = getPos plHW;};
+			//helipad
+			_h = "Land_HelipadCircle_F" createVehicle _res;
+			_h setDir getDir plHW;
+			//vehicle
+			_vSel = selectRandom HeliArW;
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
+			[_veh,_res,300] call wrm_fnc_V2clearArea;
+			[_veh,[_tex,1]] call bis_fnc_initVehicle;
+			_veh setDir getDir plHW;
+			_veh setVectorUp surfaceNormal _res;			
+			_nme = format ["%1%2",_typ,(_res select 0)];
+			[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+			z1 addCuratorEditableObjects [[_veh],true];
+			[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+			removeFromRemainsCollector [_veh];
+		};
 	};
 	
 	//gunship east
 	if(count HeliArE!=0)then
 	{
-		_res = plHE getRelPos [25, 90];
-		if((count PlaneE==0)||(!((planes==1)||((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2))))))then{_res = getPos plHE;};
-		//helipad
-		_h = "Land_HelipadCircle_F" createVehicle _res;
-		_h setDir getDir plHe;
-		//vehicle
-		_vSel = selectRandom HeliArE;
-		_typ="";_tex="";
-		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-		_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
-		[_veh,_res,300] call wrm_fnc_V2clearArea;
-		[_veh,[_tex,1]] call bis_fnc_initVehicle;
-		_veh setDir getDir plHe;
-		_veh setVectorUp surfaceNormal _res;			
-		_nme = format ["%1%2",_typ,(_res select 0)];
-		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
-		z1 addCuratorEditableObjects [[_veh],true];
-		[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-		removeFromRemainsCollector [_veh];
+		if(_plHEDefined) then {
+			_res = plHE getRelPos [25, 90];
+			if((count PlaneE==0)||(!((planes==1)||_planesCheck)))then{_res = getPos plHE;};
+			//helipad
+			_h = "Land_HelipadCircle_F" createVehicle _res;
+			_h setDir getDir plHE;
+			//vehicle
+			_vSel = selectRandom HeliArE;
+			_typ="";_tex="";
+			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
+			[_veh,_res,300] call wrm_fnc_V2clearArea;
+			[_veh,[_tex,1]] call bis_fnc_initVehicle;
+			_veh setDir getDir plHE;
+			_veh setVectorUp surfaceNormal _res;			
+			_nme = format ["%1%2",_typ,(_res select 0)];
+			[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+			z1 addCuratorEditableObjects [[_veh],true];
+			[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+			removeFromRemainsCollector [_veh];
+		};
 	};
 };
 
@@ -915,8 +977,12 @@ call //overcast
 
 call //fog
 {
-	//Always use good visibility (no fog)
-	0 setFog [0,0,0];
+	//Random
+	if (fogLevel == 0) exitWith {0 setFog selectRandom fogs;};
+	//Yes
+	if (fogLevel == 1) exitWith {0 setFog (fogs select 1);};
+	//No
+	if (fogLevel == 2) exitWith {0 setFog (fogs select 0);};
 };
 
 _rain = [0, 0.5, 1, 0];
@@ -958,22 +1024,39 @@ flgBE2 = flgE createVehicle _fpos;
 flgJetW = ""; flgJetE = "";
 if (missType == 3) then 
 {
+	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+	// Kintamieji turi būti apibrėžti prieš palyginimus
+	_plHWDefined = !isNil "plHW";
+	_plHEDefined = !isNil "plHE";
+	_plH1Defined = !isNil "plH1";
+	_plH2Defined = !isNil "plH2";
+	_planesCheck = false;
+	
+	// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
+	if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
+		_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
+	};
+	
 	if(
 		(count HeliArW!=0) ||
 		((count PlaneW!=0)&&(planes==1)) ||
-		((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+		((count PlaneW!=0)&&_planesCheck)	
 	)then 
 	{
-		flgJetW = flgW createVehicle (plHW getRelPos [30, 270]);
+		if(_plHWDefined) then {
+			flgJetW = flgW createVehicle (plHW getRelPos [30, 270]);
+		};
 	};
 
 	if(
 		(count HeliArE!=0) ||
 		((count PlaneE!=0)&&(planes==1)) ||
-		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHe==plH1)||(plHe==plH2)))	
+		((count PlaneE!=0)&&_planesCheck)	
 	)then 
 	{
-		flgJetE = flgE createVehicle (plHE getRelPos [30, 270]);
+		if(_plHEDefined) then {
+			flgJetE = flgE createVehicle (plHE getRelPos [30, 270]);
+		};
 	};
 };
 
@@ -1517,6 +1600,9 @@ if (AIon>0) then {[] spawn wrm_fnc_V2aiUpdate;};
 //progress = 2; publicVariable "progress";
 
 //CLIENTS START SCRIPT
+// Wait for mission objects (airports) to be initialized
+waitUntil {sleep 1; !isNull plH1};
+
 [[
 	//mission parameters
 	aoType, missType, day, resTickets, weather, ticBleed, fogLevel, timeLim, AIon, resType, revOn, resTime, viewType, vehTime, 

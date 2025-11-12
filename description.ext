@@ -9,7 +9,6 @@ onLoadIntro = "YourMessage";
 #include "warmachine\defines.hpp"
 #include "warmachine\V2dialog.hpp"
 #include "admin\V2adminMenu.hpp"
-#include "CfgRemoteExec.hpp"
 class cfgFunctions 
 {
 	#include "functions\cfgfunctions.hpp"
@@ -21,7 +20,7 @@ overviewTextLocked = "Conquest game mode for Arma 3, with replayable, dynamicall
 
 class Header
 {
-	gameType = "War Ukraine"; //Custom gameType: Ukraine vs Russia 2025 Warmachine misija
+	gameType = WM;
 	minPlayers = 1;
 	maxPlayers = 48;
 };
@@ -44,17 +43,17 @@ ReviveMedicSpeedMultiplier = 1;			//speed multiplier for revive performed by med
 ReviveForceRespawnDelay = 6;			//time needed to perform force respawn (in secs)
 ReviveBleedOutDelay = 180;				//unconscious state duration (in secs)
 
-//DELETE DEAD BODIES (hibridinis planas: engine manager + server queue)
-corpseManagerMode = 1;                 //engine dirba kartu su mūsų GC
-corpseLimit = 30;                      //paliekam ~30 lavonų, atmestiniam efektui
-corpseRemovalMinTime = 600;            //10 min iki pirmo automatinio valymo
-corpseRemovalMaxTime = 1800;           //30 min hard limit, jei arti nėra žaidėjų
+//DELETE DEAD BODIES
+corpseManagerMode = 1;
+corpseLimit = 24; //24
+corpseRemovalMinTime = 180; //180
+corpseRemovalMaxTime = 200; //200
 
-//DELETE WRECKS (engine manager koordinuotas su serveriniu GC)
-wreckManagerMode = 1;                  //naudojame variklio valymą vietoje 3 (disabled)
-wreckLimit = 25;                       //maksimalus nuolaužų kiekis
-wreckRemovalMinTime = 900;             //15 min iki pirmo valymo
-wreckRemovalMaxTime = 2400;            //40 min hard limit
+//DELETE WRECKS
+wreckManagerMode = 3;
+wreckLimit = 16; //16
+wreckRemovalMinTime = 200; //200
+wreckRemovalMaxTime = 600; //600
 
 saving = 0;
 taskManagement_propagate = 1;
@@ -84,7 +83,7 @@ textsParam1[] =
 	"IFA3: Wehrmacht vs. Red army", //13
 	"IFA3: Wehrmacht vs. US Army", //14
 	"IFA3: Wehrmacht vs. UK Army", //15
-	"RHS: Ukraine 2025 vs. Russia 2025" //16
+	"Ukraine 2025 vs. Russia 2025" //16
 };
 
 titleParam2 = "VIRTUAL ARSENAL";
@@ -159,7 +158,7 @@ class Params
 			"Large - 2x larger"
 		};
 		values[] = {0,1,2,3};
-		default = 0;
+		default = 1;
 	};	
 	class asp1 //Mission type
 	{
@@ -188,7 +187,7 @@ class Params
 			"Night"
 		};
 		values[] = {0,1,2,3,4,5,6};
-		default = 2;
+		default = 3;
 	};
 	class asp3 //Weather
 	{
@@ -206,14 +205,12 @@ class Params
 	};
 	class asp4 //Fog
 	{
-		title = "   - FOG"; 
-		texts[] = 
+		title = "   - FOG";
+		texts[] =
 		{
-			"Random - Fog is selected randomly",
-			"Yes - Lower visibility",
 			"No - Good visibility"
 		};
-		values[] = {0,1,2};
+		values[] = {2};
 		default = 2;
 	};
 	class asp5 //Autonomous AI
@@ -227,7 +224,7 @@ class Params
 			"Overwhelming - In SP/COOP more AI units and vehicles spawn on the enemy side"
 		};
 		values[] = {0,1,2,3};
-		default = 3;
+		default = 1;
 	};
 	class asp6 //Revive
 	{
@@ -252,7 +249,7 @@ class Params
 			"Enabled - Third person view available"
 		};
 		values[] = {0,1,2};
-		default = 2;
+		default = 1;
 	};
 	class asp8 //Respawn tickets
 	{
@@ -312,17 +309,16 @@ class Params
 	};
 	class asp12 //Player respawn time
 	{
-		title = "   - PLAYER RESPAWN TIME";
-		texts[] =
+		title = "   - PLAYER RESPAWN TIME"; 
+		texts[] = 
 		{
 			"5 sec - Instant respawn",
 			"30 sec - Default",
 			"60 sec - Normal",
 			"120 sec - Long respawn",
-			"180 sec - Go for a coffee",
-			"200 sec - Marathon mode"
+			"180 sec - Go for a coffee"
 		};
-		values[] = {0,1,2,3,4,5};
+		values[] = {0,1,2,3,4};
 		default = 2;
 	};
 	class asp13 //Vehicles respawn time
@@ -346,69 +342,6 @@ class Params
 		values[]={0,0};
 		texts[]={"",""};
 		default = 0;
-	};
-	class asp19 //AI Respawn Delay System
-	{
-		title = "   - AI RESPAWN DELAY SYSTEM";
-		texts[] = {"Enabled - Different delays for AI types","Disabled - All AI respawn instantly"};
-		values[] = {1,0};
-		default = 1;
-	};
-	class asp15 //Squad AI Respawn Delay
-	{
-		title = "   - SQUAD AI RESPAWN DELAY";
-		texts[] =
-		{
-			"10% of player delay - Very fast (6s from 60s)",
-			"25% of player delay - Fast (15s from 60s)",
-			"50% of player delay - Balanced (30s from 60s)",
-			"75% of player delay - Slow (45s from 60s)",
-			"100% of player delay - Same as player (60s from 60s)",
-			"200% of player delay - Double time (120s from 60s)"
-		};
-		values[] = {0,1,2,3,4,5};
-		default = 5; // 100% - same as player
-	};
-	class asp18 //Prestige Strategic AI Balance
-	{
-		title = "   - PRESTIGE ENGAGEMENT BOOST - AI adapts to strategic sectors for better gameplay";
-		texts[] =
-		{
-			"Disabled - No strategic AI adaptation",
-			"Enabled - AI adapts to strategic sectors for better gameplay"
-		};
-		values[] = {0,1};
-		default = 1; // Enabled by default
-	};
-	class asp16 //Combat Groups Respawn Delay
-	{
-		title = "   - COMBAT GROUPS RESPAWN DELAY";
-		texts[] =
-		{
-			"50% of player delay - Fast reinforcement (30s from 60s)",
-			"75% of player delay - Balanced (45s from 60s)",
-			"100% of player delay - Standard (60s from 60s)",
-			"125% of player delay - Slow (75s from 60s)",
-			"150% of player delay - Very slow (90s from 60s)",
-			"200% of player delay - Ultra slow (120s from 60s)"
-		};
-		values[] = {0,1,2,3,4,5};
-		default = 5; // 100% - same as player
-	};
-	class asp17 //Base Defense Respawn Delay
-	{
-		title = "   - BASE DEFENSE RESPAWN DELAY (when safe)";
-		texts[] =
-		{
-			"0s - Instant defense (zombie-like)",
-			"25% of player delay - Very fast (15s from 60s)",
-			"50% of player delay - Fast (30s from 60s)",
-			"75% of player delay - Balanced (45s from 60s)",
-			"100% of player delay - Same as player (60s from 60s)",
-			"200% of player delay - Marathon defense (120s from 60s)"
-		};
-		values[] = {0,1,2,3,4,5};
-		default = 5; // 50% - balanced
 	};
 	class EmtpyLine5
 	{
@@ -527,25 +460,6 @@ class CfgDebriefing
 		pictureBackground = "lobby.paa";
 		picture = "o_inf";
 		pictureColor[] = {0.5,0,0,1};
-	};
-	//RHS Ukraine 2025 / Russia 2025
-	class EndUkraine
-	{
-		title = "Ukraine 2025 victory";
-		subtitle = "";
-		description = "";
-		pictureBackground = "lobby.paa";
-		picture = "b_inf";
-		pictureColor[] = {1,0.84,0,1}; //Ukrainos vėliavos spalvos - geltona/mėlyna (geltona dominuoja)
-	};
-	class EndRussia
-	{
-		title = "Russia 2025 victory";
-		subtitle = "";
-		description = "";
-		pictureBackground = "lobby.paa";
-		picture = "o_inf";
-		pictureColor[] = {0.8,0,0,1}; //Rusijos vėliavos spalvos - raudona dominuoja
 	};
 	//IFA3
 	class EndWehrmacht
@@ -677,6 +591,26 @@ class CfgDebriefing
 		picture = "o_inf";
 		pictureColor[] = {0.5,0,0,1};
 	};
+	//Ukraine 2025
+	class EndUkraine
+	{
+		title = "Ukraine victory";
+		subtitle = "";
+		description = "";
+		pictureBackground = "lobby.paa";
+		picture = "b_inf";
+		pictureColor[] = {0,0.3,0.6,1};
+	};
+	//Russia 2025
+	class EndRussia
+	{
+		title = "Russia victory";
+		subtitle = "";
+		description = "";
+		pictureBackground = "lobby.paa";
+		picture = "o_inf";
+		pictureColor[] = {0.5,0,0,1};
+	};
 };
 
 //LOADOUTS--------------------------------------------------EDITABLE//
@@ -724,8 +658,8 @@ class CfgRespawnInventory
 
 	//SPE Wehrmacht Woodland
 	#include "loadouts\SPE_Wehrmacht_W_L.hpp" //WEST 558 - 591
-	
-	//Ukraine 2025 Woodland (RHS)
+
+	//Ukraine 2025 Woodland
 	#include "loadouts\UA2025_RHS_W_L.hpp" //WEST 800 - 818
 
 //EAST
@@ -762,8 +696,8 @@ class CfgRespawnInventory
 	
 	//CSLA CSLA Woodland
 	#include "loadouts\CSLA_CSLA_W_L.hpp" //EAST 437 - 478
-	
-	//Russia 2025 Woodland (RHS)
+
+	//Russia 2025 Woodland
 	#include "loadouts\RU2025_RHS_W_L.hpp" //EAST 500 - 518
 
 //IDEPENDENT

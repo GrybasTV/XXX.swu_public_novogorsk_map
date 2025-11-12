@@ -25,24 +25,13 @@ f1=[
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
 	"player==leader player && vehicle player==player && fort1==0 && fort==1", //conditionShow
-	"speed player < 0.1", //conditionProgress - nutraukti, jei žaidėjas juda
+	"true", //conditionProgress
 	{
-		hint"Trench will be build in front of you";
-		//Uždrausti judėjimą statant fortifikacijas - priversti stovėti vietoje
-		player forceWalk true;
-		player setUnitPos "MIDDLE";
-		player setVariable ["wrm_buildingFortification", true, true];
+		hint"Barricade will be build in front of you";
 		bar = createVehicle ["rnt_graben_t", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
 		bar attachTo [player,[0,3,1.3]];
 	}, //codeStart
-	{
-		//Tikrinti, ar žaidėjas juda, ir jei taip, nutraukti statymą
-		if (speed player > 0.1) then {
-			player setVariable ["wrm_buildingFortification", false, true];
-			player forceWalk false;
-			player setUnitPos "AUTO";
-		};
-	}, //codeProgress
+	{}, //codeProgress
 	{
 		detach bar;		
 		_p=getPosAtl bar;
@@ -76,10 +65,6 @@ f1=[
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		steep=(surfaceNormal getPos bar select 2)<0.95;
 		if((!ground)||(ground&&steep))then{bar setVectorUp [0,0,1];};		
-		//Atkurti judėjimą po statymo
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		[1] spawn wrm_fnc_V2coolDown;
 		fort1 = 1;
 		hintSilent"";
@@ -87,10 +72,6 @@ f1=[
 	}, //codeCompleted
 	{
 		deleteVehicle bar;
-		//Atkurti judėjimą, jei statymas nutrauktas
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		hintSilent"";
 	}, //codeInterrupted
 	[], //arguments
@@ -106,24 +87,13 @@ f2=[
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
 	"player==leader player && vehicle player==player && fort2==0 && fort==1", //conditionShow
-	"speed player < 0.1", //conditionProgress - nutraukti, jei žaidėjas juda
+	"true", //conditionProgress
 	{
 		hint"Barricade will be build in front of you";
-		//Uždrausti judėjimą statant fortifikacijas - priversti stovėti vietoje
-		player forceWalk true;
-		player setUnitPos "MIDDLE";
-		player setVariable ["wrm_buildingFortification", true, true];
 		bar = createVehicle ["rnt_graben_bunker", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
 		bar attachTo [player,[0,3,0.7]];
 	}, //codeStart
-	{
-		//Tikrinti, ar žaidėjas juda, ir jei taip, nutraukti statymą
-		if (speed player > 0.1) then {
-			player setVariable ["wrm_buildingFortification", false, true];
-			player forceWalk false;
-			player setUnitPos "AUTO";
-		};
-	}, //codeProgress
+	{}, //codeProgress
 	{
 		detach bar;		
 		_p=getPosAtl bar;
@@ -156,10 +126,6 @@ f2=[
 		
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		if(!ground)then{bar setVectorUp [0,0,1];};
-		//Atkurti judėjimą po statymo
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		[2] spawn wrm_fnc_V2coolDown;
 		fort2 = 1;
 		hintSilent"";
@@ -167,10 +133,6 @@ f2=[
 	}, //codeCompleted
 	{
 		deleteVehicle bar;
-		//Atkurti judėjimą, jei statymas nutrauktas
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		hintSilent"";
 	}, //codeInterrupted
 	[], //arguments
@@ -182,28 +144,18 @@ f2=[
 
 f3=[
 	player, //target
-	"+ Trench Position", //title
+	"+ Trench Firing Position", //title
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
 	"player==leader player && vehicle player==player && fort3==0 && fort==1", //conditionShow
-	"speed player < 0.1", //conditionProgress - nutraukti, jei žaidėjas juda
+	"true", //conditionProgress
 	{
 		hint"Barricade will be build in front of you";
-		//Uždrausti judėjimą statant fortifikacijas - priversti stovėti vietoje
-		player forceWalk true;
-		player setUnitPos "MIDDLE";
-		player setVariable ["wrm_buildingFortification", true, true];
 		bar = createVehicle ["rnt_graben_stellung", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
 		bar attachTo [player,[0,3,0.7]];
+		bar setDir 180;
 	}, //codeStart
-	{
-		//Tikrinti, ar žaidėjas juda, ir jei taip, nutraukti statymą
-		if (speed player > 0.1) then {
-			player setVariable ["wrm_buildingFortification", false, true];
-			player forceWalk false;
-			player setUnitPos "AUTO";
-		};
-	}, //codeProgress
+	{}, //codeProgress
 	{
 		detach bar;		
 		_p=getPosAtl bar;
@@ -236,10 +188,6 @@ f3=[
 		
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		if(!ground)then{bar setVectorUp [0,0,1];};
-		//Atkurti judėjimą po statymo
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		[3] spawn wrm_fnc_V2coolDown;
 		fort3 = 1;
 		hintSilent"";
@@ -247,10 +195,6 @@ f3=[
 	}, //codeCompleted
 	{
 		deleteVehicle bar;
-		//Atkurti judėjimą, jei statymas nutrauktas
-		player forceWalk false;
-		player setUnitPos "AUTO";
-		player setVariable ["wrm_buildingFortification", false, true];
 		hintSilent"";
 	}, //codeInterrupted
 	[], //arguments

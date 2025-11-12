@@ -82,63 +82,49 @@ if(true)then
 };
 
 //wait for any player to leave the base OR first sector is captured
-//OPTIMIZACIJA: Sumažinti laukimo laiką ir naudoti fallback jei rTime nėra apibrėžtas
-private _waitTime = if (!isNil "rTime") then {rTime} else {30}; // Default 30s jei nėra apibrėžtas
-sleep _waitTime;
+sleep rTime;
 _t=true;
-//OPTIMIZACIJA: Patobulinta žaidimo pradžios logika solo žaidėjams
-private _startTime = time;
-private _maxWaitTime = 120; // Maksimalus laukimo laikas 2 minutes
-
-while {_t && (time - _startTime) < _maxWaitTime} do
+while {_t} do
 {
-	private _playersReady = 0;
-	private _totalPlayers = count allPlayers;
-
 	{
 		if(!alive _x)exitWith{};
+		// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
+		// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
+		_plHWDefined = !isNil "plHW";
+		_plHEDefined = !isNil "plHE";
+		
 		call
 		{
 			if(side _x==sideW) exitWith {
-				//OPTIMIZACIJA: Solo žaidėjui užtenka išeiti iš vienos bazės
-				if(_totalPlayers == 1) then {
-					if((_x distance posBaseW1 > 150)||(_x distance posBaseW2 > 150))then{_playersReady = _playersReady + 1;};
-				} else {
-					if((_x distance posBaseW1 > 200)&&(_x distance posBaseW2 > 200)&&(_x distance plHw > 200))then{_playersReady = _playersReady + 1;};
+				if((_x distance posBaseW1 > 200)&&(_x distance posBaseW2 > 200)) then {
+					// Tikriname plHW tik jei jis apibrėžtas
+					if(_plHWDefined && (_x distance plHW > 200)) then {
+						_t=false;
+					};
 				};
 			};
 			if(side _x==sideE) exitWith {
-				if(_totalPlayers == 1) then {
-					if((_x distance posBaseE1 > 150)||(_x distance posBaseE2 > 150))then{_playersReady = _playersReady + 1;};
-				} else {
-					if((_x distance posBaseE1 > 200)&&(_x distance posBaseE2 > 200)&&(_x distance plHe > 200))then{_playersReady = _playersReady + 1;};
+				if((_x distance posBaseE1 > 200)&&(_x distance posBaseE2 > 200)) then {
+					// Tikriname plHE tik jei jis apibrėžtas
+					if(_plHEDefined && (_x distance plHE > 200)) then {
+						_t=false;
+					};
 				};
 			};
 		};
 	} forEach allPlayers;
-
-	//OPTIMIZACIJA: Solo žaidėjui užtenka būti pasiruošusiam
-	if(_playersReady >= _totalPlayers) then {_t=false;};
-
+	
 	if(!_t)exitWith{};
-
-	//OPTIMIZACIJA: Sektorių užėmimas visada nutraukia laukimą
+	
 	if((getMarkerColor resAW!="")||(getMarkerColor resAE!="")||(getMarkerColor resBW!="")||(getMarkerColor resBE!="")||(getMarkerColor resCW!="")||(getMarkerColor resCE!=""))then{_t=false;};
-
-	sleep 5; // Dažnesni patikrinimai
+	
+	sleep 11;
 };
-
-//Jei laikas baigėsi - priverstinai pradėti žaidimą
-if(_t && (time - _startTime) >= _maxWaitTime) then {
-	["Žaidimas pradedamas automatiškai po timeout"] remoteExec ["systemChat", 0, false];
-	_t = false;
+//spawn additional units
+if (AIon>2) then 
+{
+	#include "moreSquads.sqf";
 };
-//spawn additional units - DABAR VALDO PRESTIGE SISTEMA DINAMIŠKAI
-//Prestige sistema (fn_V2strategicAiBalance.sqf) spawn'ins papildomus squad'us pagal AI lygį
-//if (AIon>2) then
-//{
-//	#include "moreSquads.sqf";
-//};
 sleep 7;
 
 //start countdown

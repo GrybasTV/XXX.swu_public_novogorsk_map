@@ -1,0 +1,55 @@
+/*
+Author: IvosH
+
+Description:
+	Pridėti grupės UAV į masyvą serverio pusėje
+	
+Parameter(s):
+	0: STRING grupės ID
+	1: OBJECT UAV objektas
+	
+Returns:
+	nothing
+	
+Dependencies:
+	fn_V2uavRequest.sqf
+	
+Execution:
+	[_grpId, _uav] call wrm_fnc_V2uavGroupAdd;
+*/
+
+if !(isServer) exitWith {}; //vykdoma tik serverio pusėje
+
+//Naudojame param saugesniam masyvo elementų pasiekimui
+_grpId = _this param [0, ""];
+_uav = _this param [1, objNull];
+
+//Patikrinti, ar grupė jau turi UAV masyve - naudojame param saugesniam masyvo elementų pasiekimui
+_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+
+if(_groupUavIndex != -1)then
+{
+	//Patikrinti, ar esamas UAV dar gyvas
+	_oldUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+	if(!isNull _oldUav && alive _oldUav) then {
+		//Jei esamas UAV dar gyvas, sunaikinti naują ir grįžti
+		//Tai apsaugo nuo greitų užklausų, kurios gali sukurti kelis UAV
+		if(!isNull _uav) then {
+			//Sunaikinti visą transporto priemonę su įgula
+			{deleteVehicle _x;} forEach crew _uav;
+			deleteVehicle _uav;
+		};
+		//Neatnaujiname masyvo, nes esamas UAV dar gyvas
+	}else
+	{
+		//Atnaujinti esamą UAV, jei senasis jau negyvas
+		uavGroupObjects set [_groupUavIndex, [_grpId, _uav]];
+		publicVariable "uavGroupObjects";
+	};
+}else
+{
+	//Pridėti naują UAV
+	uavGroupObjects pushBack [_grpId, _uav];
+	publicVariable "uavGroupObjects";
+};
+

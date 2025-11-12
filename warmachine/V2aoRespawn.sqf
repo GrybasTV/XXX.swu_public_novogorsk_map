@@ -2,6 +2,16 @@
 [] execVM "warmachine\V2aoRespawn.sqf";
 */
 
+// Initialize faction variables if not already set
+if (isNil "factionW") then { factionW = "NATO"; };
+if (isNil "factionE") then { factionE = "CSAT"; };
+
+// Initialize base name variables if not already set
+if (isNil "nameBW1") then { nameBW1 = format ["%1 Transport base", factionW]; };
+if (isNil "nameBW2") then { nameBW2 = format ["%1 Armor base", factionW]; };
+if (isNil "nameBE1") then { nameBE1 = format ["%1 Transport base", factionE]; };
+if (isNil "nameBE2") then { nameBE2 = format ["%1 Armor base", factionE]; };
+
 //INFANTRY RESPAWN
 hint "Searching for infantry respawn positions";
 

@@ -20,13 +20,7 @@
 if(!hasInterface)exitWith{}; //run on the players only
 waitUntil {!isNull player}; //JIP
 waitUntil {!alive player}; //player has respawned
-//Patikrinti, ar žaidėjas jau gyvas - jei taip, nereikia laukti
-if (!alive player) then {
-	//Jei žaidėjas nėra gyvas, laukti su timeout'u
-	private _timeout = time + 30; //30 sekundžių timeout
-	waitUntil {alive player || time > _timeout}; //player has respawned
-	if (time > _timeout) exitWith {}; //Jei timeout'as pasiektas, išeiti
-};
+waitUntil {alive player}; //player has respawned
 sleep 0.5;
 fs=1;
 if(player != leader player)exitWith{}; //player is not leader > exit

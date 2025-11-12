@@ -18,21 +18,8 @@ Author: IvosH
 #include "WMinit.sqf";
 systemChat "Terrain specifications loaded";
 
-//Initialize base name variables early to prevent undefined variable errors
-if(isNil "nameBW1")then{nameBW1 = "Transport Base"; publicvariable "nameBW1";};
-if(isNil "nameBE1")then{nameBE1 = "Transport Base"; publicvariable "nameBE1";};
-if(isNil "nameBW2")then{nameBW2 = "Armor Base"; publicvariable "nameBW2";};
-if(isNil "nameBE2")then{nameBE2 = "Armor Base"; publicvariable "nameBE2";};
-
 #include "V2factionsSetup.sqf";
 systemChat "Factons selection read";
-
-//Initialize Support Requester objects for squad leader menu
-SupReqW = missionNamespace getVariable ["supReqW", objNull];
-SupReqE = missionNamespace getVariable ["supReqE", objNull];
-publicVariable "SupReqW";
-publicVariable "SupReqE";
-systemChat "Support requesters initialized";
 
 //VARIABLES
 dSel = 0; //default dialog selection
@@ -51,14 +38,6 @@ if(modA=="SPE")then{artiRange = [340,940];};
 if(modA=="RHS")then{artiRange = [830,1060];};
 if(modA=="IFA3")then{artiRange = [790,950];};
 
-//Initialize gameType from description.ext to prevent undefined variable errors
-//gameType yra apibrėžtas description.ext faile Header klasėje, bet nėra tiesiogiai prieinamas kaip kintamasis
-//Naudojame missionConfigFile, kad pasiektume Header >> gameType reikšmę
-//Custom gameType: "War Ukraine" - Ukraine vs Russia 2025 Warmachine misija
-//FIX: getMissionConfigValue negali naudoti Config entry kaip parametro, reikia naudoti getText
-gametipe = getText (missionConfigFile >> "Header" >> "gameType");
-if(isNil "gametipe" || gametipe == "")then{gametipe = "War Ukraine";}; //Fallback reikšmė, jei nepavyko nuskaityti
-publicVariable "gametipe";
 systemChat "Variables loaded";
 
 //STRUCTURES--------------------------------------------------EDITABLE//
@@ -397,29 +376,17 @@ call
 			then{
 			#include "factions\RHS_AFRF_D_V.hpp";
 			};
-
+			
 			if(env=="arid"||env=="winter")
 			then{
 			#include "factions\RHS_AFRF_A_V.hpp";
 			};
-
+			
 			if(env=="woodland"||env=="jungle")
 			then{
 			#include "factions\RHS_AFRF_W_V.hpp";
 			};
-		};
-
-		//Ukraine 2025 (RHS)
-		if(factionW=="Ukraine 2025")then
-		{
-			#include "factions\UA2025_RHS_W_V.hpp";
-		};
-
-		//Russia 2025 (RHS)
-		if(factionE=="Russia 2025")then
-		{
-			#include "factions\RU2025_RHS_W_V.hpp";
-		};
+		};		
 	};
 
 	if(modA=="IFA3")exitWith
@@ -475,7 +442,20 @@ call
 			}
 			else{
 			#include "factions\IFA3_USarmy_S_V.hpp";
-			};	
+			};
+		};
+	};
+
+	if(modA=="UA2025_RU2025")exitWith
+	{
+		if(factionW=="Ukraine 2025")then
+		{
+			#include "factions\UA2025_RHS_W_V.hpp";
+		};
+
+		if(factionE=="Russia 2025")then
+		{
+			#include "factions\RU2025_RHS_W_V.hpp";
 		};
 	};
 
@@ -606,7 +586,6 @@ if(modA=="A3")then
 		ArmorE2 = ArmorE2 + ArmorDlcE2;
 	};
 };
-
 systemChat "Lobby parameters read";
 
 //DEBUG (V2)
@@ -704,17 +683,15 @@ if(isServer)then
 				if(factionW=="USAF"&&(env=="woodland"||env=="jungle"))exitWith{_Load="WEST%1";_n1=140;_n2=198;};
 				if(factionW=="USAF"&&(env=="desert"||env=="arid"))exitWith{_Load="WEST%1";_n1=199;_n2=236;};
 				if(factionW=="USAF"&&env=="winter")exitWith{_Load="WEST%1";_n1=237;_n2=276;};
-				if(factionW=="Ukraine 2025")exitWith{_Load="WEST%1";_n1=800;_n2=818;};
 			};
 			for "_i" from _n1 to _n2 step 1 do {[sideW, [format [_Load, _i],4,-1]] call BIS_fnc_addRespawnInventory;};
-
+			
 			//sideE
 			call
 			{
 				if(factionE=="AFRF"&&(env=="woodland"||env=="jungle"))exitWith{_Load="EAST%1";_n1=109;_n2=154;};
 				if(factionE=="AFRF"&&env=="desert")exitWith{_Load="EAST%1";_n1=155;_n2=185;};
 				if(factionE=="AFRF"&&(env=="arid"||env=="winter"))exitWith{_Load="EAST%1";_n1=186;_n2=218;};
-				if(factionE=="Russia 2025")exitWith{_Load="EAST%1";_n1=500;_n2=518;}; //FIXED: Teisingi loadout numeriai (500-518, ne 200-218)
 			};
 			for "_i" from _n1 to _n2 step 1 do {[sideE, [format [_Load, _i],4,-1]] call BIS_fnc_addRespawnInventory;};
 		};

@@ -1,5 +1,5 @@
 /*
-	Author: IvosH
+	Author: GrybasTv
 	
 	Description:
 		Check if player is group leader add Actions. Update combat support and action menu available for the group leader.
@@ -50,9 +50,6 @@ call
 			SupReq = SupReqE;
 		};
 	};
-	//FIX: Fallback - jei žaidėjo pusė nėra sideW arba sideE, inicializuoti SupReq kaip objNull
-	//Tai apsaugo nuo "Undefined variable" klaidų
-	SupReq = objNull;
 };
 
 //Before mission starts
@@ -61,11 +58,11 @@ if (progress < 1 && lUpdate < 1) then
 	_a=0;
 	call
 	{
-		if("wmgenerator" call BIS_fnc_getParamValue == 2) exitWith {_a=1;}; //2
-		if(serverCommandAvailable "#kick") exitWith {_a=1;}; //0
-		if(("wmgenerator" call BIS_fnc_getParamValue == 1)&&(count(allPlayers - entities "HeadlessClient_F")==1)) exitWith {_a=1;}; //1
+		if("wmgenerator" call BIS_fnc_getParamValue == 2)exitWith{_a=1;}; //2
+		if(serverCommandAvailable "#kick")exitWith{_a=1;}; //0
+		if(("wmgenerator" call BIS_fnc_getParamValue == 1)&&(count(allPlayers - entities "HeadlessClient_F")==1))exitWith{_a=1;}; //1
 	};
-	if(_a==1) then //Mission generator
+	if(_a==1)then //Mission generator
 	{
 		MGaction = player addAction 
 		[
@@ -137,15 +134,18 @@ if (leader player == player) then
 		[
 			"Leave Leader position", //title
 			{
-				_grp=(units group player)-[player];
-				if((count _grp)<1) exitWith {hint "You are alone";};
-				//player become leader of his group
+					_grp=(units group player)-[player];
+					if((count _grp)<1)exitWith{hint "You are alone";};
+					//player become leader of his group
 					[group player, (_grp select 0)] remoteExec ["selectLeader", 0, false];
 					player removeAction LDRdown;
 					hint "You are no longer a squad leader";
-					sleep 0.5;
-					lUpdate = 1;
-					[] spawn wrm_fnc_leaderActions;
+					//Perkelti į spawn kontekstą dėl sleep naudojimo
+					[] spawn {
+						sleep 0.5;
+						lUpdate = 1;
+						[] spawn wrm_fnc_leaderActions;
+					};
 
 			}, //script
 			nil, 0, false, true, "", "", -1, false, "" //arguments, priority, showWindow, hideOnUse, shortcut, condition, radius, unconscious, selection
@@ -161,22 +161,22 @@ if (leader player == player) then
 				_hasUGV = false;
 				call
 				{
-					if(side player == sideW) exitWith
+					if(side player == sideW)exitWith
 					{
 						_hasUAV = (count uavsW > 0);
 						_hasUGV = (count ugvsW > 0);
 					};
-					if(side player == sideE) exitWith
+					if(side player == sideE)exitWith
 					{
 						_hasUAV = (count uavsE > 0);
 						_hasUGV = (count ugvsE > 0);
 					};
 				};
-
-				//UAV request - prieinamas A3 modui arba RHS su Ukraine/Russia frakcijomis (visuose režimuose)
-				if((modA=="A3" || (modA=="RHS" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) && _hasUAV)then
+				
+				//UAV request - prieinamas A3 modui arba Ukraine/Russia frakcijoms (visuose režimuose)
+				if((modA=="A3" || (modA=="UA2025_RU2025" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) && _hasUAV)then
 				{
-					uavAction = player addAction
+					uavAction = player addAction 
 					[
 						"UAV request", //title
 						{
@@ -186,18 +186,19 @@ if (leader player == player) then
 						1, //priority (Optional)
 						false, //showWindow (Optional)
 						true, //hideOnUse (Optional)
-						"", //shortcut, (Optional)
+						"", //shortcut, (Optional) 
 						"", //condition,  (Optional)
 						0, //radius, (Optional) -1disable, 15max
 						false, //unconscious, (Optional)
 						"" //selection (Optional)
-					];
+					]; 
 				};
 
-				//UGV request - prieinamas A3 modui arba RHS su Ukraine/Russia frakcijomis (visuose režimuose)
-				if((modA=="A3" || (modA=="RHS" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) && _hasUGV)then
+				//UGV request - prieinamas tik A3 modui (ne Ukraine/Russia frakcijoms)
+				//Ukraine/Russia frakcijoms prieinamas tik UAV
+				if(modA=="A3" && _hasUGV)then
 				{
-					ugvAction = player addAction
+					ugvAction = player addAction 
 					[
 						"UGV request", //title
 						{
@@ -207,18 +208,18 @@ if (leader player == player) then
 						0.9, //priority (Optional)
 						false, //showWindow (Optional)
 						true, //hideOnUse (Optional)
-						"", //shortcut, (Optional)
+						"", //shortcut, (Optional) 
 						"", //condition,  (Optional)
 						0, //radius, (Optional) -1disable, 15max
 						false, //unconscious, (Optional)
 						"" //selection (Optional)
-					];
+					]; 
 				};
 			};
 			
 			if(airDrop==0)then
 			{
-				if (suppUsed==0||carUsed==0||truckUsed==0||boatArUsed==0||boatTrUsed==0) then
+				if (suppUsed==0||carUsed==0||truckUsed==0) then
 				{
 					dropAction = player addAction 
 					[
@@ -263,136 +264,6 @@ if (leader player == player) then
 		};
 		lUpdate = 1;
 	};
-	
-	//FIX: Periodiškai atsinaujinti support link'ą, net jei žaidėjas jau yra leaderis
-	//Tai reikalinga, nes BIS_fnc_addSupportLink gali nustoti veikti po tam tikro laiko
-	//dėl tinklo problemų, objektų keitimo arba Arma 3 vidinių bug'ų
-	//Jei support link'as nustos veikti, AI nustos klausyti burio vado komandų
-	if (lUpdate == 1) then
-	{
-		//FIX: VISADA patikrinti ir inicializuoti SupReq prieš naudojimą
-		//Tai reikalinga, nes SupReq gali būti neapibrėžtas dėl tinklo problemų arba script'ų vykdymo eilės
-		//Jei SupReq nėra inicializuotas, inicializuoti jį pagal žaidėjo pusę
-		if (isNil "SupReq") then
-		{
-			call
-			{
-				if (side player == sideW) exitWith 
-				{
-					if (!isNil "SupReqW" && !isNull SupReqW) then 
-					{
-						SupReq = SupReqW;
-					} else 
-					{
-						SupReq = objNull;
-					};
-				};
-				if (side player == sideE) exitWith 
-				{
-					if (!isNil "SupReqE" && !isNull SupReqE) then 
-					{
-						SupReq = SupReqE;
-					} else 
-					{
-						SupReq = objNull;
-					};
-				};
-				//Fallback - jei žaidėjo pusė nėra sideW arba sideE
-				SupReq = objNull;
-			};
-		};
-		//SVARBU: Patikrinti ar SupReq yra teisingai inicializuotas prieš atnaujinant support link'ą
-		//Naudojame try-catch principą - patikrinti prieš naudojimą
-		if (!isNil "SupReq" && !isNull SupReq) then
-		{
-			//Pirmiausia pašalinti seną support link'ą, tada pridėti naują
-			//Tai užtikrins, kad support link'as visada bus teisingai sukonfigūruotas
-			[player, SupReq] call BIS_fnc_removeSupportLink;
-			[player, SupReq] call BIS_fnc_addSupportLink;
-		};
-	};
-	
-	//Papildomas patikrinimas: jei progress pasikeitė nuo <= 1 į > 1, atnaujinti UAV/UGV action meniu
-	//Tai reikalinga, kad UAV request action atsirastų iškart po misijos sukūrimo, net jei žaidėjas jau buvo leaderis
-	if(progress>1 && lUpdate == 1) then
-	{
-		if(version==2)then
-		{
-			//Tikrinti, ar UAV/UGV action meniu dar nėra sukurtas
-			//Jei nėra, sukurti jį
-			_hasUAV = false;
-			_hasUGV = false;
-			call
-			{
-				if(side player == sideW) exitWith
-				{
-					_hasUAV = (count uavsW > 0);
-					_hasUGV = (count ugvsW > 0);
-				};
-				if(side player == sideE) exitWith
-				{
-					_hasUAV = (count uavsE > 0);
-					_hasUGV = (count ugvsE > 0);
-				};
-			};
-			
-			//UAV request - sukurti tik jei dar nėra sukurtas
-			if((modA=="A3" || (modA=="RHS" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) && _hasUAV)then
-			{
-				//Tikrinti, ar action dar nėra sukurtas
-				//Jei nėra, sukurti jį
-				//Pašalinti seną action, jei egzistuoja (kad išvengtume dublikatų)
-				if(!isNil "uavAction")then
-				{
-					player removeAction uavAction;
-				};
-				uavAction = player addAction
-				[
-					"UAV request", //title
-					{
-						[0,(side player)] spawn wrm_fnc_V2uavRequest; //0=uav, 1=ugv
-					}, //script
-					nil, //arguments (Optional)
-					1, //priority (Optional)
-					false, //showWindow (Optional)
-					true, //hideOnUse (Optional)
-					"", //shortcut, (Optional)
-					"", //condition,  (Optional)
-					0, //radius, (Optional) -1disable, 15max
-					false, //unconscious, (Optional)
-					"" //selection (Optional)
-				];
-			};
-
-			//UGV request - sukurti tik jei dar nėra sukurtas
-			if((modA=="A3" || (modA=="RHS" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) && _hasUGV) then
-			{
-				//Tikrinti, ar action dar nėra sukurtas
-				//Jei nėra, sukurti jį
-				//Pašalinti seną action, jei egzistuoja (kad išvengtume dublikatų)
-				if(!isNil "ugvAction") then
-				{
-					player removeAction ugvAction;
-				};
-				ugvAction = player addAction
-				[
-					"UGV request", //title
-					{
-						[1,(side player)] spawn wrm_fnc_V2uavRequest; //0=uav, 1=ugv
-					}, //script
-					nil, //arguments (Optional)
-					0.9, //priority (Optional)
-					false, //showWindow (Optional)
-					true, //hideOnUse (Optional)
-					"", //shortcut, (Optional)
-					"", //condition,  (Optional)
-					0, //radius, (Optional) -1disable, 15max
-					false, //unconscious, (Optional)
-					"" //selection (Optional)
-				];
-			};
-		};
-	};
 } else 
 
 //player is NOT leader
@@ -403,23 +274,23 @@ if (leader player == player) then
 		{
 			player removeAction LDRdown; //remove "Leave Leader position"
 
-			if(progress>1) then
+			if(progress>1)then
 			{
-				if(version==2) then
+				if(version==2)then
 				{
-					if((modA=="A3" || (modA=="RHS" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) ) then
+					if((modA=="A3" || (modA=="UA2025_RU2025" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"))) )then
 					{
-						if(!isNil "uavAction") then {player removeAction uavAction;};
-						if(!isNil "ugvAction") then {player removeAction ugvAction;};
+						if(!isNil "uavAction")then{player removeAction uavAction;};
+						if(!isNil "ugvAction")then{player removeAction ugvAction;};
 					};
 				};
-				if(fort==0) then
+				if(fort==0)then
 				{
 					player removeAction fortAction;
 					fort=1;
 				};
 
-				if(airDrop==0) then
+				if(airDrop==0)then
 				{
 					if (suppUsed==0||carUsed==0||truckUsed==0) then 
 					{
@@ -459,13 +330,15 @@ if (leader player == player) then
 					_ldr = profileName;
 					_grp = group player;
 					[_ldr,_grp] remoteExec ["wrm_fnc_leaderHint", 0, false];
-					sleep 0.5;
-					lUpdate = 2;
-					[] spawn wrm_fnc_leaderActions;
+					//Perkelti į spawn kontekstą dėl sleep naudojimo
+					[] spawn {
+						sleep 0.5;
+						lUpdate = 2;
+						[] spawn wrm_fnc_leaderActions;
+					};
 				};	
 			}, //script
 			nil, 0, false, true, "", "", -1, false, "" //arguments, priority, showWindow, hideOnUse, shortcut, condition, radius, unconscious, selection
-		]; 
-		lUpdate = 2;
+		];
 	};
 };

@@ -1,364 +1,283 @@
 /*
-Author: IvosH (Modified by AI GyrbasTV)
+Author: IvosH
 
 Description:
-	Client-side UAV/UGV request handler
-	Sends request to server for UAV/UGV creation
-
+	Add actions for UAV request
+	obj = uavW, uavE, ugvW, ugvE
+	[] = uavsW, ugvsW, uavsE, ugvsE
+	
 Parameter(s):
-	0: NUMBER type of the UAV/UGV (0=UAV, 1=UGV)
-	1: SIDE player side
+	0: NUMBER type of the UAV/UGV
+	1: SIDE	player side
 
 Returns:
 	nothing
 
 Dependencies:
 	fn_leaderActions.sqf
-	fn_V2uavRequest_srv.sqf (server-side)
 
 Execution:
-	[_typ, _side] spawn wrm_fnc_V2uavRequest
+	[] spawn wrm_fnc_V2uavRequest
 */
 
-params ["_typ","_sde"];
-
-//Patikrinti ar žaidėjas yra būrio vadas - tik būrio vadai gali kviesti dronus
-if (leader player != player) exitWith {
-    hint "Only squad leaders can request UAVs";
-    systemChat "[UAV] Only squad leaders can request UAVs";
-};
-
-//GLOBAL APSAUGA: Patikrinti ar jau vyksta UAV užklausa (anti-spam protection)
-private _requestKey = format ["uav_request_progress_%1", getPlayerUID player];
-if (missionNamespace getVariable [_requestKey, false]) exitWith {
-    hint "UAV request already in progress...";
-    systemChat "[UAV] Request already in progress - please wait";
-};
-missionNamespace setVariable [_requestKey, true, true];
-
-//Tikrinti ar naudojama per-squad sistema (Ukraine 2025 / Russia 2025)
-private _usePerSquad = false;
-if (modA == "RHS") then {
-    if (_sde == sideW && factionW == "Ukraine 2025") then {_usePerSquad = true;};
-    if (_sde == sideE && factionE == "Russia 2025") then {_usePerSquad = true;};
-};
+_typ = _this select 0;
+_sde = _this select 1;
 
 call
 {
-    //UAV
-    if (_typ == 0) exitWith
-    {
-        call
-        {
-            if (_sde == sideW) exitWith
-            {
-                //Patikrinti ar bazė neprarasta
-                if (getMarkerColor resFobW == "") exitWith {
-                    hint parseText format ["UAV service is unavailable<br/>You lost %1 base", nameBW1];
-                };
+	//UAV
+	if(_typ==0)exitWith
+	{
+		//Patikrinti, ar tai Ukraine/Russia frakcija - jei taip, naudoti grupės-based sistemą
+		_isUkraineRussia = (modA=="UA2025_RU2025" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"));
+		
+		if(_isUkraineRussia)then
+		{
+			//Grupės-based sistema Ukraine/Russia frakcijoms
+			_grp = group player;
+			_grpId = str _grp; //Unikalus grupės identifikatorius
+			
+			call
+			{
+				if(_sde==sideW)exitWith
+				{
+					//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
+					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+					if(_groupUavIndex != -1)then
+					{
+						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					};
+					
+					//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
+					_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+					if(_groupCooldownIndex != -1)then
+					{
+						_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+						if(_groupCooldown > 0)exitWith
+						{
+							_t = _groupCooldown; _s = "sec";
+							if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
+							hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+						};
+					};
+					
+					//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
+					//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
+					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+					if(_groupUavIndex != -1)then
+					{
+						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					};
+					
+					//Sukurti UAV virš žaidėjo galvos
+					_playerPos = getPos player;
+					_uavSpawnPos = [_playerPos param [0, 0], _playerPos param [1, 0], (_playerPos param [2, 0]) + 100]; //100m virš žaidėjo galvos
+					_groupUav = createVehicle [(selectRandom uavsW), _uavSpawnPos, [], 0, "FLY"];
+					createVehicleCrew _groupUav;
+					
+					//Išsaugoti grupės UAV masyve serverio pusėje
+					//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+					[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
+					
+					//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
+					_groupUav addMPEventHandler ["MPKilled", {
+						params ["_uav"];
+						//Pašalinti UAV ir pradėti cooldown serverio pusėje
+						[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+					}];
+					
+					//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
+					// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
+					[_groupUav] spawn {
+						params ["_groupUavLocal"];
+						sleep 1;
+						if(!isNull _groupUavLocal) then {
+							[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+						};
+					};
+					
+					hint "UAV deployed above your position";
+				};
+				
+				if(_sde==sideE)exitWith
+				{
+					//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
+					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+					if(_groupUavIndex != -1)then
+					{
+						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					};
+					
+					//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
+					_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+					if(_groupCooldownIndex != -1)then
+					{
+						_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+						if(_groupCooldown > 0)exitWith
+						{
+							_t = _groupCooldown; _s = "sec";
+							if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
+							hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+						};
+					};
+					
+					//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
+					//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
+					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+					if(_groupUavIndex != -1)then
+					{
+						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					};
+					
+					//Sukurti UAV virš žaidėjo galvos
+					_playerPos = getPos player;
+					_uavSpawnPos = [_playerPos param [0, 0], _playerPos param [1, 0], (_playerPos param [2, 0]) + 100]; //100m virš žaidėjo galvos
+					_groupUav = createVehicle [(selectRandom uavsE), _uavSpawnPos, [], 0, "FLY"];
+					createVehicleCrew _groupUav;
+					
+					//Išsaugoti grupės UAV masyve serverio pusėje
+					//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+					[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
+					
+					//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
+					_groupUav addMPEventHandler ["MPKilled", {
+						params ["_uav"];
+						//Pašalinti UAV ir pradėti cooldown serverio pusėje
+						[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+					}];
+					
+					//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
+					// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
+					[_groupUav] spawn {
+						params ["_groupUavLocal"];
+						sleep 1;
+						if(!isNull _groupUavLocal) then {
+							[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+						};
+					};
+					
+					hint "UAV deployed above your position";
+				};
+			};
+		}else
+		{
+			//Senoji sistema kitoms frakcijoms
+			call
+			{
+				if(_sde==sideW)exitWith
+				{
+					if(getMarkerColor resFobW=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBW1];};
+					if(alive uavW)exitWith{hint "UAV is already deployed";};
+					if(uavWr>0)exitWith
+					{ 
+						_t=uavWr; _s="sec"; if(uavWr>60)then{_t=floor (uavWr/60); _s="min";};
+						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+					};
+					// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
+					if(!isNil "plHW") then {
+						uavW = createVehicle [(selectRandom uavsW), plHW, [], 0, "FLY"];
+						createVehicleCrew uavW;
+						publicvariable "uavW";
+						(group driver uavW) move posCenter;
+						
+						uavW addMPEventHandler ["MPKilled",{[5] spawn wrm_fnc_V2coolDown;}];
+						[5] remoteExec ["wrm_fnc_V2hints", 0, false];
+						sleep 1;
+						[z1,[[uavW],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+					} else {
+						hint "UAV service is unavailable - Air base not available";
+					};
+				};
+				
+				if(_sde==sideE)exitWith
+				{
+					if(getMarkerColor resFobE=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBE1];};
+					if(alive uavE)exitWith{hint "UAV is already deployed";};
+					if(uavEr>0)exitWith
+					{ 
+						_t=uavEr; _s="sec"; if(uavEr>60)then{_t=floor (uavEr/60); _s="min";};
+						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+					};
+					// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
+					if(!isNil "plHE") then {
+						uavE = createVehicle [(selectRandom uavsE), plHE, [], 0, "FLY"];
+						createVehicleCrew uavE;
+						publicvariable "uavE";
+						(group driver uavE) move posCenter;
+						
+						uavE addMPEventHandler ["MPKilled",{[6] spawn wrm_fnc_V2coolDown;}];
+						[6] remoteExec ["wrm_fnc_V2hints", 0, false];
+						sleep 1;
+						[z1,[[uavE],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+					} else {
+						hint "UAV service is unavailable - Air base not available";
+					};
+				};
+			};
+		};
 
-                if (_usePerSquad) then {
-                    //PER-SQUAD SISTEMA (Ukraine 2025) - naudoti missionNamespace throttling
-                    private _playerUID = getPlayerUID player;
-                    private _cooldownKey = format ["uav_cooldown_%1", _playerUID];
-                    private _currentTime = diag_tickTime;
-                    private _lastRequestTime = missionNamespace getVariable [_cooldownKey, 0];
-
-                    //Patikrinti ar nepraėjo pakankamai laiko nuo paskutinio užklausimo (1 sekundė apsauga)
-                    if (_currentTime - _lastRequestTime < 1) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        hint "Please wait before requesting another UAV...";
-                        systemChat "[UAV] Request cooldown active";
-                    };
-                    missionNamespace setVariable [_cooldownKey, _currentTime, true];
-
-                    //Patikrinti aktyvių UAV limitą (maksimaliai 4 per pusę)
-                    //OPTIMALIZACIJA: naudoti entity komandą vietoj allUnits kad būtų greičiau
-                    private _activeUavCount = 0;
-                    {
-                        if (!isNull (_x select 1) && alive (_x select 1)) then {
-                            _activeUavCount = _activeUavCount + 1;
-                        };
-                    } forEach uavSquadW;
-
-                    if (_activeUavCount >= 4) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        //Atstatyti cooldown timestamp kad žaidėjas galėtų bandyti vėl
-                        missionNamespace setVariable [_cooldownKey, _currentTime - 1, true];
-                        hint "UAV limit reached\nMaximum 4 active UAVs per faction";
-                        systemChat format ["[UAV] Maximum 4 active UAVs per faction reached (current: %1)", _activeUavCount];
-                        if (DBG) then {
-                            diag_log format ["[UAV_CLIENT] Limit exceeded for WEST: %1 active UAVs", _activeUavCount];
-                        };
-                    };
-
-                    //Patikrinti ar žaidėjas jau turi aktyvų droną
-                    private _index = -1;
-                    {
-                        if ((_x select 0) == _playerUID) exitWith {_index = _forEachIndex;};
-                    } forEach uavSquadW;
-
-                    if (_index >= 0) then {
-                        private _uavData = uavSquadW select _index;
-                        private _uavObj = _uavData select 1;
-                        private _cooldown = _uavData select 2;
-
-                        if (!isNull _uavObj && alive _uavObj) exitWith {
-                            missionNamespace setVariable [_requestKey, false, true];
-                            hint "You already have an active drone deployed";
-                            systemChat "[UAV] You already have an active drone deployed";
-                            if (DBG) then {
-                                diag_log format ["[UAV_CLIENT] Player %1 already has active UAV", _playerUID];
-                            };
-                        };
-
-                        if (_cooldown > 0) exitWith {
-                            missionNamespace setVariable [_requestKey, false, true];
-                            private _t = _cooldown; private _s = "sec";
-                            if (_cooldown > 60) then {_t = floor (_cooldown / 60); _s = "min";};
-                            hint parseText format ["Drone cooldown<br/>Ready in %1 %2", _t, _s];
-                            systemChat format ["[UAV] Drone cooldown: %1 %2 remaining", _t, _s];
-                        };
-                    };
-
-                    //Validacija: patikrinti ar UAV masyvas nėra tuščias
-                    if (count uavsW == 0) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        hint "UAV service is unavailable<br/>No UAVs available for this faction";
-                        systemChat "[UAV ERROR] uavsW array is empty";
-                    };
-
-                    //Siųsti užklausą serveriui
-                    private _playerPos = getPosATL player;
-                    private _spawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 50 + random 50];
-                    [_typ, _sde, _playerUID, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-
-                    //Užklausa išsiųsta - atstatyti vėliavėlę po trumpos pauzės
-                    [] spawn {
-                        sleep 2;
-                        private _requestKey = format ["uav_request_progress_%1", getPlayerUID player];
-                        missionNamespace setVariable [_requestKey, false, true];
-                    };
-
-                } else {
-                    //ORIGINALI SISTEMA (A3 modas arba kitos RHS frakcijos)
-                    if (alive uavW) exitWith {
-                        hint "UAV is already deployed";
-                    };
-                    if (uavWr > 0) exitWith
-                    {
-                        private _t = uavWr;
-                        private _s = "sec";
-                        if (uavWr > 60) then {
-                            _t = floor (uavWr / 60);
-                            _s = "min";
-                        };
-                        hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
-                    };
-
-                    //Validacija: patikrinti ar UAV masyvas nėra tuščias
-                    if (count uavsW == 0) exitWith {
-                        hint "UAV service is unavailable<br/>No UAVs available for this faction";
-                        systemChat "[UAV ERROR] uavsW array is empty";
-                    };
-
-                    //Siųsti užklausą serveriui
-                    private _playerPos = getPosATL player;
-                    private _spawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 50 + random 50];
-                    [_typ, _sde, getPlayerUID player, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-                };
-            };
-
-            if (_sde == sideE) exitWith
-            {
-                //Patikrinti ar bazė neprarasta
-                if (getMarkerColor resFobE == "") exitWith {
-                    hint parseText format ["UAV service is unavailable<br/>You lost %1 base", nameBE1];
-                };
-
-                if (_usePerSquad) then {
-                    //PER-SQUAD SISTEMA (Russia 2025) - naudoti missionNamespace throttling
-                    private _playerUID = getPlayerUID player;
-
-                    //Papildoma apsauga nuo greito karto jimo - naudoti tą pačią schemą kaip WEST
-                    private _cooldownKey = format ["uav_cooldown_%1", _playerUID];
-                    private _currentTime = diag_tickTime;
-                    private _lastRequestTime = missionNamespace getVariable [_cooldownKey, 0];
-
-                    //Patikrinti ar nepraėjo pakankamai laiko nuo paskutinio užklausimo (1 sekundė apsauga)
-                    if (_currentTime - _lastRequestTime < 1) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        hint "Please wait before requesting another UAV...";
-                        systemChat "[UAV] UAV creation cooldown active";
-                    };
-                    missionNamespace setVariable [_cooldownKey, _currentTime, true];
-
-                    private _finish = { missionNamespace setVariable [_cooldownKey, _currentTime - 1, true]; };
-
-                    //Patikrinti aktyvių UAV limitą (maksimaliai 4 per pusę)
-                    private _activeUavCount = 0;
-                    {
-                        if (!isNull (_x select 1) && alive (_x select 1)) then {
-                            _activeUavCount = _activeUavCount + 1;
-                        };
-                    } forEach uavSquadE;
-
-                    if (_activeUavCount >= 4) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        call _finish;
-                        hint "UAV limit reached\nMaximum 4 active UAVs per faction";
-                        systemChat format ["[UAV] Maximum 4 active UAVs per faction reached (current: %1)", _activeUavCount];
-                        if (DBG) then {
-                            diag_log format ["[UAV_CLIENT] Limit exceeded for EAST: %1 active UAVs", _activeUavCount];
-                        };
-                    };
-
-                    //Patikrinti ar žaidėjas jau turi aktyvų droną
-                    private _index = -1;
-                    {
-                        if ((_x select 0) == _playerUID) exitWith {_index = _forEachIndex;};
-                    } forEach uavSquadE;
-
-                    if (_index >= 0) then {
-                        private _uavData = uavSquadE select _index;
-                        private _uavObj = _uavData select 1;
-                        private _cooldown = _uavData select 2;
-
-                        if (!isNull _uavObj && alive _uavObj) exitWith {
-                            missionNamespace setVariable [_requestKey, false, true];
-                            call _finish;
-                            hint "You already have an active drone deployed";
-                            systemChat "[UAV] You already have an active drone deployed";
-                            if (DBG) then {
-                                diag_log format ["[UAV_CLIENT] Player %1 already has active UAV", _playerUID];
-                            };
-                        };
-
-                        if (_cooldown > 0) exitWith {
-                            missionNamespace setVariable [_requestKey, false, true];
-                            call _finish;
-                            private _t = _cooldown; private _s = "sec";
-                            if (_cooldown > 60) then {_t = floor (_cooldown / 60); _s = "min";};
-                            hint parseText format ["Drone cooldown<br/>Ready in %1 %2", _t, _s];
-                            systemChat format ["[UAV] Drone cooldown: %1 %2 remaining", _t, _s];
-                        };
-                    };
-
-                    //Validacija: patikrinti ar UAV masyvas nėra tuščias
-                    if (count uavsE == 0) exitWith {
-                        missionNamespace setVariable [_requestKey, false, true];
-                        call _finish;
-                        hint "UAV service is unavailable<br/>No UAVs available for this faction";
-                        systemChat "[UAV ERROR] uavsE array is empty";
-                    };
-
-                    //Siųsti užklausą serveriui
-                    private _playerPos = getPosATL player;
-                    private _spawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 50 + random 50];
-                    [_typ, _sde, _playerUID, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-
-                    //Užklausa išsiųsta - atstatyti vėliavėlę po trumpos pauzės
-                    [] spawn {
-                        sleep 2;
-                        private _requestKey = format ["uav_request_progress_%1", getPlayerUID player];
-                        missionNamespace setVariable [_requestKey, false, true];
-                    };
-
-                } else {
-                    //ORIGINALI SISTEMA (A3 modas arba kitos RHS frakcijos)
-                    if (alive uavE) exitWith {
-                        hint "UAV is already deployed";
-                    };
-                    if (uavEr > 0) exitWith
-                    {
-                        private _t = uavEr;
-                        private _s = "sec";
-                        if (uavEr > 60) then {
-                            _t = floor (uavEr / 60);
-                            _s = "min";
-                        };
-                        hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
-                    };
-
-                    //Validacija: patikrinti ar UAV masyvas nėra tuščias
-                    if (count uavsE == 0) exitWith {
-                        hint "UAV service is unavailable<br/>No UAVs available for this faction";
-                        systemChat "[UAV ERROR] uavsE array is empty";
-                    };
-
-                    //Siųsti užklausą serveriui
-                    private _playerPos = getPosATL player;
-                    private _spawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 50 + random 50];
-                    [_typ, _sde, getPlayerUID player, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-                };
-            };
-        };
-    };
-
-    //UGV
-    if (_typ == 1) exitWith
-    {
-        call
-        {
-            if (_sde == sideW) exitWith
-            {
-                if (getMarkerColor resFobW == "") exitWith {
-                    hint parseText format ["UGV service is unavailable<br/>You lost %1 base", nameBW1];
-                };
-                if (alive ugvW) exitWith {
-                    hint "UGV is already deployed";
-                };
-                if (ugvWr > 0) exitWith
-                {
-                    private _t = ugvWr;
-                    private _s = "sec";
-                    if (ugvWr > 60) then {
-                        _t = floor (ugvWr / 60);
-                        _s = "min";
-                    };
-                    hint parseText format ["UGV service is unavailable<br/>UGV will be ready in %1 %2",_t,_s];
-                };
-
-                //Validacija: patikrinti ar UGV masyvas nėra tuščias
-                if (count ugvsW == 0) exitWith {
-                    hint "UGV service is unavailable\nNo UGVs available for this faction";
-                    systemChat "[UGV ERROR] ugvsW array is empty";
-                };
-
-                //Siųsti užklausą serveriui
-                private _spawnPos = objBaseW1 getRelPos [75, random 360];
-                [_typ, _sde, getPlayerUID player, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-            };
-
-            if (_sde == sideE) exitWith
-            {
-                if (getMarkerColor resFobE == "") exitWith {
-                    hint parseText format ["UGV service is unavailable<br/>You lost %1 base", nameBE1];
-                };
-                if (alive ugvE) exitWith {
-                    hint "UGV is already deployed";
-                };
-                if (ugvEr > 0) exitWith
-                {
-                    private _t = ugvEr;
-                    private _s = "sec";
-                    if (ugvEr > 60) then {
-                        _t = floor (ugvEr / 60);
-                        _s = "min";
-                    };
-                    hint parseText format ["UGV service is unavailable<br/>UGV will be ready in %1 %2",_t,_s];
-                };
-
-                //Validacija: patikrinti ar UGV masyvas nėra tuščias
-                if (count ugvsE == 0) exitWith {
-                    hint "UGV service is unavailable\nNo UGVs available for this faction";
-                    systemChat "[UGV ERROR] ugvsE array is empty";
-                };
-
-                //Siųsti užklausą serveriui
-                private _spawnPos = objBaseE1 getRelPos [75, random 360];
-                [_typ, _sde, getPlayerUID player, _spawnPos] remoteExec ["wrm_fnc_V2uavRequest_srv", 2];
-            };
-        };
-    };
+	};
+	
+	//UGV
+	if(_typ==1)exitWith
+	{
+		call
+		{
+			if(_sde==sideW)exitWith
+			{
+				if(getMarkerColor resFobW=="")exitWith{hint parseText format ["UGV service is unavailable<br/>You lost %1 base",nameBW1];};
+				if(alive ugvW)exitWith{hint "UGV is already deployed";};
+				if(ugvWr>0)exitWith
+				{ 
+					_t=ugvWr; _s="sec"; if(ugvWr>60)then{_t=floor (ugvWr/60); _s="min";};
+					hint parseText format ["UGV service is unavailable<br/>UGV will be ready in %1 %2",_t,_s];
+				};
+				
+				_s = (selectRandom ugvsW); 
+				_pr =  objBaseW1 getRelPos [75, random 360];
+				_p =  _pr findEmptyPosition [0, 50, _s];
+				if(count _p==0)then{_p=_pr;};
+				
+				ugvW = createVehicle [_s, [_p select 0, _p select 1, 50], [], 0, "NONE"];
+				createVehicleCrew ugvW;
+				[ugvW] call wrm_fnc_parachute;
+				publicvariable "ugvW";
+				
+				ugvW addMPEventHandler ["MPKilled",{[7] spawn wrm_fnc_V2coolDown;}];
+				[7] remoteExec ["wrm_fnc_V2hints", 0, false];
+				sleep 1;
+				[z1,[[ugvW],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+			};
+			
+			if(_sde==sideE)exitWith
+			{
+				if(getMarkerColor resFobE=="")exitWith{hint parseText format ["UGV service is unavailable<br/>You lost %1 base",nameBE1];};
+				if(alive ugvE)exitWith{hint "UGV is already deployed";};
+				if(ugvEr>0)exitWith
+				{ 
+					_t=ugvEr; _s="sec"; if(ugvEr>60)then{_t=floor (ugvEr/60); _s="min";};
+					hint parseText format ["UGV service is unavailable<br/>UGV will be ready in %1 %2",_t,_s];
+				};
+				
+				_s = (selectRandom ugvsE); 
+				_pr =  objBaseE1 getRelPos [75, random 360];
+				_p =  _pr findEmptyPosition [0, 50, _s];
+				if(count _p==0)then{_p=_pr;};
+				
+				ugvE = createVehicle [_s, [_p select 0, _p select 1, 50], [], 0, "NONE"];
+				createVehicleCrew ugvE;
+				[ugvE] call wrm_fnc_parachute;
+				publicvariable "ugvE";
+				
+				ugvE addMPEventHandler ["MPKilled",{[8] spawn wrm_fnc_V2coolDown;}];
+				[8] remoteExec ["wrm_fnc_V2hints", 0, false];
+				sleep 1;
+				[z1,[[ugvE],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+			};
+		};
+	};
 };

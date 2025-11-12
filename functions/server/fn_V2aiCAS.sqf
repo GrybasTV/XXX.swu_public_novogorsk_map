@@ -22,26 +22,21 @@ for "_i" from 0 to 1 step 0 do
 	//random timer
 	sleep (random[(arTime/2),arTime,(arTime*2)]);
 	//sleep 40;
-
-	//OPTIMIZATION: Cache allPlayers - VALIDUOTA SU ARMA 3 BEST PRACTICES
-	private _cachedPlayers = allPlayers select {alive _x};
-	if(count _cachedPlayers>0)then
+	if(count allPlayers>0)then
 	{
 		_t=true;
-		//OPTIMIZATION: Pridėti timeout while ciklui - VALIDUOTA SU ARMA 3 BEST PRACTICES
-		private _timeout = time + 60; //60 sekundžių timeout
-		while {_t && time < _timeout} do
+		while {_t} do
 		{
-			{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach _cachedPlayers;
+			{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
 			sleep 1;
 		};
 	};
-	_plw={side _x==sideW} count _cachedPlayers;
-	_ple={side _x==sideE} count _cachedPlayers;
+	_plw={side _x==sideW} count allplayers;
+	_ple={side _x==sideE} count allplayers;
 	_nlW=true;
-	{if((side _x==sideW)&&(_x==leader _x)) then {_nlW=false;};} forEach _cachedPlayers;
+	{if((side _x==sideW)&&(_x==leader _x)) then {_nlW=false;};} forEach allPlayers;
 	_nlE=true;
-	{if((side _x==sideE)&&(_x==leader _x)) then {_nlE=false;};} forEach _cachedPlayers;
+	{if((side _x==sideE)&&(_x==leader _x)) then {_nlE=false;};} forEach allPlayers;
 	
 	//call
 	//{	
@@ -55,8 +50,7 @@ for "_i" from 0 to 1 step 0 do
 				if(alive objArtiE)then
 				{
 					_fr=[];
-					//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-					{if((side _x==sideW)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+					{if((side _x==sideW)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique (getPos objArtiE);};
 				};
 				
@@ -64,8 +58,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBE1)&&(getMarkerColor resFobE!=""))then
 				{
 					_fr=[];
-					//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-					{if((side _x==sideW)&&((_x distance posBaseE1)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+					{if((side _x==sideW)&&((_x distance posBaseE1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique posBaseE1;};
 				};
 
@@ -73,8 +66,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBE2)&&(getMarkerColor resBaseE!=""))then
 				{
 					_fr=[];
-					//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-					{if((side _x==sideW)&&((_x distance posBaseE2)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+					{if((side _x==sideW)&&((_x distance posBaseE2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique posBaseE2;};
 				};
 				
@@ -86,7 +78,10 @@ for "_i" from 0 to 1 step 0 do
 				if (_vSel isEqualType [])then{_typ=_vSel select 0;}else{_typ=_vSel;};
 				
 				_logic = "logic" createVehicleLocal _t;
-				_logic setDir (plHW getDir posCenter);
+				// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
+				if(!isNil "plHW") then {
+					_logic setDir (plHW getDir posCenter);
+				};
 				_logic setVariable ["vehicle",_typ];
 				_logic setVariable ["type",(selectRandom [2,3])];
 
@@ -104,8 +99,7 @@ for "_i" from 0 to 1 step 0 do
 				if(alive objArtiW)then
 				{
 					_fr=[];
-					//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-					{if((side _x==sideE)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+					{if((side _x==sideE)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique (getPos objArtiW);};
 				};
 				
@@ -113,8 +107,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBW1)&&(getMarkerColor resFobW!=""))then
 				{
 					_fr=[];
-					//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-					{if((side _x==sideE)&&((_x distance posBaseW1)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+					{if((side _x==sideE)&&((_x distance posBaseW1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique posBaseW1;};
 				};
 
@@ -124,8 +117,7 @@ for "_i" from 0 to 1 step 0 do
 					if((secBW2)&&(getMarkerColor resBaseW!=""))then
 					{
 						_fr=[];
-						//OPTIMIZATION: Pakeisti allUnits į entities - VALIDUOTA SU ARMA 3 BEST PRACTICES
-						{if((side _x==sideE)&&((_x distance posBaseW2)<75))then{_fr pushBackUnique _x;};} forEach (entities [["Man"], [], true, false]);
+						{if((side _x==sideE)&&((_x distance posBaseW2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 						if(count _fr==0)then{_tar pushBackUnique posBaseW2;};
 					};
 				};
@@ -138,7 +130,10 @@ for "_i" from 0 to 1 step 0 do
 				if (_vSel isEqualType [])then{_typ=_vSel select 0;}else{_typ=_vSel;};	
 				
 				_logic = "logic" createVehicleLocal _t;
-				_logic setDir (plHE getDir posCenter);
+				// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
+				if(!isNil "plHE") then {
+					_logic setDir (plHE getDir posCenter);
+				};
 				_logic setVariable ["vehicle",_typ];
 				_logic setVariable ["type",(selectRandom [2,3])];
 
