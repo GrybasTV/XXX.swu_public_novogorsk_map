@@ -1,6 +1,36 @@
 # Changelog
 
-## [Neišleistas] - 2025-01-XX
+## [Neišleistas] - 2025-11-XX
+
+### Ištaisytos klaidos
+- **UAV cooldown sistema**: Ištaisytas trūkumas, kai UAV galėjo būti kviečiamas iškart po pirmo sunaikinimo. Dabar įgyvendinta 3 minučių cooldown sistema per būrį visoms frakcijoms.
+  - Pakeista sistema iš globalių cooldown kintamųjų (`uavWr`, `uavEr`) į grupės-based sistemą (`uavGroupCooldowns`)
+  - Pridėtas patikrinimas prieš UAV sukūrimą, ar grupė neturi aktyvaus cooldown
+  - Išsaugoma grupės informacija serverio pusėje su `uavGroupObjects` masyvu
+  - Automatinis cooldown pradėjimas UAV sunaikinimo metu naudojant `fn_V2uavGroupRemove`
+
+- **Fortifikacijų ištrynimo klaida**: Ištaisytas kritinis trūkumas fortifikacijų ištrynimo sistemoje, kai bandant ištrinti tranšėjas su pasirinkimu buvo meta klaida.
+  - Pakeista neteisinga masyvo manipuliavimo sintaksė `fortifications_player = fortifications_player - [_nearestFort]` į teisingą `deleteAt` metodą
+  - Pridėtas saugus objekto patikrinimas prieš `deleteVehicle` iškvietimą
+  - Pakeistas artimiausios fortifikacijos paieškos algoritmas naudojant `_forEachIndex` vietoj tiesioginio elemento lyginimo
+  - Ištaisytas limitų tikrinimo funkcijos (`fnc_checkFortLimits`) masyvo valdymas
+
+### Optimizuota pagal SQF geriausių praktikų dokumentaciją
+- **AI našumo optimizavimas**: Ištaisytos kritinės našumo problemos remiantis SQF_SYNTAX_BEST_PRACTICES.md dokumentacija
+  - Pakeistas begalinis ciklas `for "_i" from 0 to 1 step 0 do` į aiškesnį `while {true} do` sintaksę
+  - Pridėtas AI įstrigimo aptikimas su pozicijos delta stebėjimu vietoj nepapikimo `canMove` komandos
+  - Sukurta nauja funkcija `fn_V2aiStuckCheck.sqf` įstrigimo aptikimui ir taisymui
+  - Padidintas AI atnaujinimo ciklo intervalas nuo 30 iki 45 sekundžių
+  - Optimizuotos `nearRoads` komandos - sumažinti spinduliai nuo 200->150 ir 30->20
+  - Optimizuota `nearestLocations` - sumažintas spindulys nuo worldSize/2 iki worldSize/4
+  - Įjungta Dinaminė Simuliacija tolimiems AI vienetams išjungti su atstumais: Group-1000m, Vehicle-2500m, EmptyVehicle-500m
+
+### Pridėta
+- **Fortifikacijų valdymo sistema**: Įgyvendintas fortifikacijų griovimo mechanizmas su limitais
+  - Maksimalus kiekis: po 3 kiekvieno tipo fortifikacijas (Trench T, Trench Bunker, Trench Firing Position)
+  - Automatinis seniausių ištrynimas viršijus limitą
+  - Rankinis ištrynimas: lyderiai gali ištrinti artimiausią savo fortifikaciją (10m spindulys)
+  - Pagerinta serverio našumas išvalant null objektus ir sugadintas fortifikacijas
 
 ### Pataisyta
 - **autoStart.sqf**: Pašalintas 30 sekundžių laukimas prieš misijos pradžią

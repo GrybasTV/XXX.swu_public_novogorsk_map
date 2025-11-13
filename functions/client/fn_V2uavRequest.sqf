@@ -28,195 +28,164 @@ call
 	//UAV
 	if(_typ==0)exitWith
 	{
-		//Patikrinti, ar tai Ukraine/Russia frakcija - jei taip, naudoti grupės-based sistemą
-		_isUkraineRussia = (modA=="UA2025_RU2025" && (factionW=="Ukraine 2025" || factionE=="Russia 2025"));
-		
-		if(_isUkraineRussia)then
+		//Naudoti grupės-based cooldown sistemą visoms frakcijoms
+		_grp = group player;
+		_grpId = str _grp; //Unikalus grupės identifikatorius
+
+		call
 		{
-			//Grupės-based sistema Ukraine/Russia frakcijoms
-			_grp = group player;
-			_grpId = str _grp; //Unikalus grupės identifikatorius
-			
-			call
+			if(_sde==sideW)exitWith
 			{
-				if(_sde==sideW)exitWith
+				//Papildomi patikrinimai bazės būsenos
+				if(getMarkerColor resFobW=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBW1];};
+
+				//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
+				_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+				if(_groupUavIndex != -1)then
 				{
-					//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
-					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
-					if(_groupUavIndex != -1)then
-					{
-						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
-						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
-					};
-					
-					//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
-					_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
-					if(_groupCooldownIndex != -1)then
-					{
-						_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
-						if(_groupCooldown > 0)exitWith
-						{
-							_t = _groupCooldown; _s = "sec";
-							if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
-							hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
-						};
-					};
-					
-					//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
-					//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
-					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
-					if(_groupUavIndex != -1)then
-					{
-						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
-						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
-					};
-					
-					//Sukurti UAV virš žaidėjo galvos
-					_playerPos = getPos player;
-					_uavSpawnPos = [_playerPos param [0, 0], _playerPos param [1, 0], (_playerPos param [2, 0]) + 100]; //100m virš žaidėjo galvos
-					_groupUav = createVehicle [(selectRandom uavsW), _uavSpawnPos, [], 0, "FLY"];
-					createVehicleCrew _groupUav;
-					
-					//Išsaugoti grupės UAV masyve serverio pusėje
-					//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
-					[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
-					
-					//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
-					_groupUav addMPEventHandler ["MPKilled", {
-						params ["_uav"];
-						//Pašalinti UAV ir pradėti cooldown serverio pusėje
-						[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
-					}];
-					
-					//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
-					// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
-					[_groupUav] spawn {
-						params ["_groupUavLocal"];
-						sleep 1;
-						if(!isNull _groupUavLocal) then {
-							[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
-						};
-					};
-					
-					hint "UAV deployed above your position";
+					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
 				};
-				
-				if(_sde==sideE)exitWith
+
+				//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
+				_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+				if(_groupCooldownIndex != -1)then
 				{
-					//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
-					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
-					if(_groupUavIndex != -1)then
+					_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+					if(_groupCooldown > 0)exitWith
 					{
-						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
-						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+						_t = _groupCooldown; _s = "sec";
+						if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
+						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
 					};
-					
-					//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
-					_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
-					if(_groupCooldownIndex != -1)then
-					{
-						_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
-						if(_groupCooldown > 0)exitWith
-						{
-							_t = _groupCooldown; _s = "sec";
-							if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
-							hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
-						};
-					};
-					
-					//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
-					//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
-					_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
-					if(_groupUavIndex != -1)then
-					{
-						_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
-						if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
-					};
-					
-					//Sukurti UAV virš žaidėjo galvos
-					_playerPos = getPos player;
-					_uavSpawnPos = [_playerPos param [0, 0], _playerPos param [1, 0], (_playerPos param [2, 0]) + 100]; //100m virš žaidėjo galvos
-					_groupUav = createVehicle [(selectRandom uavsE), _uavSpawnPos, [], 0, "FLY"];
-					createVehicleCrew _groupUav;
-					
-					//Išsaugoti grupės UAV masyve serverio pusėje
-					//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
-					[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
-					
-					//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
-					_groupUav addMPEventHandler ["MPKilled", {
-						params ["_uav"];
-						//Pašalinti UAV ir pradėti cooldown serverio pusėje
-						[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
-					}];
-					
-					//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
-					// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
-					[_groupUav] spawn {
-						params ["_groupUavLocal"];
-						sleep 1;
-						if(!isNull _groupUavLocal) then {
-							[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
-						};
-					};
-					
-					hint "UAV deployed above your position";
 				};
+
+				//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
+				//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
+				_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+				if(_groupUavIndex != -1)then
+				{
+					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+				};
+
+				//Sukurti UAV virš žaidėjo galvos arba iš bazės
+				_uavSpawnPos = [];
+				if(!isNil "plHW") then {
+					_uavSpawnPos = plHW;
+				} else {
+					_playerPos = getPos player;
+					_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
+				};
+
+				_groupUav = createVehicle [(selectRandom uavsW), _uavSpawnPos, [], 0, "FLY"];
+				createVehicleCrew _groupUav;
+
+				//Jei UAV sukurtas iš bazės, judėti į centro poziciją
+				if(!isNil "plHW") then {
+					(group driver _groupUav) move posCenter;
+				};
+
+				//Išsaugoti grupės UAV masyve serverio pusėje
+				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+				[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
+
+				//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
+				_groupUav addMPEventHandler ["MPKilled", {
+					params ["_uav"];
+					//Pašalinti UAV ir pradėti cooldown serverio pusėje
+					[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+				}];
+
+				//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
+				// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
+				[_groupUav] spawn {
+					params ["_groupUavLocal"];
+					sleep 1;
+					if(!isNull _groupUavLocal) then {
+						[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
+					};
+				};
+
+				hint "UAV deployed above your position";
+				[5] remoteExec ["wrm_fnc_V2hints", 0, false]; //Informuoti kitus žaidėjus apie UAV
 			};
-		}else
-		{
-			//Senoji sistema kitoms frakcijoms
-			call
+
+			if(_sde==sideE)exitWith
 			{
-				if(_sde==sideW)exitWith
+				//Papildomi patikrinimai bazės būsenos
+				if(getMarkerColor resFobE=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBE1];};
+
+				//Patikrinti, ar grupė jau turi aktyvų UAV - naudojame param saugesniam masyvo elementų pasiekimui
+				_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+				if(_groupUavIndex != -1)then
 				{
-					if(getMarkerColor resFobW=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBW1];};
-					if(alive uavW)exitWith{hint "UAV is already deployed";};
-					if(uavWr>0)exitWith
-					{ 
-						_t=uavWr; _s="sec"; if(uavWr>60)then{_t=floor (uavWr/60); _s="min";};
+					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+				};
+
+				//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
+				_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+				if(_groupCooldownIndex != -1)then
+				{
+					_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+					if(_groupCooldown > 0)exitWith
+					{
+						_t = _groupCooldown; _s = "sec";
+						if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
 						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
 					};
-					// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
-					if(!isNil "plHW") then {
-						uavW = createVehicle [(selectRandom uavsW), plHW, [], 0, "FLY"];
-						createVehicleCrew uavW;
-						publicvariable "uavW";
-						(group driver uavW) move posCenter;
-						
-						uavW addMPEventHandler ["MPKilled",{[5] spawn wrm_fnc_V2coolDown;}];
-						[5] remoteExec ["wrm_fnc_V2hints", 0, false];
-						sleep 1;
-						[z1,[[uavW],true]] remoteExec ["addCuratorEditableObjects", 2, false];
-					} else {
-						hint "UAV service is unavailable - Air base not available";
-					};
 				};
-				
-				if(_sde==sideE)exitWith
+
+				//Papildomas tikrinimas: patikrinti, ar grupė jau turi aktyvų UAV prieš sukurdamas naują
+				//Tai apsaugo nuo greitų paspaudimų, kurie gali sukurti kelis UAV
+				_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+				if(_groupUavIndex != -1)then
 				{
-					if(getMarkerColor resFobE=="")exitWith{hint parseText format ["UAV service is unavailable<br/>You lost %1 base",nameBE1];};
-					if(alive uavE)exitWith{hint "UAV is already deployed";};
-					if(uavEr>0)exitWith
-					{ 
-						_t=uavEr; _s="sec"; if(uavEr>60)then{_t=floor (uavEr/60); _s="min";};
-						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
-					};
-					// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
-					if(!isNil "plHE") then {
-						uavE = createVehicle [(selectRandom uavsE), plHE, [], 0, "FLY"];
-						createVehicleCrew uavE;
-						publicvariable "uavE";
-						(group driver uavE) move posCenter;
-						
-						uavE addMPEventHandler ["MPKilled",{[6] spawn wrm_fnc_V2coolDown;}];
-						[6] remoteExec ["wrm_fnc_V2hints", 0, false];
-						sleep 1;
-						[z1,[[uavE],true]] remoteExec ["addCuratorEditableObjects", 2, false];
-					} else {
-						hint "UAV service is unavailable - Air base not available";
+					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
+					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+				};
+
+				//Sukurti UAV virš žaidėjo galvos arba iš bazės
+				_uavSpawnPos = [];
+				if(!isNil "plHE") then {
+					_uavSpawnPos = plHE;
+				} else {
+					_playerPos = getPos player;
+					_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
+				};
+
+				_groupUav = createVehicle [(selectRandom uavsE), _uavSpawnPos, [], 0, "FLY"];
+				createVehicleCrew _groupUav;
+
+				//Jei UAV sukurtas iš bazės, judėti į centro poziciją
+				if(!isNil "plHE") then {
+					(group driver _groupUav) move posCenter;
+				};
+
+				//Išsaugoti grupės UAV masyve serverio pusėje
+				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+				[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
+
+				//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
+				_groupUav addMPEventHandler ["MPKilled", {
+					params ["_uav"];
+					//Pašalinti UAV ir pradėti cooldown serverio pusėje
+					[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+				}];
+
+				//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
+				// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
+				[_groupUav] spawn {
+					params ["_groupUavLocal"];
+					sleep 1;
+					if(!isNull _groupUavLocal) then {
+						[z1,[[_groupUavLocal],true]] remoteExec ["addCuratorEditableObjects", 2, false];
 					};
 				};
+
+				hint "UAV deployed above your position";
+				[6] remoteExec ["wrm_fnc_V2hints", 0, false]; //Informuoti kitus žaidėjus apie UAV
 			};
 		};
 
