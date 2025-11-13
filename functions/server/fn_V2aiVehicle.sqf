@@ -93,7 +93,24 @@ call
 
 			aiVehW = createVehicle [_typ, posW1, [], 0, "NONE"];
 			[aiVehW,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiVehW;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpVehW = createGroup [sideW, true];
+			_crewPositions = fullCrew aiVehW;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpVehW createUnit [crewW, posW1, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiVehW;};
+					case "commander": {_unit moveInCommander aiVehW;};
+					case "gunner": {_unit moveInGunner aiVehW;};
+					case "turret": {_unit moveInTurret [aiVehW, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehW);
@@ -171,7 +188,24 @@ call
 
 			aiArmW = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiArmW;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpArmW = createGroup [sideW, true];
+			_crewPositions = fullCrew aiArmW;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiArmW;};
+					case "commander": {_unit moveInCommander aiArmW;};
+					case "gunner": {_unit moveInGunner aiArmW;};
+					case "turret": {_unit moveInTurret [aiArmW, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW);
@@ -249,7 +283,24 @@ call
 
 			aiArmW2 = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW2,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiArmW2;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpArmW2 = createGroup [sideW, true];
+			_crewPositions = fullCrew aiArmW2;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpArmW2 createUnit [crewW, posW2, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiArmW2;};
+					case "commander": {_unit moveInCommander aiArmW2;};
+					case "gunner": {_unit moveInGunner aiArmW2;};
+					case "turret": {_unit moveInTurret [aiArmW2, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW2);
@@ -313,7 +364,24 @@ call
 
 				aiCasW = createVehicle [_typ, plHW, [], 0, "FLY"];
 				[aiCasW,[_tex,1]] call bis_fnc_initVehicle;
-				createVehicleCrew aiCasW;	
+
+				//Elegantiškas įgulos priskyrimas naudojant fullCrew
+				_grpCasW = createGroup [sideW, true];
+				_crewPositions = fullCrew aiCasW;
+
+				{
+					_role = _x select 1;
+					_turretPath = _x select 2;
+					_unit = _grpCasW createUnit [crewW, plHW, [], 0, "NONE"];
+
+					switch (_role) do {
+						case "driver": {_unit moveInDriver aiCasW;};
+						case "commander": {_unit moveInCommander aiCasW;};
+						case "gunner": {_unit moveInGunner aiCasW;};
+						case "turret": {_unit moveInTurret [aiCasW, _turretPath];};
+					};
+				} forEach _crewPositions;
+
 				{ _x addMPEventHandler
 					["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 				} forEach (crew aiCasW);
@@ -394,7 +462,24 @@ call
 
 			aiVehE = createVehicle [_typ, posE1, [], 0, "NONE"];
 			[aiVehE,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiVehE;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpVehE = createGroup [sideE, true];
+			_crewPositions = fullCrew aiVehE;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpVehE createUnit [crewE, posE1, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiVehE;};
+					case "commander": {_unit moveInCommander aiVehE;};
+					case "gunner": {_unit moveInGunner aiVehE;};
+					case "turret": {_unit moveInTurret [aiVehE, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehE);
@@ -472,7 +557,24 @@ call
 
 			aiArmE = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiArmE;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpArmE = createGroup [sideE, true];
+			_crewPositions = fullCrew aiArmE;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiArmE;};
+					case "commander": {_unit moveInCommander aiArmE;};
+					case "gunner": {_unit moveInGunner aiArmE;};
+					case "turret": {_unit moveInTurret [aiArmE, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE);
@@ -550,7 +652,24 @@ call
 
 			aiArmE2 = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE2,[_tex,1]] call bis_fnc_initVehicle;
-			createVehicleCrew aiArmE2;
+
+			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			_grpArmE2 = createGroup [sideE, true];
+			_crewPositions = fullCrew aiArmE2;
+
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _grpArmE2 createUnit [crewE, posE2, [], 0, "NONE"];
+
+				switch (_role) do {
+					case "driver": {_unit moveInDriver aiArmE2;};
+					case "commander": {_unit moveInCommander aiArmE2;};
+					case "gunner": {_unit moveInGunner aiArmE2;};
+					case "turret": {_unit moveInTurret [aiArmE2, _turretPath];};
+				};
+			} forEach _crewPositions;
+
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE2);
@@ -614,7 +733,24 @@ call
 
 				aiCasE = createVehicle [_typ, plHE, [], 0, "FLY"];
 				[aiCasE,[_tex,1]] call bis_fnc_initVehicle;
-				createVehicleCrew aiCasE;
+
+				//Elegantiškas įgulos priskyrimas naudojant fullCrew
+				_grpCasE = createGroup [sideE, true];
+				_crewPositions = fullCrew aiCasE;
+
+				{
+					_role = _x select 1;
+					_turretPath = _x select 2;
+					_unit = _grpCasE createUnit [crewE, plHE, [], 0, "NONE"];
+
+					switch (_role) do {
+						case "driver": {_unit moveInDriver aiCasE;};
+						case "commander": {_unit moveInCommander aiCasE;};
+						case "gunner": {_unit moveInGunner aiCasE;};
+						case "turret": {_unit moveInTurret [aiCasE, _turretPath];};
+					};
+				} forEach _crewPositions;
+
 				{ _x addMPEventHandler
 					["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 				} forEach (crew aiCasE);

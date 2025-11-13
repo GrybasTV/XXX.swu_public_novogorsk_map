@@ -3,6 +3,60 @@
 ## [Neišleistas] - 2025-11-XX
 
 ### Ištaisytos klaidos
+- **fn_V2flagActions.sqf "isnull: Type String, expected Object" klaida**: Netinkamas kintamųjų tipų patikrinimo tvarka
+  - Pakeista patikrinimo tvarka: pirmiau tikriname ar nėra tuščia string, tada ar nėra null objektas
+  - Išvengiama `isNull` kvietimo ant string tipo kintamųjų
+- **fn_V2aiMove.sqf "Undefined variable in expression: wrm_fnc_V2aiStuckCheck" klaida**: Funkcija buvo nepridėta į cfgFunctions.hpp
+  - Pridėta `V2aiStuckCheck` į cfgFunctions.hpp serverio sekciją
+  - Funkcija dabar gali būti kviečiama iš AI judėjimo logikos
+- **Bazės pavadinimų logika pataisyta**: Pridėti trūkstami bazės pavadinimai missType==2 ir missType==3
+  - Dabar visi 3 misijos tipai turi teisingus bazės pavadinimus
+  - Transport base + Helicopter/Armor base pagal misijos tipą
+  - Išspręsta problema kai abi bazės rodė kaip "Armor base"
+- **Fortifikacijų statymo sistema patobulinta**: Tranšėjos atsiranda tik po statybos užbaigimo
+  - Pakeistas statybos procesas: vietoj iškart atsirandančios tranšėjos, statybos metu rodoma laikina žalia žymė
+  - Tranšėja sukuriama tik po sėkmingo statybos proceso užbaigimo
+  - Išvengta problemos kai žaidėjas gali vaikščioti aplink jau pastatytą tranšėją statybos metu
+- **Fortifikacijų statymo apribojimas**: Tranšėjų nebegalima statyti vaikštant
+- **AI transportų įgulos priskyrimo bugas (patobulinta versija)**: AI įgula nebūdavo priskirta pagal pozicijas (driver, gunner, commander)
+  - Pakeista `createVehicleCrew` į elegantišką sprendimą naudojant `fullCrew` funkciją
+  - Dabar sistema automatiškai aptinka visas įgulos pozicijas transporte ir priskiria įgulos narius pagal jų vaidmenis
+  - Palaiko įvairius transportų tipus su skirtingomis pozicijų kombinacijomis (be driver, be commander, etc.)
+  - Įgulos nariai yra teisingai priskiriami į driver, gunner, commander ir turret pozicijas
+  - Išspręsta problema kai AI būdavo tiesiog "priskirti mašinoje" be konkrečių vaidmenų
+  - Pridėtas `speed player < 0.1` patikrinimas į visus 3 tranšėjų tipus
+  - Užkerta kelią statymui judant, užtikrina stabilesnį statybos procesą
+- **UAV cooldown sistema sustiprinimas**: Pridėtas serverio pusės cooldown patikrinimas
+  - Serverio pusėje nebeleidžiama kurti naujų UAV, jei grupė turi aktyvų cooldown
+  - Pakeistas cooldown nustatymas iš asinchroninio į sinchroninį (`spawn` → `call`)
+  - Atnaujintas cooldown atnaujinimo mechanizmas su geresne sinchronizacija
+  - Pakeistas cooldown atnaujinimo intervalas iš 10 sekundžių į 1 sekundę geresniam tikslumui
+  - Pridėti debug pranešimai apie cooldown pradžią ir pabaigą
+  - Užtikrinamas tikslus 3 minučių (180 sekundžių) cooldown laikotarpis
+- **V2aiStart.sqf "Undefined variable in expression: pLhW" klaida**: Ištaisytas `plHW` ir `plHE` kintamųjų naudojimas kai jie gali būti `nil`
+  - Pašalinti tarpiniai `_plHWDefined` ir `_plHEDefined` kintamieji ir perkeltas patikrinimas tiesiai į sąlygą
+  - Naudojamas `!isNil "plHW" && {!isNull plHW} && (_x distance plHW > 200)` patikrinimas
+  - Užkerta kelią "Undefined variable" klaidoms kai heliport'ai nėra sukurti
+- **fn_V2flagActions.sqf "Type String, expected Object" klaida**: Ištaisytas `addAction` klaida kai flag objektai buvo string'ai vietoj objektų
+  - Pridėti `!isNull` ir `isNotEqualTo ""` patikrinimai prieš pridedant `flgJetW` ir `flgJetE` į `_flgs` masyvą
+  - Užkerta kelią bandymui kviesti `addAction` ant neegzistuojančių flag objektų
+- **V2startServer.sqf SQF geriausių praktikų optimizavimas**: Ištaisytos kritinės klaidos ir pritaikytas kodas pagal SQF_SYNTAX_BEST_PRACTICES.md dokumentaciją
+  - OnOwnerChange callback'ai palikti string formatu dėl BIS modulio sistemos reikalavimų (nesuderinama su code block formatu)
+  - Ištaisytos visos kabutės OnOwnerChange callback'uose - visos string reikšmės tinkamai escape'intos su "" (dvigubomis kabutėmis)
+  - Ištaisytos kabutės komentaruose format string'uose, kurios kėlė "Error Missing ]" klaidas (pašalintos kabutės iš komentarų)
+  - Pašalinti per ilgi komentarai, kurie kėlė "Error Invalid number in expression" klaidas
+  - Pakeisti select operacijos į param funkcijas saugiam masyvo elementų pasiekimui (pvz., HeliArW select 0 → HeliArW param [0, []])
+  - Inicializuoti objekto kintamieji (objAAW, objAAE, objArtiW, objArtiE) prieš jų naudojimą pagal SQF geriausias praktikas
+  - Pridėti saugumo patikrinimai prieš objektų naudojimą su if(!isNull obj) sąlygomis
+  - Ištaisytos potencialios "Error Undefined variable" klaidos inicializuojant kintamuosius
+
+- **fn_V2aiMove.sqf sintaksės pataisymai**: Ištaisytos sintaksės klaidos pagal SQF geriausių praktikų dokumentaciją
+  - Pašalinti dvigubi kabliataškiai (;;) kurie galėjo sukelti sintaksės klaidas
+- **UAV pozicijos pataisymas**: Ištaisytas UAV sukūrimo pozicionavimas - UAV visada atsiranda virš žaidėjo galvos, ne oro bazėje
+  - Pašalinta logika kuri pirmiau tikrindavo oro bazės egzistavimą (`plHW`/`plHE`)
+  - UAV dabar visada kuriamas 100m virš žaidėjo galvos naudojant `eyePos player`
+  - UAV po sukūrimo visada juda į žemėlapio centro poziciją (`posCenter`)
+
 - **UAV cooldown sistema**: Ištaisytas trūkumas, kai UAV galėjo būti kviečiamas iškart po pirmo sunaikinimo. Dabar įgyvendinta 3 minučių cooldown sistema per būrį visoms frakcijoms.
   - Pakeista sistema iš globalių cooldown kintamųjų (`uavWr`, `uavEr`) į grupės-based sistemą (`uavGroupCooldowns`)
   - Pridėtas patikrinimas prieš UAV sukūrimą, ar grupė neturi aktyvaus cooldown
@@ -18,6 +72,12 @@
 ### Optimizuota pagal SQF geriausių praktikų dokumentaciją
 - **AI našumo optimizavimas**: Ištaisytos kritinės našumo problemos remiantis SQF_SYNTAX_BEST_PRACTICES.md dokumentacija
   - Pakeistas begalinis ciklas `for "_i" from 0 to 1 step 0 do` į aiškesnį `while {true} do` sintaksę
+
+- **Sektorių stabilumo optimizavimas**: Ištaisytos misijos užstrigimo problemos sektorių keitimosi metu pagal SQF_SYNTAX_BEST_PRACTICES.md
+  - Pakeisti visi OnOwnerChange callback'ai iš string formato į code block formatą, užkertant kelią "Error Missing ]" klaidoms
+  - Pridėtas įstrigimo aptikimo mechanizmas į AI judėjimo logiką naudojant delta pozicijos stebėjimą
+  - Optimizuotas AI judėjimo iškvietimų vykdymas pakeičiant iš `call` į `spawn` OnOwnerChange kontekste
+  - Pridėti komentarai apie optimizacijas ir jų pagrindimą
   - Pridėtas AI įstrigimo aptikimas su pozicijos delta stebėjimu vietoj nepapikimo `canMove` komandos
   - Sukurta nauja funkcija `fn_V2aiStuckCheck.sqf` įstrigimo aptikimui ir taisymui
   - Padidintas AI atnaujinimo ciklo intervalas nuo 30 iki 45 sekundžių
