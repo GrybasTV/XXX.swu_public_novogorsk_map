@@ -74,8 +74,9 @@ call
 		{
 			//is base under attack?
 			_eBW1=true;
-			while {_eBW1} do 
+			while {_eBW1} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBW1=false;
 				{
 					_unit=_x;
@@ -87,29 +88,48 @@ call
 				if (_eBW1) then {sleep 30;};
 			};
 			//create new vehicle
+			// Patikriname, ar senas transportas dar egzistuoja - jei taip, jį sunaikiname
+			if(!isNull aiVehW) then {
+				{aiVehW deleteVehicleCrew _x} forEach crew aiVehW;
+				deleteVehicle aiVehW;
+			};
+			
 			_vSel = selectRandom CarArW;
 			_typ="";_tex="";
 			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
 
-			aiVehW = createVehicle [_typ, posW1, [], 0, "NONE"];
+			// Naudojame findEmptyPosition, kad išvengtume dvigubo spawninimo vienoje vietoje
+			_spawnPos = posW1 findEmptyPosition [0, 10, _typ];
+			if(count _spawnPos == 0) then {_spawnPos = posW1;};
+			
+			aiVehW = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehW,[_tex,1]] call bis_fnc_initVehicle;
-
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			
+			// Naudojame originalo metodą - createVehicleCrew automatiškai sukuria įgulą pagal transporto configą
+			// Tai užtikrina, kad transportas turės įgulą ir nesprogs
+			createVehicleCrew aiVehW;
+			
+			// Dabar pakeičiame įgulą pagal mūsų configą
+			// Pirmiausia pašaliname seną įgulą
+			{aiVehW deleteVehicleCrew _x} forEach crew aiVehW;
+			
+			// Sukuriame naują įgulą pagal mūsų configą naudojant emptyPositions (kaip kitur kode)
 			_grpVehW = createGroup [sideW, true];
-			_crewPositions = fullCrew aiVehW;
-
-			{
-				_role = _x select 1;
-				_turretPath = _x select 2;
-				_unit = _grpVehW createUnit [crewW, posW1, [], 0, "NONE"];
-
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiVehW;};
-					case "commander": {_unit moveInCommander aiVehW;};
-					case "gunner": {_unit moveInGunner aiVehW;};
-					case "turret": {_unit moveInTurret [aiVehW, _turretPath];};
-				};
-			} forEach _crewPositions;
+			// Driver pozicija
+			if(aiVehW emptyPositions "Driver" > 0) then {
+				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
+				_unit moveInDriver aiVehW;
+			};
+			// Gunner pozicija
+			for "_i" from 1 to (aiVehW emptyPositions "Gunner") step 1 do {
+				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
+				_unit moveInGunner aiVehW;
+			};
+			// Commander pozicija
+			for "_i" from 1 to (aiVehW emptyPositions "Commander") step 1 do {
+				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
+				_unit moveInCommander aiVehW;
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
@@ -169,8 +189,9 @@ call
 		{
 			//is base under attack?
 			_eBW2=true;
-			while {_eBW2} do 
+			while {_eBW2} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBW2=false;
 				{
 					_unit=_x;
@@ -193,18 +214,61 @@ call
 			_grpArmW = createGroup [sideW, true];
 			_crewPositions = fullCrew aiArmW;
 
+			// Debug informacija apie crew pozicijas
+			if(DBG)then{
+				["AI Vehicle Debug: fullCrew returned %1 positions for aiArmW", count _crewPositions] remoteExec ["systemChat", 0, false];
+				{["AI Vehicle Debug: Position %1: %2", _forEachIndex, _x] remoteExec ["systemChat", 0, false];} forEach _crewPositions;
+			};
+
 			{
 				_role = _x select 1;
 				_turretPath = _x select 2;
 				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
 
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiArmW;};
-					case "commander": {_unit moveInCommander aiArmW;};
-					case "gunner": {_unit moveInGunner aiArmW;};
-					case "turret": {_unit moveInTurret [aiArmW, _turretPath];};
+				// Debug informacija apie unit kūrimą
+				if(DBG)then{
+					if(isNull _unit)then{
+						["AI Vehicle Debug: FAILED to create unit for role %1", _role] remoteExec ["systemChat", 0, false];
+					}else{
+						["AI Vehicle Debug: Created unit %1 for role %2", _unit, _role] remoteExec ["systemChat", 0, false];
+					};
+				};
+
+				if(!isNull _unit)then{
+					switch (_role) do {
+						case "driver": {
+							_unit moveInDriver aiArmW;
+							if(DBG && !(driver aiArmW isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into driver position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "commander": {
+							_unit moveInCommander aiArmW;
+							if(DBG && !(commander aiArmW isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into commander position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "gunner": {
+							_unit moveInGunner aiArmW;
+							if(DBG && !(gunner aiArmW isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into gunner position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "turret": {
+							_unit moveInTurret [aiArmW, _turretPath];
+							if(DBG && !(_unit in (aiArmW turretUnit _turretPath)))then{
+								["AI Vehicle Debug: FAILED to move unit into turret position %1", _turretPath] remoteExec ["systemChat", 0, false];
+							};
+						};
+					};
 				};
 			} forEach _crewPositions;
+
+			// Debug informacija apie galutinį crew skaičių
+			if(DBG)then{
+				_finalCrew = count (crew aiArmW);
+				["AI Vehicle Debug: Final crew count for aiArmW: %1", _finalCrew] remoteExec ["systemChat", 0, false];
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
@@ -264,8 +328,9 @@ call
 		{
 			//is base under attack?
 			_eBW2=true;
-			while {_eBW2} do 
+			while {_eBW2} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBW2=false;
 				{
 					_unit=_x;
@@ -443,8 +508,9 @@ call
 		{
 			//is base under attack?
 			_eBE1=true;
-			while {_eBE1} do 
+			while {_eBE1} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBE1=false;
 				{
 					_unit=_x;
@@ -456,29 +522,48 @@ call
 				if (_eBE1) then {sleep 30;};
 			};
 			//create new vehicle
+			// Patikriname, ar senas transportas dar egzistuoja - jei taip, jį sunaikiname
+			if(!isNull aiVehE) then {
+				{aiVehE deleteVehicleCrew _x} forEach crew aiVehE;
+				deleteVehicle aiVehE;
+			};
+			
 			_vSel = selectRandom CarArE;
 			_typ="";_tex="";
 			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
 
-			aiVehE = createVehicle [_typ, posE1, [], 0, "NONE"];
+			// Naudojame findEmptyPosition, kad išvengtume dvigubo spawninimo vienoje vietoje
+			_spawnPos = posE1 findEmptyPosition [0, 10, _typ];
+			if(count _spawnPos == 0) then {_spawnPos = posE1;};
+			
+			aiVehE = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehE,[_tex,1]] call bis_fnc_initVehicle;
-
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			
+			// Naudojame originalo metodą - createVehicleCrew automatiškai sukuria įgulą pagal transporto configą
+			// Tai užtikrina, kad transportas turės įgulą ir nesprogs
+			createVehicleCrew aiVehE;
+			
+			// Dabar pakeičiame įgulą pagal mūsų configą
+			// Pirmiausia pašaliname seną įgulą
+			{aiVehE deleteVehicleCrew _x} forEach crew aiVehE;
+			
+			// Sukuriame naują įgulą pagal mūsų configą naudojant emptyPositions (kaip kitur kode)
 			_grpVehE = createGroup [sideE, true];
-			_crewPositions = fullCrew aiVehE;
-
-			{
-				_role = _x select 1;
-				_turretPath = _x select 2;
-				_unit = _grpVehE createUnit [crewE, posE1, [], 0, "NONE"];
-
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiVehE;};
-					case "commander": {_unit moveInCommander aiVehE;};
-					case "gunner": {_unit moveInGunner aiVehE;};
-					case "turret": {_unit moveInTurret [aiVehE, _turretPath];};
-				};
-			} forEach _crewPositions;
+			// Driver pozicija
+			if(aiVehE emptyPositions "Driver" > 0) then {
+				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
+				_unit moveInDriver aiVehE;
+			};
+			// Gunner pozicija
+			for "_i" from 1 to (aiVehE emptyPositions "Gunner") step 1 do {
+				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
+				_unit moveInGunner aiVehE;
+			};
+			// Commander pozicija
+			for "_i" from 1 to (aiVehE emptyPositions "Commander") step 1 do {
+				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
+				_unit moveInCommander aiVehE;
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
@@ -538,8 +623,9 @@ call
 		{
 			//is base under attack?
 			_eBE2=true;
-			while {_eBE2} do 
+			while {_eBE2} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBE2=false;
 				{
 					_unit=_x;
@@ -562,18 +648,61 @@ call
 			_grpArmE = createGroup [sideE, true];
 			_crewPositions = fullCrew aiArmE;
 
+			// Debug informacija apie crew pozicijas
+			if(DBG)then{
+				["AI Vehicle Debug: fullCrew returned %1 positions for aiArmE", count _crewPositions] remoteExec ["systemChat", 0, false];
+				{["AI Vehicle Debug: Position %1: %2", _forEachIndex, _x] remoteExec ["systemChat", 0, false];} forEach _crewPositions;
+			};
+
 			{
 				_role = _x select 1;
 				_turretPath = _x select 2;
 				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
 
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiArmE;};
-					case "commander": {_unit moveInCommander aiArmE;};
-					case "gunner": {_unit moveInGunner aiArmE;};
-					case "turret": {_unit moveInTurret [aiArmE, _turretPath];};
+				// Debug informacija apie unit kūrimą
+				if(DBG)then{
+					if(isNull _unit)then{
+						["AI Vehicle Debug: FAILED to create unit for role %1", _role] remoteExec ["systemChat", 0, false];
+					}else{
+						["AI Vehicle Debug: Created unit %1 for role %2", _unit, _role] remoteExec ["systemChat", 0, false];
+					};
+				};
+
+				if(!isNull _unit)then{
+					switch (_role) do {
+						case "driver": {
+							_unit moveInDriver aiArmE;
+							if(DBG && !(driver aiArmE isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into driver position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "commander": {
+							_unit moveInCommander aiArmE;
+							if(DBG && !(commander aiArmE isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into commander position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "gunner": {
+							_unit moveInGunner aiArmE;
+							if(DBG && !(gunner aiArmE isEqualTo _unit))then{
+								["AI Vehicle Debug: FAILED to move unit into gunner position"] remoteExec ["systemChat", 0, false];
+							};
+						};
+						case "turret": {
+							_unit moveInTurret [aiArmE, _turretPath];
+							if(DBG && !(_unit in (aiArmE turretUnit _turretPath)))then{
+								["AI Vehicle Debug: FAILED to move unit into turret position %1", _turretPath] remoteExec ["systemChat", 0, false];
+							};
+						};
+					};
 				};
 			} forEach _crewPositions;
+
+			// Debug informacija apie galutinį crew skaičių
+			if(DBG)then{
+				_finalCrew = count (crew aiArmE);
+				["AI Vehicle Debug: Final crew count for aiArmE: %1", _finalCrew] remoteExec ["systemChat", 0, false];
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
@@ -633,8 +762,9 @@ call
 		{
 			//is base under attack?
 			_eBE2=true;
-			while {_eBE2} do 
+			while {_eBE2} do
 			{
+				sleep 0.1; //Minimalus sleep kad nebūtų scheduler starvation
 				_eBE2=false;
 				{
 					_unit=_x;
@@ -949,7 +1079,7 @@ call
 				objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
 				[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
 			};
-			objArtiW lockDriver true;
+			objArtiW lockDriver true;			
 			objArtiW allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objArtiW],true];
 			[objArtiW] call wrm_fnc_parachute;	
@@ -1039,7 +1169,7 @@ call
 				objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
 				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
 			};
-			objArtiE lockDriver true;
+			objArtiE lockDriver true;			
 			objArtiE allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objArtiE],true];
 			[objArtiE] call wrm_fnc_parachute;	

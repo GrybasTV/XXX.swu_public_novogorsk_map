@@ -24,10 +24,26 @@ if !(isServer) exitWith {}; //vykdoma tik serverio pusėje
 _grpId = _this param [0, ""];
 _uav = _this param [1, objNull];
 
-//Patikrinti, ar grupė jau turi UAV masyve - naudojame param saugesniam masyvo elementų pasiekimui
-_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
+//Patikrinti, ar grupė turi aktyvų cooldown - jei taip, sunaikinti UAV ir nutraukti
+_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+if(_groupCooldownIndex != -1)then
+{
+	_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+	if(_groupCooldown > 0)then
+	{
+		//Grupė turi aktyvų cooldown - sunaikinti UAV ir nutraukti
+		if(!isNull _uav) then {
+			{deleteVehicle _x;} forEach crew _uav;
+			deleteVehicle _uav;
+		};
+		//Nepridėti į masyvą
+	};
+}else
+{
+	//Patikrinti, ar grupė jau turi UAV masyve - naudojame param saugesniam masyvo elementų pasiekimui
+	_groupUavIndex = uavGroupObjects findIf {(_x param [0, ""]) == _grpId};
 
-if(_groupUavIndex != -1)then
+	if(_groupUavIndex != -1)then
 {
 	//Patikrinti, ar esamas UAV dar gyvas
 	_oldUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
@@ -51,5 +67,6 @@ if(_groupUavIndex != -1)then
 	//Pridėti naują UAV
 	uavGroupObjects pushBack [_grpId, _uav];
 	publicVariable "uavGroupObjects";
+	};
 };
 

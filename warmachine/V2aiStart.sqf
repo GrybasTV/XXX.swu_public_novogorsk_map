@@ -24,9 +24,9 @@ if !(isServer) exitWith {}; //runs on the server/host
 //if(missType>1&&AIon>0)then
 if(true)then
 { 
-	//find AI car base 1 west respawn position
+	//find AI car base 1 west respawn position - optimizuota pagal dokumentacijos rekomendacijas
 	posW1=[];
-	_roadW1 = [posBaseW1,200,(posBaseW1 nearRoads 30)] call BIS_fnc_nearestRoad;
+	_roadW1 = [posBaseW1,150,(posBaseW1 nearRoads 20)] call BIS_fnc_nearestRoad; //Sumažintas spindulys nuo 200->150 ir 30->20
 	if(isNull _roadW1)then
 	{
 		_prW=objBaseW1 getRelPos [100,random 360];
@@ -38,9 +38,9 @@ if(true)then
 	{posW1= getPosATL _roadW1;};
 	publicvariable "posW1";	
 	
-	//find AI armors base 2 west respawn position
+	//find AI armors base 2 west respawn position - optimizuota pagal dokumentacijos rekomendacijas
 	posW2=[];
-	_roadW2 = [posBaseW2,200,(posBaseW2 nearRoads 30)] call BIS_fnc_nearestRoad;
+	_roadW2 = [posBaseW2,150,(posBaseW2 nearRoads 20)] call BIS_fnc_nearestRoad; //Sumažintas spindulys nuo 200->150 ir 30->20
 	if(isNull _roadW2)then
 	{
 		_prW=objBaseW2 getRelPos [100,random 360];
@@ -52,9 +52,9 @@ if(true)then
 	{posW2= getPosATL _roadW2;};
 	publicvariable "posW2";
 
-	//find AI car base 1 east respawn position
+	//find AI car base 1 east respawn position - optimizuota pagal dokumentacijos rekomendacijas
 	posE1=[];
-	_roadE1 = [posBaseE1,200,(posBaseE1 nearRoads 30)] call BIS_fnc_nearestRoad;
+	_roadE1 = [posBaseE1,150,(posBaseE1 nearRoads 20)] call BIS_fnc_nearestRoad; //Sumažintas spindulys nuo 200->150 ir 30->20
 	if(isNull _roadE1)then
 	{
 		_prW=objBaseE1 getRelPos [100,random 360];
@@ -66,9 +66,9 @@ if(true)then
 	{posE1= getPosATL _roadE1;};
 	publicvariable "posE1";	
 	
-	//find AI armors base 2 east respawn position
+	//find AI armors base 2 east respawn position - optimizuota pagal dokumentacijos rekomendacijas
 	posE2=[];
-	_roadE2 = [posBaseE2,200,(posBaseE2 nearRoads 30)] call BIS_fnc_nearestRoad;
+	_roadE2 = [posBaseE2,150,(posBaseE2 nearRoads 20)] call BIS_fnc_nearestRoad; //Sumažintas spindulys nuo 200->150 ir 30->20
 	if(isNull _roadE2)then
 	{
 		_prW=objBaseE2 getRelPos [100,random 360];
@@ -88,25 +88,24 @@ while {_t} do
 {
 	{
 		if(!alive _x)exitWith{};
-		// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-		// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
-		_plHWDefined = !isNil "plHW";
-		_plHEDefined = !isNil "plHE";
-		
 		call
 		{
 			if(side _x==sideW) exitWith {
 				if((_x distance posBaseW1 > 200)&&(_x distance posBaseW2 > 200)) then {
-					// Tikriname plHW tik jei jis apibrėžtas
-					if(_plHWDefined && (_x distance plHW > 200)) then {
+					// Tikriname plHW tik jei jis apibrėžtas ir nėra null
+					// Pagal oficialią dokumentaciją: pirmiausia patikriname isNil, tada isNull
+					// Code block {} užtikrina trumpąjį patikrinimą (short-circuit evaluation)
+					if(!isNil "plHW" && {!isNull plHW} && {_x distance plHW > 200}) then {
 						_t=false;
 					};
 				};
 			};
 			if(side _x==sideE) exitWith {
 				if((_x distance posBaseE1 > 200)&&(_x distance posBaseE2 > 200)) then {
-					// Tikriname plHE tik jei jis apibrėžtas
-					if(_plHEDefined && (_x distance plHE > 200)) then {
+					// Tikriname plHE tik jei jis apibrėžtas ir nėra null
+					// Pagal oficialią dokumentaciją: pirmiausia patikriname isNil, tada isNull
+					// Code block {} užtikrina trumpąjį patikrinimą (short-circuit evaluation)
+					if(!isNil "plHE" && {!isNull plHE} && {_x distance plHE > 200}) then {
 						_t=false;
 					};
 				};
@@ -176,6 +175,12 @@ if(AIon>0)then
 };
 
 #include "baseDefense.sqf"; //spawn base defense
+
+//Įjungiame Dinaminę Simuliaciją pagal dokumentacijos rekomendacijas
+enableDynamicSimulationSystem true;
+"Group" setDynamicSimulationDistance 1000;
+"Vehicle" setDynamicSimulationDistance 2500;
+"EmptyVehicle" setDynamicSimulationDistance 500;
 
 [] spawn wrm_fnc_V2aiVehUpdate;
 

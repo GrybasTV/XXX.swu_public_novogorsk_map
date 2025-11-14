@@ -31,17 +31,11 @@ for "_i" from 0 to 1 step 0 do
 			sleep 1;
 		};
 	};
-	_plw={side _x==sideW} count allplayers;
-	_ple={side _x==sideE} count allplayers;
-	_nlW=true;
-	{if((side _x==sideW)&&(_x==leader _x)) then {_nlW=false;};} forEach allPlayers;
-	_nlE=true;
-	{if((side _x==sideE)&&(_x==leader _x)) then {_nlE=false;};} forEach allPlayers;
-	
-	//call
-	//{
-		if((_plw==0)||((_plw>0)&&_nlW))then
-		{
+	//AI veikia visada, nepriklausomai nuo žaidėjų buvimo (žaidėjai gali naudoti artileriją per support sistemą)
+	//AI artilerijos logika veikia nepriklausomai nuo žaidėjų - žaidėjai naudoja artileriją per BIS_fnc_addSupportLink
+	//West pusės AI artilerija
+	call
+	{
 			_objs=[];
 			if(alive objArtiW)then{_objs pushBackUnique objArtiW};
 			if(alive objMortW)then{_objs pushBackUnique objMortW};
@@ -83,6 +77,35 @@ for "_i" from 0 to 1 step 0 do
 					if(count _fr==0)then{_tar pushBackUnique posBaseE2;};
 				};
 				
+				//Priešo transporto priemonės ir didelės grupės (Ukrainos karas - realistiškas artilerijos naudojimas)
+				_enemyVehicles=[];
+				_enemyGroups=[];
+				{
+					if((side _x==sideE)&&alive _x)then
+					{
+						//Tikriname, ar tai transporto priemonė (tankai, BTR, BMP, sunkioji technika)
+						_isVehicle=(_x isKindOf "Tank"||_x isKindOf "Wheeled_APC_F"||_x isKindOf "Tracked_APC"||_x isKindOf "Car"||_x isKindOf "Armored");
+						//Tikriname, ar tai didelė grupė (4 ar daugiau vienetų)
+						_isLargeGroup=((count units group _x)>=4);
+						
+						if(_isVehicle||_isLargeGroup)then
+						{
+							//Tikriname, ar netoli nėra savų vienetų (saugumo spindulys - 100m)
+							_fr=[];
+							_unit=_x;
+							{if((side _x==sideW)&&((_x distance _unit)<100))then{_fr pushBackUnique _x;};} forEach allUnits;
+							if(count _fr==0)then
+							{
+								if(_isVehicle)then{_enemyVehicles pushBackUnique (getPos _unit);};
+								if(_isLargeGroup)then{_enemyGroups pushBackUnique (getPos leader group _unit);};
+							};
+						};
+					};
+				} forEach allUnits;
+				
+				//Pridedame priešo transporto priemones su prioritetu (pirmiau nei grupės)
+				_tar=_tar+_enemyVehicles+_enemyGroups;
+				
 				if(count _tar > 0) then
 				{
 					_t = selectRandom _tar;
@@ -90,10 +113,11 @@ for "_i" from 0 to 1 step 0 do
 					if(DBG)then{["West AI call Artillery"] remoteExec ["systemChat", 0, false];};
 				};
 			};
-		};
+	};
 		
-		if((_plE==0)||((_plE>0)&&_nlE))then
-		{
+	//East pusės AI artilerija
+	call
+	{
 			_objs=[];
 			if(alive objArtiE)then{_objs pushBackUnique objArtiE};
 			if(alive objMortE)then{_objs pushBackUnique objMortE};
@@ -134,7 +158,36 @@ for "_i" from 0 to 1 step 0 do
 					{if((side _x==sideE)&&((_x distance posBaseW2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
 					if(count _fr==0)then{_tar pushBackUnique posBaseW2;};
 				};
-
+				
+				//Priešo transporto priemonės ir didelės grupės (Ukrainos karas - realistiškas artilerijos naudojimas)
+				_enemyVehicles=[];
+				_enemyGroups=[];
+				{
+					if((side _x==sideW)&&alive _x)then
+					{
+						//Tikriname, ar tai transporto priemonė (tankai, BTR, BMP, sunkioji technika)
+						_isVehicle=(_x isKindOf "Tank"||_x isKindOf "Wheeled_APC_F"||_x isKindOf "Tracked_APC"||_x isKindOf "Car"||_x isKindOf "Armored");
+						//Tikriname, ar tai didelė grupė (4 ar daugiau vienetų)
+						_isLargeGroup=((count units group _x)>=4);
+						
+						if(_isVehicle||_isLargeGroup)then
+						{
+							//Tikriname, ar netoli nėra savų vienetų (saugumo spindulys - 100m)
+							_fr=[];
+							_unit=_x;
+							{if((side _x==sideE)&&((_x distance _unit)<100))then{_fr pushBackUnique _x;};} forEach allUnits;
+							if(count _fr==0)then
+							{
+								if(_isVehicle)then{_enemyVehicles pushBackUnique (getPos _unit);};
+								if(_isLargeGroup)then{_enemyGroups pushBackUnique (getPos leader group _unit);};
+							};
+						};
+					};
+				} forEach allUnits;
+				
+				//Pridedame priešo transporto priemones su prioritetu (pirmiau nei grupės)
+				_tar=_tar+_enemyVehicles+_enemyGroups;
+				
 				if(count _tar > 0) then
 				{
 					_t = selectRandom _tar;
@@ -142,6 +195,5 @@ for "_i" from 0 to 1 step 0 do
 					if(DBG)then{["East AI call Artillery"] remoteExec ["systemChat", 0, false];};
 				};
 			};
-		};
-	//};
+	};
 };

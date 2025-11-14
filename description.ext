@@ -224,7 +224,7 @@ class Params
 			"Overwhelming - In SP/COOP more AI units and vehicles spawn on the enemy side"
 		};
 		values[] = {0,1,2,3};
-		default = 1;
+		default = 3;
 	};
 	class asp6 //Revive
 	{
@@ -249,7 +249,7 @@ class Params
 			"Enabled - Third person view available"
 		};
 		values[] = {0,1,2};
-		default = 1;
+		default = 2;
 	};
 	class asp8 //Respawn tickets
 	{

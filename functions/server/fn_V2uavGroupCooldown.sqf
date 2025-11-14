@@ -38,32 +38,40 @@ if(_groupCooldownIndex != -1)then
 
 publicVariable "uavGroupCooldowns";
 
-//Cooldown ciklas - mažinti kas 10 sekundžių
-while {true} do
-{
-	sleep 10;
+//Informuoti apie cooldown pradžią
+[format ["UAV cooldown started: %1 seconds", uavCooldownTime]] remoteExec ["systemChat", 0, false];
+
+//Cooldown ciklas - pradėti asinchroninį countdown
+[_grpId] spawn {
+	params ["_grpId"];
 	
-	//Rasti grupės cooldown indeksą
-	_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
-	
-	//Jei grupės cooldown neberado, baigti ciklą
-	if(_groupCooldownIndex == -1)exitWith{};
-	
-	//Gauti dabartinį cooldown laiką - naudojame param saugesniam masyvo elementų pasiekimui
-	_currentCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
-	_newCooldown = _currentCooldown - 10;
-	
-	//Jei cooldown baigėsi, pašalinti iš masyvo
-	if(_newCooldown <= 0)then
+	while {true} do
 	{
-		uavGroupCooldowns deleteAt _groupCooldownIndex;
-		publicVariable "uavGroupCooldowns";
-		break; //Baigti ciklą
-	}else
-	{
-		//Atnaujinti cooldown laiką
-		uavGroupCooldowns set [_groupCooldownIndex, [_grpId, _newCooldown]];
-		publicVariable "uavGroupCooldowns";
+		sleep 1;
+
+		//Rasti grupės cooldown indeksą
+		_groupCooldownIndex = uavGroupCooldowns findIf {(_x param [0, ""]) == _grpId};
+
+		//Jei grupės cooldown neberado, baigti ciklą
+		if(_groupCooldownIndex == -1)exitWith{};
+
+		//Gauti dabartinį cooldown laiką - naudojame param saugesniam masyvo elementų pasiekimui
+		_currentCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
+		_newCooldown = _currentCooldown - 1;
+
+		//Jei cooldown baigėsi, pašalinti iš masyvo
+		if(_newCooldown <= 0)then
+		{
+			uavGroupCooldowns deleteAt _groupCooldownIndex;
+			publicVariable "uavGroupCooldowns";
+			["UAV cooldown ended - UAV available again"] remoteExec ["systemChat", 0, false];
+			break; //Baigti ciklą
+		}else
+		{
+			//Atnaujinti cooldown laiką
+			uavGroupCooldowns set [_groupCooldownIndex, [_grpId, _newCooldown]];
+			publicVariable "uavGroupCooldowns";
+		};
 	};
 };
 

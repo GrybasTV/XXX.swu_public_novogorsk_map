@@ -62,44 +62,50 @@ f1=[
 	"+ Trench T", //title
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
-	"player==leader player && vehicle player==player && fort1==0 && fort==1", //conditionShow
+	"player==leader player && vehicle player==player && fort1==0 && fort==1 && speed player < 0.1", //conditionShow
 	"true", //conditionProgress
 	{
 		hint"Barricade will be build in front of you";
-		bar = createVehicle ["rnt_graben_t", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
-		bar attachTo [player,[0,3,1.3]];
+		// Sukurti laikina pozicijos žymę statybos metu
+		bar = createVehicle ["Land_HelipadCircle_F", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
+		bar attachTo [player,[0,3,0]];
+		bar setObjectTexture [0, "#(rgb,8,8,3)color(0,1,0,0.3)"];
 	}, //codeStart
 	{}, //codeProgress
 	{
-		detach bar;		
-		_p=getPosAtl bar;
-		
+		detach bar;
+		_previewPos = getPosAtl bar;
+
+		// Ištrinti laikina žymę ir sukurti tikrają tranšėją
+		deleteVehicle bar;
+		bar = createVehicle ["rnt_graben_t", _previewPos, [], 0, "CAN_COLLIDE"];
+
 		call
 		{
 			if(!isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{!isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i-0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.05)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_z select 2)-0.05)];
 			};
 			if(isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i+0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.1)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_z select 2)-0.1)];
 			};
 		};
-		
+
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		steep=(surfaceNormal getPos bar select 2)<0.95;
 		if((!ground)||(ground&&steep))then{bar setVectorUp [0,0,1];};
@@ -131,44 +137,50 @@ f2=[
 	"+ Trench Bunker", //title
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
-	"player==leader player && vehicle player==player && fort2==0 && fort==1", //conditionShow
+	"player==leader player && vehicle player==player && fort2==0 && fort==1 && speed player < 0.1", //conditionShow
 	"true", //conditionProgress
 	{
 		hint"Barricade will be build in front of you";
-		bar = createVehicle ["rnt_graben_bunker", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
-		bar attachTo [player,[0,3,0.7]];
+		// Sukurti laikina pozicijos žymę statybos metu
+		bar = createVehicle ["Land_HelipadCircle_F", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
+		bar attachTo [player,[0,3,0]];
+		bar setObjectTexture [0, "#(rgb,8,8,3)color(0,1,0,0.3)"];
 	}, //codeStart
 	{}, //codeProgress
 	{
-		detach bar;		
-		_p=getPosAtl bar;
-		
+		detach bar;
+		_previewPos = getPosAtl bar;
+
+		// Ištrinti laikina žymę ir sukurti tikrają tranšėjos bunkerį
+		deleteVehicle bar;
+		bar = createVehicle ["rnt_graben_bunker", _previewPos, [], 0, "CAN_COLLIDE"];
+
 		call
 		{
 			if(!isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{!isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i-0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.05)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_z select 2)-0.05)];
 			};
 			if(isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i+0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.1)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)-0.1)];
 			};
 		};
-		
+
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		if(!ground)then{bar setVectorUp [0,0,1];};
 
@@ -199,44 +211,50 @@ f3=[
 	"+ Trench Firing Position", //title
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //idleIcon
 	"\a3\ui_f\data\IGUI\Cfg\holdactions\holdAction_connect_ca.paa", //progressIcon
-	"player==leader player && vehicle player==player && fort3==0 && fort==1", //conditionShow
+	"player==leader player && vehicle player==player && fort3==0 && fort==1 && speed player < 0.1", //conditionShow
 	"true", //conditionProgress
 	{
 		hint"Barricade will be build in front of you";
-		bar = createVehicle ["rnt_graben_stellung", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
-		bar attachTo [player,[0,3,0.7]];		
+		// Sukurti laikina pozicijos žymę statybos metu
+		bar = createVehicle ["Land_HelipadCircle_F", (player getRelPos [1.8, 0]), [], 0, "CAN_COLLIDE"];
+		bar attachTo [player,[0,3,0]];
+		bar setObjectTexture [0, "#(rgb,8,8,3)color(0,1,0,0.3)"];
 	}, //codeStart
 	{}, //codeProgress
 	{
-		detach bar;		
-		_p=getPosAtl bar;
-		
+		detach bar;
+		_previewPos = getPosAtl bar;
+
+		// Ištrinti laikina žymę ir sukurti tikrają tranšėjos šaudymo poziciją
+		deleteVehicle bar;
+		bar = createVehicle ["rnt_graben_stellung", _previewPos, [], 0, "CAN_COLLIDE"];
+
 		call
 		{
 			if(!isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{!isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i-0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.05)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_z select 2)-0.05)];
 			};
 			if(isTouchingGround bar)exitWith
 			{
 				_i=0;
 				while{isTouchingGround bar}do
-				{	
-					bar setPos [(_p select 0),(_p select 1),((_p select 2)+_i)];
+				{
+					bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)+_i)];
 					_i=_i+0.05;
 				};
 				_z=getPosAtl bar;
-				bar setPos [(_p select 0),(_p select 1),((_z select 2)-0.1)];
+				bar setPos [(_previewPos select 0),(_previewPos select 1),((_previewPos select 2)-0.1)];
 			};
 		};
-		
+
 		ground=((getPosAtl bar select 2)-(getPos bar select 2))<0.15;
 		if(!ground)then{bar setVectorUp [0,0,1];};
 

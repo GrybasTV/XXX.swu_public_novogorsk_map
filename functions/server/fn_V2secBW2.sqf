@@ -20,8 +20,9 @@
 */
 
 
-while {!secBW2} do 
+while {!secBW2} do
 {
+	sleep 10; //Padidintas intervalas nuo 5 iki 10 sek. mažinti apkrovą
 	{
 		_unit=_x;
 		if (side _unit==sideE) then
@@ -29,7 +30,6 @@ while {!secBW2} do
 			if (_unit distance posBaseW2 < 200) then {secBW2=true;};
 		};
 	}  forEach allUnits;
-	sleep 5;
 };
 publicvariable "secBW2";
 
@@ -49,7 +49,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resBaseW!='''')exitWith{};
+				if(getMarkerColor resBaseW!='' '')exitWith{};
 				_mrkRaW = createMarker [resBaseW, posBaseW2];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -64,7 +64,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 						if (_unit distance posBaseW2 < 250) then {_eBW2=false;};
 					};
 				}  forEach allUnits;
-				if((getMarkerColor resBaseW!='''')&&(_eBW2))
+				if((getMarkerColor resBaseW!='' '')&&(_eBW2))
 				then{
 					{_x hideObjectGlobal false,} forEach hideVehBW2;
 					hideVehBW2=[];
@@ -73,7 +73,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 			 };
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resBaseWE!='''')exitWith{};
+				if(getMarkerColor resBaseWE!='' '')exitWith{};
 				_mrkRaW = createMarker [resBaseWE, posBaseW2];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -82,7 +82,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 				if(dBW2)then{[posBaseW2,sideE] call wrm_fnc_V2secDefense;};
 			 };
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+		if (AIon>0) then {[] spawn wrm_fnc_V2aiMove;};
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];

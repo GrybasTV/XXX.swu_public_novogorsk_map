@@ -20,8 +20,9 @@
 */
 
 
-while {!secBE1} do 
+while {!secBE1} do
 {
+	sleep 10; //Padidintas intervalas nuo 5 iki 10 sek. mažinti apkrovą
 	{
 		_unit=_x;
 		if (side _unit==sideW) then
@@ -29,7 +30,6 @@ while {!secBE1} do
 			if (_unit distance posBaseE1 < 200) then {secBE1=true;};
 		};
 	}  forEach allUnits;
-	sleep 5;
 };
 publicvariable "secBE1";
 
@@ -49,7 +49,7 @@ _des=format ['Capture/Defend %1 base',nameBE1];
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resFobEW!='''')exitWith{};
+				if(getMarkerColor resFobEW != '' '') exitWith {};
 				_mrkRaW = createMarker [resFobEW, posBaseE1];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -60,7 +60,7 @@ _des=format ['Capture/Defend %1 base',nameBE1];
 			 
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resFobE!='''')exitWith{};
+				if(getMarkerColor resFobE!='' '')exitWith{};
 				_mrkRaW = createMarker [resFobE, posBaseE1];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -83,7 +83,7 @@ _des=format ['Capture/Defend %1 base',nameBE1];
 				if(dBE1)then{[posBaseE1,sideE] call wrm_fnc_V2secDefense;};
 			 };
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+		if (AIon>0) then {[] spawn wrm_fnc_V2aiMove;};
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];

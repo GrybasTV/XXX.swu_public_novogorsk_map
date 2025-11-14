@@ -14,6 +14,7 @@ class wrm
 		class V2aiArtillery {};
 		class V2aiCAS {};
 		class V2aiMove {};
+		class V2aiStuckCheck {}; //AI įstrigimo aptikimo ir taisymo funkcija
 		class V2aiUpdate {};
 		class V2aiVehicle {};
 		class V2aiVehUpdate {};

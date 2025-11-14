@@ -34,6 +34,14 @@ call
 
 _mType = [_mSd,_mrk] joinString "";
 
+// Patikriname, ar _res yra teisingas masyvas su 3 elementais (x, y, z koordinatės)
+if (isNil "_res" || count _res < 2) then 
+{
+	// Jei _res nėra teisingas, naudojame [0,0,0] kaip numatytąją poziciją
+	_res = [0,0,0];
+	["wrm_fnc_V2vehMrkW: Klaida - _res nėra teisingas masyvas"] call BIS_fnc_error;
+};
+
 _mrkVeh = createMarkerLocal [_nme, _res];
 _mrkVeh setMarkerShapeLocal "ICON";
 _mrkVeh setMarkerTypeLocal _mType;

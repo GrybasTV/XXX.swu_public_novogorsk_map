@@ -69,22 +69,15 @@ call
 					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
 				};
 
-				//Sukurti UAV virš žaidėjo galvos arba iš bazės
-				_uavSpawnPos = [];
-				if(!isNil "plHW") then {
-					_uavSpawnPos = plHW;
-				} else {
-					_playerPos = getPos player;
-					_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
-				};
+				//Sukurti UAV virš žaidėjo galvos
+				_playerPos = eyePos player;
+				_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
 
 				_groupUav = createVehicle [(selectRandom uavsW), _uavSpawnPos, [], 0, "FLY"];
 				createVehicleCrew _groupUav;
 
-				//Jei UAV sukurtas iš bazės, judėti į centro poziciją
-				if(!isNil "plHW") then {
-					(group driver _groupUav) move posCenter;
-				};
+				//UAV visada juda į centro poziciją po sukūrimo virš žaidėjo galvos
+				(group driver _groupUav) move posCenter;
 
 				//Išsaugoti grupės UAV masyve serverio pusėje
 				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
@@ -146,22 +139,15 @@ call
 					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
 				};
 
-				//Sukurti UAV virš žaidėjo galvos arba iš bazės
-				_uavSpawnPos = [];
-				if(!isNil "plHE") then {
-					_uavSpawnPos = plHE;
-				} else {
-					_playerPos = getPos player;
-					_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
-				};
+				//Sukurti UAV virš žaidėjo galvos
+				_playerPos = eyePos player;
+				_uavSpawnPos = [_playerPos select 0, _playerPos select 1, (_playerPos select 2) + 100]; //100m virš žaidėjo galvos
 
 				_groupUav = createVehicle [(selectRandom uavsE), _uavSpawnPos, [], 0, "FLY"];
 				createVehicleCrew _groupUav;
 
-				//Jei UAV sukurtas iš bazės, judėti į centro poziciją
-				if(!isNil "plHE") then {
-					(group driver _groupUav) move posCenter;
-				};
+				//UAV visada juda į centro poziciją po sukūrimo virš žaidėjo galvos
+				(group driver _groupUav) move posCenter;
 
 				//Išsaugoti grupės UAV masyve serverio pusėje
 				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV

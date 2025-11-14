@@ -34,9 +34,10 @@ if(_uavIndex != -1)then
 	{
 		uavGroupObjects deleteAt _uavIndex;
 		publicVariable "uavGroupObjects";
-		
-		//Pradėti cooldown
-		[_grpId] spawn wrm_fnc_V2uavGroupCooldown;
+
+		//Pradėti cooldown - informuoti apie cooldown pradžią ir nustatyti nedelsiant
+		["UAV destroyed - starting cooldown"] remoteExec ["systemChat", 0, false];
+		[_grpId] call wrm_fnc_V2uavGroupCooldown;
 	};
 };
 

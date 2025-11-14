@@ -91,11 +91,14 @@ call
 		if(
 			(count HeliArW!=0) ||
 			((count PlaneW!=0)&&(planes==1)) ||
-			((count PlaneW!=0)&&_planesCheck)	
-		)then 
+			((count PlaneW!=0)&&_planesCheck)
+		)then
 		{
-			_flgs pushBack flgJetW;
-			_act pushBack ["Teleport to the Air base",{player setPos (flgJetW getRelPos [3,180]);},5,""];
+			// Patikriname, ar flag objektas buvo sukurtas prieš jį pridedant
+			if (flgJetW isNotEqualTo "" && {!isNull flgJetW}) then {
+				_flgs pushBack flgJetW;
+				_act pushBack ["Teleport to the Air base",{player setPos (flgJetW getRelPos [3,180]);},5,""];
+			};
 		};
 	};
 	};
@@ -145,11 +148,14 @@ call
 			if(
 				(count HeliArE!=0) ||
 				((count PlaneE!=0)&&(planes==1)) ||
-				((count PlaneE!=0)&&_planesCheck)	
+				((count PlaneE!=0)&&_planesCheck)
 			)then
 			{
-				_flgs pushBack flgJetE;
-				_act pushBack ["Teleport to the Air base",{player setPos (flgJetE getRelPos [3,180]);},5,""];
+				// Patikriname, ar flag objektas buvo sukurtas prieš jį pridedant
+				if (flgJetE isNotEqualTo "" && {!isNull flgJetE}) then {
+					_flgs pushBack flgJetE;
+					_act pushBack ["Teleport to the Air base",{player setPos (flgJetE getRelPos [3,180]);},5,""];
+				};
 			};
 		};
 	};

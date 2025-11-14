@@ -90,10 +90,10 @@ hideVehBW2=[]; publicVariable "hideVehBW2";
 hideVehBE1=[]; publicVariable "hideVehBE1";
 hideVehBE2=[]; publicVariable "hideVehBE2";
 //sector Vehicles
-objArtiW=objNull; publicvariable "objVehW";
-objArtiE=objNull; publicvariable "objVehW";
-objAAW=objNull; publicvariable "objVehW";
-objAAE=objNull; publicvariable "objVehW";
+objArtiW=objNull; publicvariable "objArtiW";
+objArtiE=objNull; publicvariable "objArtiE";
+objAAW=objNull; publicvariable "objAAW";
+objAAE=objNull; publicvariable "objAAE";
 objMortW=objNull; publicvariable "objMortW";
 objMortE=objNull; publicvariable "objMortE";
 //check sectors at the bases

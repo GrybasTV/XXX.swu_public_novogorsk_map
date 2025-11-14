@@ -52,7 +52,7 @@ Variklis ignoruoja tarpus (įskaitant tabuliaciją ir tuščias eilutes) vykdymo
 **"Error Missing ]" Klaida**: Ši klaida dažniausiai rodoma ne ten, kur yra tikroji problema. Ji atsiranda dėl neuždarytų masyvų arba sudėtingų string struktūrų aukščiau klaidos eilutės.
 
 **Priežastys ir sprendimai:**
-- **OnOwnerChange Callback'ai**: String formato callback'ai su sudėtingu escaping'u gali sukelti šią klaidą. **Rekomenduojama naudoti code block formatą**:
+- **OnOwnerChange Callback'ai**: String formato callback'ai su sudėtingu escaping'u gali sukelti šią klaidą. **BIS sektorių moduliuose naudoti string formatą** (code block formatas nesuderinamas su BIS modulio sistema):
   ```sqf
   // NETEISINGA - gali sukelti "Error Missing ]":
   _sector setVariable ["OnOwnerChange", "
@@ -492,7 +492,7 @@ Ekspertinis misijų ir modifikacijų kodo auditas reikalauja ne tik funkcinio ve
 - **Vykdymas**: Ar sustabdymo komandos (sleep, uiSleep, waitUntil) naudojamos tik suplanotuose kontekstuose, t. y., tik po spawn ar execVM?
 - **Apimtis**: Ar scenarijų blokai, paleisti per spawn ar įvykių tvarkykles (kurios naudoja izoliuotą apimtį), tinkamai perduoda parametrus per _this, užuot kliavusios paveldimais privatiais kintamaisiais? Ar privatūs kintamieji, reikalingi po kontrolinio bloko, yra inicializuoti už jo ribų? Ar naudojama `param` funkcija vietoj `select` saugesniam masyvo elementų pasiekimui?
 - **Tinklo protokolas**: Ar BIS_fnc_MP yra visiškai pakeista remoteExec arba remoteExecCall?
-- **Callback'ai**: Ar OnOwnerChange ir kiti event handler'iai naudoja code block formatą `{ ... }` vietoj string formato su sudėtingu escaping'u?
+- **Callback'ai**: Ar OnOwnerChange ir kiti event handler'iai naudoja tinkamą formatą (string formatą BIS sektorių moduliuose, code block formatą kitur)?
 - **Optimizavimas**: Ar masyvo operacijos naudoja optimizuotas komandas (select, apply, findIf), o ne bendrą forEach, kai tai įmanoma? Ar yra minimizuojamas aktyvių suplanuotų gijų (sukurtų per spawn/execVM) skaičius?
 - **Našumas**: Ar naudojami efektyvūs duomenų tipai (HashMap) ir optimizuoti algoritmai?
 
@@ -502,8 +502,13 @@ Nors SQF išlieka pagrindine kalba "Arma 3" platformoje, kūrėjai turėtų prip
 
 ---
 
-**Paskutinis Atnaujinimas**: 2025-11-11
-**Versija**: 5.1
+**Paskutinis Atnaujinimas**: 2025-11-13
+**Versija**: 5.2
+**Pakeitimai v5.2**:
+- **KRITINIS TAISYMAS** (patvirtinta interneto paieška): Ištaisytas neteisingas OnOwnerChange callback'ų rekomendavimas - BIS sektorių moduliuose būtinas string formatas su escaping'u, ne code block formatas
+- Code block formatas nesuderinamas su BIS modulio sistema ir callback'ai neveiks
+- Atnaujinta validavimo sistema atsižvelgiant į skirtingus callback formatų reikalavimus skirtinguose kontekstuose
+
 **Pakeitimai v5.1**:
 - Pridėtas naujas poskyris "Saugus Neapibrėžtų Kintamųjų Valdymas" su išsamią informacija apie `isNil` ir `typeName` saugumą
 - Dokumentuota, kad `isNil` ir `typeName` yra saugūs naudoti su neapibrėžtais kintamaisiais (patikrinta internete)

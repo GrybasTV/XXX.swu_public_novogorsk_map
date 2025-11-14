@@ -12,7 +12,7 @@ class EditorData
 	};
 	class ItemIDProvider
 	{
-		nextID=4428;
+		nextID=4431;
 	};
 	class MarkerIDProvider
 	{
@@ -20,14 +20,14 @@ class EditorData
 	};
 	class LayerIndexProvider
 	{
-		nextID=967;
+		nextID=1088;
 	};
 	class Camera
 	{
-		pos[]={4210.876,254.22118,1335.4102};
-		dir[]={0.24156384,-0.1519025,0.95842195};
-		up[]={0.037124969,0.98839551,0.14729598};
-		aside[]={0.96967459,0,-0.24439999};
+		pos[]={4326.6436,760.54816,1733.5557};
+		dir[]={-0.41146117,-0.42600924,-0.80573946};
+		up[]={-0.19374666,0.9047187,-0.37940231};
+		aside[]={-0.89059645,-1.4901161e-08,0.45479447};
 	};
 };
 binarizationWanted=0;
@@ -125,6 +125,7 @@ randomSeed=11834352;
 class ScenarioData
 {
 	author="IvosH_cz";
+	briefing=0;
 	aIKills=1;
 	class Header
 	{
@@ -140,18 +141,6 @@ class CustomAttributes
 		name="Multiplayer";
 		class Attribute0
 		{
-			property="RespawnTemplates";
-			expression="true";
-			class Value
-			{
-				class data
-				{
-					singleType="ARRAY";
-				};
-			};
-		};
-		class Attribute1
-		{
 			property="ENH_saveLoadout";
 			expression="if (!isMultiplayer || !_value || is3DEN || !hasInterface) exitWith {};        0 spawn        {            waitUntil {sleep 1; !isNull player};            player setVariable ['ENH_savedLoadout', getUnitloadout player];            player addMPEventHandler ['MPRespawn',            {                params ['_unit'];                private _loadout = _unit getVariable ['ENH_savedLoadout', []];                if (_loadout isNotEqualTo []) then {_unit setUnitLoadout _loadout};            }];        };";
 			class Value
@@ -163,14 +152,44 @@ class CustomAttributes
 				};
 			};
 		};
+		class Attribute1
+		{
+			property="RespawnTemplates";
+			expression="true";
+			class Value
+			{
+				class data
+				{
+					singleType="ARRAY";
+				};
+			};
+		};
 		nAttributes=2;
+	};
+	class Category1
+	{
+		name="Scenario";
+		class Attribute0
+		{
+			property="EnableDebugConsole";
+			expression="true";
+			class Value
+			{
+				class data
+				{
+					singleType="SCALAR";
+					value=1;
+				};
+			};
+		};
+		nAttributes=1;
 	};
 };
 class Mission
 {
 	class Intel
 	{
-		briefingName="WARMACHINE Korsac";
+		briefingName="WARMACHINE Ukraine";
 		overviewText="Ukraine War Warmhachine";
 		resistanceWest=0;
 		timeOfChanges=28800;
@@ -213,7 +232,7 @@ class Mission
 	};
 	class Entities
 	{
-		items=26;
+		items=27;
 		class Item0
 		{
 			dataType="Object";
@@ -3706,8 +3725,8 @@ class Mission
 					dataType="Object";
 					class PositionInfo
 					{
-						position[]={5298.3555,231.07045,1868.5684};
-						angles[]={0,5.0405283,0};
+						position[]={6301.2744,212.14066,2781.0962};
+						angles[]={0.062504455,5.0405283,6.1943936};
 					};
 					side="Empty";
 					class Attributes
@@ -3754,7 +3773,7 @@ class Mission
 											position[]={5309,238.33406,1270.752};
 											class Attributes
 											{
-												onActivation="if (isNil ""globalMarkers"") then {  " \n "    globalMarkers = [];  " \n "};  " \n "if (isNil ""territoryControl"") then {  " \n "    territoryControl = createHashMap;  " \n "};  " \n "if (isNil ""gridToMarker"") then {  " \n "    gridToMarker = createHashMap;  " \n "};  " \n " " \n "private _gridSize = 100;  " \n "private _mapSize = worldSize;  " \n "private _maxGrid = floor(_mapSize / _gridSize);  " \n " " \n "globalMarkers resize 0; " \n "territoryControl = createHashMap; " \n "gridToMarker = createHashMap; " \n " " \n "for ""_x"" from 0 to (_maxGrid - 1) do {  " \n "    for ""_y"" from 0 to (_maxGrid - 1) do {  " \n "        private _markerName = format [""territory_%1_%2"", _x, _y];  " \n "        private _centerX = (_x * _gridSize) + (_gridSize / 2);  " \n "        private _centerY = (_y * _gridSize) + (_gridSize / 2);  " \n "        private _pos = [_centerX, _centerY];  " \n "          " \n "        private _marker = createMarkerLocal [_markerName, _pos];  " \n "        _marker setMarkerShape ""RECTANGLE"";  " \n "        _marker setMarkerBrush ""DiagGrid"";  " \n "        _marker setMarkerSize [_gridSize / 2, _gridSize / 2];  " \n "        _marker setMarkerColor ""ColorGrey"";  " \n "        _marker setMarkerAlpha 0;  " \n "        globalMarkers pushBack [_marker, _pos];  " \n "        territoryControl set [_marker, ""ColorGrey""];  " \n "        gridToMarker set [format [""%1_%2"", _x, _y], _marker];  " \n "    };  " \n "};  " \n " " \n "[_gridSize, _maxGrid, gridToMarker] spawn {  " \n "    params [""_gridSize"", ""_maxGrid"", ""_gridToMarker""];  " \n "      " \n "    while {true} do {  " \n "        private _unitCounts = createHashMap;  " \n "          " \n "        {  " \n "            private _veh = vehicle _x;  " \n "            if (_veh isKindOf ""Land"") then {  " \n "                private _side = side _x;  " \n "                private _pos = getPos _x;  " \n "                private _px = _pos select 0;  " \n "                private _py = _pos select 1;  " \n "                private _gx = floor (_px / _gridSize);  " \n "                private _gy = floor (_py / _gridSize);  " \n "                  " \n "                if (_gx >= 0 && _gy >= 0 && _gx < _maxGrid && _gy < _maxGrid) then {  " \n "                    private _key = format [""%1_%2"", _gx, _gy];  " \n "                    private _marker = _gridToMarker get _key;  " \n "                    if !(isNil ""_marker"") then {  " \n "                        private _counts = _unitCounts get _marker;  " \n "                        if (isNil ""_counts"") then {  " \n "                            _counts = [0, 0, 0];  " \n "                        };  " \n "                          " \n "                        private _idx = -1;  " \n "                        switch (_side) do {  " \n "                            case west: {_idx = 0;};  " \n "                            case east: {_idx = 1;};  " \n "                            case resistance: {_idx = 2;};  " \n "                        };  " \n "                          " \n "                        if (_idx >= 0) then {  " \n "                            private _newCounts = +_counts;  " \n "                            _newCounts set [_idx, (_newCounts select _idx) + 1];  " \n "                            _unitCounts set [_marker, _newCounts];  " \n "                        };  " \n "                    };  " \n "                };  " \n "            };  " \n "        } forEach allUnits;  " \n "          " \n "        {  " \n "            private _markerData = _x;  " \n "            private _marker = _markerData select 0;  " \n "              " \n "            private _counts = _unitCounts get _marker;  " \n "            if (isNil ""_counts"") then {  " \n "                _counts = [0, 0, 0];  " \n "            };  " \n "              " \n "            private _blufor = _counts select 0;  " \n "            private _opfor = _counts select 1;  " \n "            private _independent = _counts select 2;  " \n "              " \n "            private _currentControl = territoryControl get _marker;  " \n "              " \n "            private _color = switch (true) do {  " \n "                case (_blufor > 0 && _opfor == 0 && _independent == 0): {""ColorBlue""};  " \n "                case (_opfor > 0 && _blufor == 0 && _independent == 0): {""ColorRed""};  " \n "                case (_independent > 0 && _blufor == 0 && _opfor == 0): {""ColorGreen""};  " \n "                case (_blufor > 0 || _opfor > 0 || _independent > 0): {""ColorUnknown""};  " \n "                default {_currentControl};  " \n "            };  " \n "              " \n "            if (_color != _currentControl) then {  " \n "                if (_color == ""ColorGrey"") then {  " \n "                    _marker setMarkerAlpha 0;  " \n "                } else {  " \n "                    _marker setMarkerAlpha 0.7;  " \n "                    _marker setMarkerColor _color;  " \n "                };  " \n "                territoryControl set [_marker, _color];  " \n "            };  " \n "        } forEach globalMarkers;  " \n "          " \n "        sleep 3;  " \n "    };  " \n "};";
+												onActivation="if (isNil ""globalMarkers"") then {  " \n "    globalMarkers = [];  " \n "};  " \n "if (isNil ""territoryControl"") then {  " \n "    territoryControl = createHashMap;  " \n "};  " \n "if (isNil ""gridToMarker"") then {  " \n "    gridToMarker = createHashMap;  " \n "};  " \n " " \n "private _gridSize = 500;  " \n "private _mapSize = worldSize;  " \n "private _maxGrid = floor(_mapSize / _gridSize);  " \n " " \n "globalMarkers resize 0; " \n "territoryControl = createHashMap; " \n "gridToMarker = createHashMap; " \n " " \n "for ""_x"" from 0 to (_maxGrid - 1) do {  " \n "    for ""_y"" from 0 to (_maxGrid - 1) do {  " \n "        private _markerName = format [""territory_%1_%2"", _x, _y];  " \n "        private _centerX = (_x * _gridSize) + (_gridSize / 2);  " \n "        private _centerY = (_y * _gridSize) + (_gridSize / 2);  " \n "        private _pos = [_centerX, _centerY];  " \n "          " \n "        private _marker = createMarkerLocal [_markerName, _pos];  " \n "        _marker setMarkerShape ""RECTANGLE"";  " \n "        _marker setMarkerBrush ""DiagGrid"";  " \n "        _marker setMarkerSize [_gridSize / 2, _gridSize / 2];  " \n "        _marker setMarkerColor ""ColorGrey"";  " \n "        _marker setMarkerAlpha 0;  " \n "        globalMarkers pushBack [_marker, _pos];  " \n "        territoryControl set [_marker, ""ColorGrey""];  " \n "        gridToMarker set [format [""%1_%2"", _x, _y], _marker];  " \n "    };  " \n "};  " \n " " \n "[_gridSize, _maxGrid, gridToMarker] spawn {  " \n "    params [""_gridSize"", ""_maxGrid"", ""_gridToMarker""];  " \n "      " \n "    while {true} do {  " \n "        private _unitCounts = createHashMap;  " \n "          " \n "        {  " \n "            private _veh = vehicle _x;  " \n "            if (_veh isKindOf ""Land"") then {  " \n "                private _side = side _x;  " \n "                private _pos = getPos _x;  " \n "                private _px = _pos select 0;  " \n "                private _py = _pos select 1;  " \n "                private _gx = floor (_px / _gridSize);  " \n "                private _gy = floor (_py / _gridSize);  " \n "                  " \n "                if (_gx >= 0 && _gy >= 0 && _gx < _maxGrid && _gy < _maxGrid) then {  " \n "                    private _key = format [""%1_%2"", _gx, _gy];  " \n "                    private _marker = _gridToMarker get _key;  " \n "                    if !(isNil ""_marker"") then {  " \n "                        private _counts = _unitCounts get _marker;  " \n "                        if (isNil ""_counts"") then {  " \n "                            _counts = [0, 0, 0];  " \n "                        };  " \n "                          " \n "                        private _idx = -1;  " \n "                        switch (_side) do {  " \n "                            case west: {_idx = 0;};  " \n "                            case east: {_idx = 1;};  " \n "                            case resistance: {_idx = 2;};  " \n "                        };  " \n "                          " \n "                        if (_idx >= 0) then {  " \n "                            private _newCounts = +_counts;  " \n "                            _newCounts set [_idx, (_newCounts select _idx) + 1];  " \n "                            _unitCounts set [_marker, _newCounts];  " \n "                        };  " \n "                    };  " \n "                };  " \n "            };  " \n "        } forEach allUnits;  " \n "          " \n "        {  " \n "            private _markerData = _x;  " \n "            private _marker = _markerData select 0;  " \n "              " \n "            private _counts = _unitCounts get _marker;  " \n "            if (isNil ""_counts"") then {  " \n "                _counts = [0, 0, 0];  " \n "            };  " \n "              " \n "            private _blufor = _counts select 0;  " \n "            private _opfor = _counts select 1;  " \n "            private _independent = _counts select 2;  " \n "              " \n "            private _currentControl = territoryControl get _marker;  " \n "              " \n "            private _color = switch (true) do {  " \n "                case (_blufor > 0 && _opfor == 0 && _independent == 0): {""ColorBlue""};  " \n "                case (_opfor > 0 && _blufor == 0 && _independent == 0): {""ColorRed""};  " \n "                case (_independent > 0 && _blufor == 0 && _opfor == 0): {""ColorGreen""};  " \n "                case (_blufor > 0 || _opfor > 0 || _independent > 0): {""ColorUnknown""};  " \n "                default {_currentControl};  " \n "            };  " \n "              " \n "            if (_color != _currentControl) then {  " \n "                if (_color == ""ColorGrey"") then {  " \n "                    _marker setMarkerAlpha 0;  " \n "                } else {  " \n "                    _marker setMarkerAlpha 0.7;  " \n "                    _marker setMarkerColor _color;  " \n "                };  " \n "                territoryControl set [_marker, _color];  " \n "            };  " \n "        } forEach globalMarkers;  " \n "          " \n "        sleep 3;  " \n "    };  " \n "};";
 												sizeA=0.1;
 												sizeB=0.1;
 												activationType="NOT PRESENT";
@@ -3775,6 +3794,34 @@ class Mission
 				};
 			};
 			id=4427;
+		};
+		class Item26
+		{
+			dataType="Layer";
+			name="Insta Ambient Artillery";
+			class Entities
+			{
+				items=1;
+				class Item0
+				{
+					dataType="Trigger";
+					position[]={5877.2007,212.58047,2817.4187};
+					class Attributes
+					{
+						onActivation="_TAG_artilleryRadius = 250; " \n "_TAG_artillerySpread = 250; " \n "_TAG_artilleryRounds = 9999999; " \n "_TAG_artilleryDelay = [0.01,0.02]; " \n " " \n "_TAG_selectedPos = [[[getMarkerPos ""TAG_artilleryCenter"", _TAG_artilleryRadius]], [""water"", TAG_safeZone_1, TAG_safeZone_2]] call BIS_fnc_randomPos; " \n " " \n "[_TAG_selectedPos, ""Sh_82mm_AMOS"", _TAG_artillerySpread, _TAG_artilleryRounds, _TAG_artilleryDelay] spawn BIS_fnc_fireSupportVirtual;";
+						sizeA=100;
+						sizeB=100;
+						repeatable=1;
+						activationBy="WEST";
+						isServerOnly=1;
+					};
+					id=4428;
+					type="EmptyDetector";
+					atlOffset=0.19999695;
+				};
+			};
+			id=4430;
+			atlOffset=0.19999695;
 		};
 	};
 };

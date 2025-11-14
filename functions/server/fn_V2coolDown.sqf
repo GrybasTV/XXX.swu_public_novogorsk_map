@@ -31,9 +31,9 @@ call
 
 		call
 		{
-			if(_tpe==1)exitWith{fort1 = 0; systemChat"Sandbags barricade tall is available";};
-			if(_tpe==2)exitWith{fort2 = 0; systemChat"Sandbags barricade low is available";};
-			if(_tpe==3)exitWith{fort3 = 0; systemChat"Sandbags barricade low is available";};
+			if(_tpe==1)exitWith{fort1 = 0; systemChat"Trench barricade is available";};
+			if(_tpe==2)exitWith{fort2 = 0; systemChat"Trench barricade is available";};
+			if(_tpe==3)exitWith{fort3 = 0; systemChat"Trench barricade is available";};
 		};
 		
 		if(fort==1 && player==leader player)then

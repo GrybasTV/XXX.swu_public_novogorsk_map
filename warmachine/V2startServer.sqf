@@ -69,7 +69,8 @@ if (aoType==0) then
 {
 	//select random location on the map
 	AOcreated = 0;
-	_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], (worldSize/2)];
+	//Optimizuota pagal dokumentacijos rekomendacijas - sumažintas spindulys ir naudojamas efektyvesnis metodas
+	_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], worldSize/4]; //Sumažintas spindulys nuo worldSize/2 iki worldSize/4
 	_i=1;
 	_l=count _locations;
 	while {(AOcreated == 0)&&(count _locations>0)} do 
@@ -106,6 +107,22 @@ if(missType==1)then
 	if(count HeliTrE==0)then{nameBE2 = format ["%1 Infantry base",factionE];};
 	publicvariable "nameBW2";
 	publicvariable "nameBE2";
+};
+
+if(missType==2)then
+{
+	nameBW1 = format ["%1 Transport base",factionW]; publicvariable "nameBW1";
+	nameBE1 = format ["%1 Transport base",factionE]; publicvariable "nameBE1";
+	nameBW2 = format ["%1 Armor base",factionW]; publicvariable "nameBW2";
+	nameBE2 = format ["%1 Armor base",factionE]; publicvariable "nameBE2";
+};
+
+if(missType==3)then
+{
+	nameBW1 = format ["%1 Transport base",factionW]; publicvariable "nameBW1";
+	nameBE1 = format ["%1 Transport base",factionE]; publicvariable "nameBE1";
+	nameBW2 = format ["%1 Armor base",factionW]; publicvariable "nameBW2";
+	nameBE2 = format ["%1 Armor base",factionE]; publicvariable "nameBE2";
 };
 
 if(DBG)then{"warmachine\V2debug.sqf" remoteExec ["execVM", 0, false];}; //delete debug vehicles
@@ -520,26 +537,26 @@ if(!isNil "plHE") then {
 {[_x,["bis_supp_cooldown", arTime]] remoteExec ["setVariable",0,false];} forEach [SupCasHW,SupCasBW,SupCasHE,SupCasBE]; //set coolDown time == arTime
 
 _HeliArW=[];
-if ((HeliArW select 0) isEqualType [])
-then{{_HeliArW pushBackUnique (_x select 0);} forEach HeliArW;}
+if ((HeliArW param [0, []]) isEqualType [])
+then{{_HeliArW pushBackUnique (_x param [0, '']);} forEach HeliArW;}
 else{_HeliArW=HeliArW;};
 [SupCasHW,["bis_supp_vehicles", _HeliArW]] remoteExec ["setVariable",0,false];
 
 _PlaneW=[];
-if ((PlaneW select 0) isEqualType [])
-then{{_PlaneW pushBackUnique (_x select 0);} forEach PlaneW;}
+if ((PlaneW param [0, []]) isEqualType [])
+then{{_PlaneW pushBackUnique (_x param [0, '']);} forEach PlaneW;}
 else{_PlaneW=PlaneW;};
 [SupCasBW,["bis_supp_vehicles", _PlaneW]] remoteExec ["setVariable",0,false];
 
 _HeliArE=[];
-if ((HeliArE select 0) isEqualType [])
-then{{_HeliArE pushBackUnique (_x select 0);} forEach HeliArE;}
+if ((HeliArE param [0, []]) isEqualType [])
+then{{_HeliArE pushBackUnique (_x param [0, '']);} forEach HeliArE;}
 else{_HeliArE=HeliArE;};
 [SupCasHE,["bis_supp_vehicles", _HeliArE]] remoteExec ["setVariable",0,false];
 
 _PlaneE=[];
-if ((PlaneE select 0) isEqualType [])
-then{{_PlaneE pushBackUnique (_x select 0);} forEach PlaneE;}
+if ((PlaneE param [0, []]) isEqualType [])
+then{{_PlaneE pushBackUnique (_x param [0, '']);} forEach PlaneE;}
 else{_PlaneE=PlaneE;};
 [SupCasBE,["bis_supp_vehicles", _PlaneE]] remoteExec ["setVariable",0,false];
 
@@ -1145,114 +1162,105 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','A: Anti Air'];
 	this setVariable ['Designation','A'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange','
-		call
-		{
-			 if ((_this select 1) == sideW) exitWith 
-			 {
-				if(getMarkerColor resAW!='''')exitWith{};
+	this setVariable ['OnOwnerChange', '
+		call {
+			if ((_this select 1) == sideW) exitWith {
+				if(getMarkerColor resAW != '''') exitWith {};
 				_mrkRbW = createMarker [resAW, posAA];
 				_mrkRbW setMarkerShape ''ICON'';
 				_mrkRbW setMarkerType ''empty'';
 				_mrkRbW setMarkerText ''Anti Air'';
 				deleteMarker resAE;
-				if(!isNull objAAE)then
-				{
+				if(!isNull objAAE) then {
 					{objAAE deleteVehicleCrew _x} forEach crew objAAE;
 					deleteVehicle objAAE;
 				};
-				if(count aaW!=0)then
-				{
+				objAAW = objNull;
+				if(count aaW != 0) then {
 					_vSel = selectRandom aaW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = ''''; _tex = '''';
+					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
 					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
+				} else {
 					_vSel = selectRandom aaE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = ''''; _tex = '''';
+					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
 					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				[objAAW] call wrm_fnc_parachute;
-				objAAW lockDriver true;
-				_grpAAW=createGroup [sideW, true];			
-				for ''_i'' from 1 to (objAAW emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-					_unit moveInGunner objAAW;
+				if(!isNull objAAW) then {
+					[objAAW] call wrm_fnc_parachute;
+					objAAW lockDriver true;
+					_grpAAW = createGroup [sideW, true];
+					for ''_i'' from 1 to (objAAW emptyPositions ''Gunner'') step 1 do {
+						_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
+						_unit moveInGunner objAAW;
+					};
+					for ''_i'' from 1 to (objAAW emptyPositions ''Commander'') step 1 do {
+						_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
+						_unit moveInCommander objAAW;
+					};
+					objAAW allowCrewInImmobile true;
+					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideW] spawn wrm_fnc_killedEH; }];
+					} forEach (crew objAAW);
+					publicVariable ''objAAW'';
+					sleep 1;
+					z1 addCuratorEditableObjects [[objAAW], true];
+					defW pushBackUnique _grpAAW;
+					[posAA, sideW] call wrm_fnc_V2secDefense;
 				};
-				for ''_i'' from 1 to (objAAW emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-					_unit moveInCommander objAAW;
-				};
-				objAAW allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objAAW);				
-				publicvariable ''objAAW'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objAAW],true];
-				defW pushBackUnique _grpAAW;
-				[posAA,sideW] call wrm_fnc_V2secDefense;
-			 };
+			};
 
-			 if ((_this select 1) == sideE) exitWith  
-			 {
-				if(getMarkerColor resAE!='''')exitWith{};
+			if ((_this select 1) == sideE) exitWith {
+				if(getMarkerColor resAE != '''') exitWith {};
 				_mrkRbE = createMarker [resAE, posAA];
 				_mrkRbE setMarkerShape ''ICON'';
 				_mrkRbE setMarkerType ''empty'';
 				_mrkRbE setMarkerText ''Anti Air'';
 				deleteMarker resAW;
-				if(!isNull objAAW)then
-				{
+				if(!isNull objAAW) then {
 					{objAAW deleteVehicleCrew _x} forEach crew objAAW;
 					deleteVehicle objAAW;
 				};
-				if(count aaE!=0)then
-				{
+				objAAE = objNull;
+				if(count aaE != 0) then {
 					_vSel = selectRandom aaE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = ''''; _tex = '''';
+					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
 					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
+				} else {
 					_vSel = selectRandom aaW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = ''''; _tex = '''';
+					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
 					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				[objAAE] call wrm_fnc_parachute;
-				objAAE lockDriver true;
-				_grpAAE=createGroup [sideE, true];			
-				for ''_i'' from 1 to (objAAE emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-					_unit moveInGunner objAAE;
+				if(!isNull objAAE) then {
+					[objAAE] call wrm_fnc_parachute;
+					objAAE lockDriver true;
+					_grpAAE = createGroup [sideE, true];
+					for ''_i'' from 1 to (objAAE emptyPositions ''Gunner'') step 1 do {
+						_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
+						_unit moveInGunner objAAE;
+					};
+					for ''_i'' from 1 to (objAAE emptyPositions ''Commander'') step 1 do {
+						_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
+						_unit moveInCommander objAAE;
+					};
+					objAAE allowCrewInImmobile true;
+					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideE] spawn wrm_fnc_killedEH; }];
+					} forEach (crew objAAE);
+					publicVariable ''objAAE'';
+					sleep 1;
+					z1 addCuratorEditableObjects [[objAAE], true];
+					defE pushBackUnique _grpAAE;
+					[posAA, sideE] call wrm_fnc_V2secDefense;
 				};
-				for ''_i'' from 1 to (objAAE emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-					_unit moveInCommander objAAE;
-				};
-				objAAE allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objAAE);				
-				publicvariable ''objAAE'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objAAE],true];
-				defE pushBackUnique _grpAAE;
-				[posAA,sideE] call wrm_fnc_V2secDefense;
-			 };
+			};
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
@@ -1279,12 +1287,10 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','B: Artillery'];
 	this setVariable ['Designation','B'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange','
-		call
-		{
-			 if ((_this select 1) == sideW) exitWith 
-			 {
-				if(getMarkerColor resBW!='''')exitWith{};
+	this setVariable ['OnOwnerChange', '
+		call {
+			if ((_this select 1) == sideW) exitWith {
+				if(getMarkerColor resBW != '''') exitWith {};
 				_mrkRaW = createMarker [resBW, posArti];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -1293,55 +1299,57 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-				if(!isNull objArtiE)then
-				{
+				if(!isNull objArtiE) then {
 					{objArtiE deleteVehicleCrew _x} forEach crew objArtiE;
 					deleteVehicle objArtiE;
 				};
-				if(count artiW!=0)then
-				{
+				objArtiW = objNull;
+				if(count artiW != 0) then {
 					_vSel = selectRandom artiW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = '''';
+					_tex = '''';
+					if (_vSel isEqualType []) then {
+						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
+					else {_typ = _vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
+				} else {
 					_vSel = selectRandom artiE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = '''';
+					_tex = '''';
+					if (_vSel isEqualType []) then {
+						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
+					else {_typ = _vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				[objArtiW] call wrm_fnc_parachute;
-				objArtiW lockDriver true;
-				_grpArtiW=createGroup [sideW, true];			
-				for ''_i'' from 1 to (objArtiW emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
-					_unit moveInGunner objArtiW;
+				if(!isNull objArtiW) then {
+					[objArtiW] call wrm_fnc_parachute;
+					objArtiW lockDriver true;					
+					_grpArtiW = createGroup [sideW, true];
+					for ''_i'' from 1 to (objArtiW emptyPositions ''Gunner'') step 1 do {
+						_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
+						_unit moveInGunner objArtiW;
+					};
+					for ''_i'' from 1 to (objArtiW emptyPositions ''Commander'') step 1 do {
+						_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
+						_unit moveInCommander objArtiW;
+					};
+					objArtiW allowCrewInImmobile true;
+					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideW] spawn wrm_fnc_killedEH; }];
+					} forEach (crew objArtiW);
+					[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
+					publicVariable ''objArtiW'';
+					sleep 1;
+					z1 addCuratorEditableObjects [[objArtiW], true];
+					defW pushBackUnique _grpArtiW;
+					[] spawn wrm_fnc_V2mortarW;
+					[posArti, sideW] call wrm_fnc_V2secDefense;
 				};
-				for ''_i'' from 1 to (objArtiW emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
-					_unit moveInCommander objArtiW;
-				};
-				objArtiW allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objArtiW);
-				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
-				publicvariable ''objArtiW'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objArtiW],true];
-				defW pushBackUnique _grpArtiW;
-				[] spawn wrm_fnc_V2mortarW;
-				[posArti,sideW] call wrm_fnc_V2secDefense;
-			 };
-			 
-			 if ((_this select 1) == sideE) exitWith  
-			 {
-				if(getMarkerColor resBE!='''')exitWith{};
+			};
+
+			if ((_this select 1) == sideE) exitWith {
+				if(getMarkerColor resBE != '''') exitWith {};
 				_mrkRaE = createMarker [resBE, posArti];
 				_mrkRaE setMarkerShape ''ICON'';
 				_mrkRaE setMarkerType ''empty'';
@@ -1350,53 +1358,56 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-				if(!isNull objArtiW)then
-				{
+				if(!isNull objArtiW) then {
 					{objArtiW deleteVehicleCrew _x} forEach crew objArtiW;
 					deleteVehicle objArtiW;
 				};
-				if(count artiE!=0)then
-				{
+				objArtiE = objNull;
+				if(count artiE != 0) then {
 					_vSel = selectRandom artiE;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = '''';
+					_tex = '''';
+					if (_vSel isEqualType []) then {
+						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
+					else {_typ = _vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
-				}else
-				{
+				} else {
 					_vSel = selectRandom artiW;
-					_typ='''';_tex='''';
-					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
+					_typ = '''';
+					_tex = '''';
+					if (_vSel isEqualType []) then {
+						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
+					else {_typ = _vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				[objArtiE] call wrm_fnc_parachute;
-				objArtiE lockDriver true;
-				_grpArtiE=createGroup [sideE, true];			
-				for ''_i'' from 1 to (objArtiE emptyPositions ''Gunner'') step 1 do
-				{
-					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
-					_unit moveInGunner objArtiE;
+				if(!isNull objArtiE) then {
+					[objArtiE] call wrm_fnc_parachute;
+					objArtiE lockDriver true;					
+					_grpArtiE = createGroup [sideE, true];
+					for ''_i'' from 1 to (objArtiE emptyPositions ''Gunner'') step 1 do {
+						_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
+						_unit moveInGunner objArtiE;
+					};
+					for ''_i'' from 1 to (objArtiE emptyPositions ''Commander'') step 1 do {
+						_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
+						_unit moveInCommander objArtiE;
+					};
+					objArtiE allowCrewInImmobile true;
+					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideE] spawn wrm_fnc_killedEH; }];
+					} forEach (crew objArtiE);
+					[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
+					publicVariable ''objArtiE'';
+					sleep 1;
+					z1 addCuratorEditableObjects [[objArtiE], true];
+					defE pushBackUnique _grpArtiE;
+					[] spawn wrm_fnc_V2mortarE;
+					[posArti, sideE] call wrm_fnc_V2secDefense;
 				};
-				for ''_i'' from 1 to (objArtiE emptyPositions ''Commander'') step 1 do
-				{
-					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
-					_unit moveInCommander objArtiE;
-				};
-				objArtiE allowCrewInImmobile true;
-				{ _x addMPEventHandler
-					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
-				} forEach (crew objArtiE);
-				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
-				publicvariable ''objArtiE'';
-				sleep 1;
-				z1 addCuratorEditableObjects [[objArtiE],true];
-				defE pushBackUnique _grpArtiE;
-				[] spawn wrm_fnc_V2mortarE;
-				[posArti,sideE] call wrm_fnc_V2secDefense;
 			};
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
@@ -1424,65 +1435,52 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','C: CAS Tower'];
 	this setVariable ['Designation','C'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange','
-		call
-		{
-			 if ((_this select 1) == sideW) exitWith 
-			 {
-				if(getMarkerColor resCW!='''')exitWith{};
-				if(missType>1||count PlaneW==0)then
-				{
-					if(count HeliArW!=0)then
-					{
-						_v = HeliArW select 0; _typ='''';
-						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
-						if(_typ iskindof ''helicopter'')then
-						{
+	this setVariable ['OnOwnerChange', '
+		call {
+			if ((_this select 1) == sideW) exitWith {
+				if(getMarkerColor resCW != '''') exitWith {};
+				if(missType > 1 || count PlaneW == 0) then {
+					if(count HeliArW != 0) then {
+						_v = HeliArW param [0, []]; _typ = '''';
+						if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
+						if(_typ isKindOf ''helicopter'') then {
 							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 						};
 					};
 				};
-				if(count PlaneW!=0)then
-				{
-					_v = PlaneW select 0; _typ='''';
-					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
-					if(_typ iskindof ''plane'')then
-					{
+				if(count PlaneW != 0) then {
+					_v = PlaneW param [0, []]; _typ = '''';
+					if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
+					if(_typ isKindOf ''plane'') then {
 						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 					};
-				};				
+				};
 				_mrkRcW = createMarker [resCW, posCas];
 				_mrkRcW setMarkerShape ''ICON'';
 				_mrkRcW setMarkerType ''empty'';
-				_mrkRcW setMarkerText ''CAS Tower''; 
+				_mrkRcW setMarkerText ''CAS Tower'';
 				deleteMarker resCE;
-				[posCas,sideW] call wrm_fnc_V2secDefense;
-			 };
-			 
-			 if ((_this select 1) == sideE) exitWith  
-			 {
-				if(getMarkerColor resCE!='''')exitWith{};
-				if(missType>1||count PlaneE==0)then
-				{
-					if(count HeliArE!=0)then
-					{
-						_v = HeliArE select 0; _typ='''';
-						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
-						if(_typ iskindof ''helicopter'')then
-						{
+				[posCas, sideW] call wrm_fnc_V2secDefense;
+			};
+
+			if ((_this select 1) == sideE) exitWith {
+				if(getMarkerColor resCE != '''') exitWith {};
+				if(missType > 1 || count PlaneE == 0) then {
+					if(count HeliArE != 0) then {
+						_v = HeliArE param [0, []]; _typ = '''';
+						if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
+						if(_typ isKindOf ''helicopter'') then {
 							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 						};
 					};
 				};
-				if(count PlaneE!=0)then
-				{
-					_v = PlaneE select 0; _typ='''';
-					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
-					if(_typ iskindof ''plane'')then
-					{
+				if(count PlaneE != 0) then {
+					_v = PlaneE param [0, []]; _typ = '''';
+					if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
+					if(_typ isKindOf ''plane'') then {
 						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 					};
@@ -1492,10 +1490,10 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				_mrkRcE setMarkerType ''empty'';
 				_mrkRcE setMarkerText ''CAS Tower'';
 				deleteMarker resCW;
-				[posCas,sideE] call wrm_fnc_V2secDefense;
-			 };
+				[posCas, sideE] call wrm_fnc_V2secDefense;
+			};
 		};
-		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
+		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];

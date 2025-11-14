@@ -3,6 +3,17 @@
 ## [Neišleistas] - 2025-11-XX
 
 ### Ištaisytos klaidos
+- **Artillerijos palaikymo sistema ištaisyta**: Žaidėjų HIMARS užklausos neveikė dėl custom transporto priemonių
+  - Pakeistos custom transporto priemonės (`himars_krest`, `m109_krest`) į originalias RHS transporto priemones (`rhsusf_M142_usarmy_WD`, `rhsusf_m109_usarmy`)
+  - Panaikintas nereikalingas `enableEngineArtillery true` kodas (originaliame faile jo nebuvo)
+  - Dabar žaidėjų artilerijos užklausos turėtų veikti kaip originaliame faile
+- **KRITIŠKA: Serverio scheduler starvation problema išspręsta**: AI sustojimas, žaidėjai negali prisijungti dėl serverio perkrovos
+  - **fn_V2secBE1.sqf, fn_V2secBE2.sqf, fn_V2secBW1.sqf, fn_V2secBW2.sqf**: While ciklai neturėjo sleep pradžioje, sukeldami begalinį vykdymą be pertraukos
+    - Pridėtas `sleep 0.1` kiekvieno while ciklo pradžioje minimaliam scheduler starvation išvengimui
+    - Padidintas intervalas nuo 5 iki 10 sekundžių mažinti apkrovą (allUnits forEach kas 10 sek. vietoj 5)
+  - **fn_V2aiVehicle.sqf**: Įstrigimo aptikimo while ciklai (_eBW1, _eBW2, _eBE1, _eBE2) neturėjo sleep pradžioje
+    - Pridėtas `sleep 0.1` kiekvieno ciklo pradžioje užtikrinti, kad ciklai neužblokuotų scheduler'io
+  - Šie pakeitimai išsprendžia pagrindinę priežastį dėl kurios AI sustodavo judėti ir žaidėjai negalėdavo prisijungti prie serverio
 - **fn_V2flagActions.sqf "isnull: Type String, expected Object" klaida**: Netinkamas kintamųjų tipų patikrinimo tvarka
   - Pakeista patikrinimo tvarka: pirmiau tikriname ar nėra tuščia string, tada ar nėra null objektas
   - Išvengiama `isNull` kvietimo ant string tipo kintamųjų

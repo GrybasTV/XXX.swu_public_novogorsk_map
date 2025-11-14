@@ -199,7 +199,15 @@ then {_secAE pushBackUnique (selectRandom [posBaseW1,posBaseW2]);};
 
 //move groups west
 _secS=[];
+// Pridėtas įstrigimo patikrinimas pagal SQF_SYNTAX_BEST_PRACTICES.md rekomendacijas
 {
+	// Tikriname kiekvieną vienetą grupėje dėl įstrigimo
+	{
+		if (alive _x && {!isPlayer _x}) then {
+			[_x, 1, 3] call wrm_fnc_V2aiStuckCheck;
+		};
+	} forEach units _x;
+
 	if(count _secS<1)then{_secS=_sec0+_secDW+_secE+_posPE+_posGE+_secAW+_secW;}; //refill sectors array
 	_sec=_secS select 0;
 	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
@@ -208,7 +216,15 @@ _secS=[];
 
 //move groups east
 _secS=[];
+// Pridėtas įstrigimo patikrinimas pagal SQF_SYNTAX_BEST_PRACTICES.md rekomendacijas
 {
+	// Tikriname kiekvieną vienetą grupėje dėl įstrigimo
+	{
+		if (alive _x && {!isPlayer _x}) then {
+			[_x, 1, 3] call wrm_fnc_V2aiStuckCheck;
+		};
+	} forEach units _x;
+
 	if(count _secS<1)then{_secS=_sec0+_secDE+_secW+_posPW+_posGW+_secAE+_secE;}; //refill sectors array
 	_sec=_secS select 0;
 	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
@@ -218,6 +234,6 @@ _secS=[];
 if(DBG)then
 {
 	["AI moves to the objectives"] remoteExec ["systemChat", 0, false];
-	[(format ["West %1 groups with players, %2 AI groups",(count _posPW),(count _posGW)])] remoteExec ["systemChat", 0, false];;
-	[(format ["East %1 groups with players, %2 AI groups",(count _posPE),(count _posGE)])] remoteExec ["systemChat", 0, false];;
+	[(format ["West %1 groups with players, %2 AI groups",(count _posPW),(count _posGW)])] remoteExec ["systemChat", 0, false];
+	[(format ["East %1 groups with players, %2 AI groups",(count _posPE),(count _posGE)])] remoteExec ["systemChat", 0, false];
 };

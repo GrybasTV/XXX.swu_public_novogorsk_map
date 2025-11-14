@@ -23,9 +23,9 @@ ArmorW1=["brdm2_krest","brdm2_atgm_krest","btr60_triangle","btr70_krest","btr70_
 ArmorW2=["abrams_krest","abrams_ukr_krest","abrams_ol_krest","amx10_krest","t64bv_triangles","t64bv_krest","t72bb_ukr_krest","t72bb_krest","t72bd_ukr_krest","t72be_triangle","t80u_krest","t80u_ukr_krest","t80uk_krest","t80uk_ukr_krest"]; //tank
 ArmorDlcW2=[]; //tank tanks dlc
 
-HeliTrW=["mi8_afg_ukr","mi8_ukr_mtv3","uh60_gur","uh60_gur_gun"]; //transport heli - pašalintos RHS USAF transporto priemonės (RHS_UH60M*, RHS_CH_47F)
+HeliTrW=["uh60_gur","uh60_gur_gun"]; //transport heli - pašalintos RHS USAF transporto priemonės (RHS_UH60M*, RHS_CH_47F)
 HeliTrDlcW=[]; //transport heli helicopters dlc
-HeliArW=["mi24_ukr_p","mi24_ukr_v"]; //gunship (armed heli) - pašalintos RHS USAF transporto priemonės (RHS_AH64D*, RHS_AH1Z*)
+HeliArW=["mi24_ukr_p","mi24_ukr_v","mi8_afg_ukr","mi8_ukr_mtv3"]; //gunship (armed heli) - pašalintos RHS USAF transporto priemonės (RHS_AH64D*, RHS_AH1Z*)
 PlaneW=["mig29_ua","su24_ua","su24_ua_storm","su25_ua"]; //jet - pašalintos RHS USAF transporto priemonės (RHS_A10, rhsusf_f22)
 PlaneDlcW=[]; //jets dlc
 
