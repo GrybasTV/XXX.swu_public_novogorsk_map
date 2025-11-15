@@ -105,30 +105,65 @@ call
 			aiVehW = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehW,[_tex,1]] call bis_fnc_initVehicle;
 			
-			// Naudojame originalo metodą - createVehicleCrew automatiškai sukuria įgulą pagal transporto configą
-			// Tai užtikrina, kad transportas turės įgulą ir nesprogs
-			createVehicleCrew aiVehW;
-			
-			// Dabar pakeičiame įgulą pagal mūsų configą
-			// Pirmiausia pašaliname seną įgulą
-			{aiVehW deleteVehicleCrew _x} forEach crew aiVehW;
-			
-			// Sukuriame naują įgulą pagal mūsų configą naudojant emptyPositions (kaip kitur kode)
+			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
+			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
+			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
 			_grpVehW = createGroup [sideW, true];
-			// Driver pozicija
-			if(aiVehW emptyPositions "Driver" > 0) then {
+
+			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			if (aiVehW emptyPositions "Driver" > 0) then {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInDriver aiVehW;
 			};
-			// Gunner pozicija
-			for "_i" from 1 to (aiVehW emptyPositions "Gunner") step 1 do {
+
+			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			for "_i" from 1 to (aiVehW emptyPositions "Gunner") do {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInGunner aiVehW;
 			};
-			// Commander pozicija
-			for "_i" from 1 to (aiVehW emptyPositions "Commander") step 1 do {
+
+			// Commander pozicijos - kai kuriose transporto priemonėse
+			for "_i" from 1 to (aiVehW emptyPositions "Commander") do {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInCommander aiVehW;
+			};
+
+			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			_turretPaths = allTurrets [aiVehW, true];
+			{
+				// Tikriname ar turret pozicija tuščia naudojant fullCrew (patikimesnis metodas)
+				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
+				_turretCrew = aiVehW turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
+					_unit moveInTurret [aiVehW, _x];
+				};
+			} forEach _turretPaths;
+
+			// Keleiviai (Cargo) - random kareiviai iš tinkamų kategorijų (paprasčiau ir greičiau!)
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsW = [
+				unitsW param [5, ""],  // Rifleman
+				unitsW param [2, ""],  // Autorifleman
+				unitsW param [9, ""],  // Grenadier
+				unitsW param [7, ""],  // Marksman
+				unitsW param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsW == 0) then {
+				_riflemanW = unitsW param [5, ""];
+				if (_riflemanW != "") then {
+					_cargoUnitsW = [_riflemanW];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus (saugumas pagal dokumentaciją)
+			if (count _cargoUnitsW > 0) then {
+				for "_i" from 1 to (aiVehW emptyPositions "Cargo") do {
+					_unit = _grpVehW createUnit [selectRandom _cargoUnitsW, _spawnPos, [], 0, "NONE"];
+					_unit moveInCargo aiVehW;
+				};
 			};
 
 			{ _x addMPEventHandler
@@ -210,64 +245,79 @@ call
 			aiArmW = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW,[_tex,1]] call bis_fnc_initVehicle;
 
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
+			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
+			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
 			_grpArmW = createGroup [sideW, true];
-			_crewPositions = fullCrew aiArmW;
 
-			// Debug informacija apie crew pozicijas
-			if(DBG)then{
-				["AI Vehicle Debug: fullCrew returned %1 positions for aiArmW", count _crewPositions] remoteExec ["systemChat", 0, false];
-				{["AI Vehicle Debug: Position %1: %2", _forEachIndex, _x] remoteExec ["systemChat", 0, false];} forEach _crewPositions;
+			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			if (aiArmW emptyPositions "Driver" > 0) then {
+				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInDriver aiArmW;
 			};
 
+			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			for "_i" from 1 to (aiArmW emptyPositions "Gunner") do {
+				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInGunner aiArmW;
+			};
+
+			// Commander pozicijos - kai kuriose transporto priemonėse
+			for "_i" from 1 to (aiArmW emptyPositions "Commander") do {
+				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInCommander aiArmW;
+			};
+
+			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			_turretPaths = allTurrets [aiArmW, true];
+			{
+				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
+				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
+				_turretCrew = aiArmW turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
+					_unit moveInTurret [aiArmW, _x];
+				};
+			} forEach _turretPaths;
+
+			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
+			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			// Pagal interneto ekspertų rekomendacijas, fullCrew su filtravimu yra patikimesnis tankuose
+			_crewPositions = fullCrew [aiArmW, "", true];
+			_cargoPositions = [];
 			{
 				_role = _x select 1;
 				_turretPath = _x select 2;
-				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
-
-				// Debug informacija apie unit kūrimą
-				if(DBG)then{
-					if(isNull _unit)then{
-						["AI Vehicle Debug: FAILED to create unit for role %1", _role] remoteExec ["systemChat", 0, false];
-					}else{
-						["AI Vehicle Debug: Created unit %1 for role %2", _unit, _role] remoteExec ["systemChat", 0, false];
-					};
-				};
-
-				if(!isNull _unit)then{
-					switch (_role) do {
-						case "driver": {
-							_unit moveInDriver aiArmW;
-							if(DBG && !(driver aiArmW isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into driver position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "commander": {
-							_unit moveInCommander aiArmW;
-							if(DBG && !(commander aiArmW isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into commander position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "gunner": {
-							_unit moveInGunner aiArmW;
-							if(DBG && !(gunner aiArmW isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into gunner position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "turret": {
-							_unit moveInTurret [aiArmW, _turretPath];
-							if(DBG && !(_unit in (aiArmW turretUnit _turretPath)))then{
-								["AI Vehicle Debug: FAILED to move unit into turret position %1", _turretPath] remoteExec ["systemChat", 0, false];
-							};
-						};
-					};
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
 				};
 			} forEach _crewPositions;
-
-			// Debug informacija apie galutinį crew skaičių
-			if(DBG)then{
-				_finalCrew = count (crew aiArmW);
-				["AI Vehicle Debug: Final crew count for aiArmW: %1", _finalCrew] remoteExec ["systemChat", 0, false];
+			
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsW = [
+				unitsW param [5, ""],  // Rifleman
+				unitsW param [2, ""],  // Autorifleman
+				unitsW param [9, ""],  // Grenadier
+				unitsW param [7, ""],  // Marksman
+				unitsW param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsW == 0) then {
+				_riflemanW = unitsW param [5, ""];
+				if (_riflemanW != "") then {
+					_cargoUnitsW = [_riflemanW];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsW > 0 && count _cargoPositions > 0) then {
+				{
+					_unit = _grpArmW createUnit [selectRandom _cargoUnitsW, posW2, [], 0, "NONE"];
+					_unit moveInCargo aiArmW;
+				} forEach _cargoPositions;
 			};
 
 			{ _x addMPEventHandler
@@ -365,6 +415,44 @@ call
 					case "turret": {_unit moveInTurret [aiArmW2, _turretPath];};
 				};
 			} forEach _crewPositions;
+
+			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
+			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			_cargoPositions = [];
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
+				};
+			} forEach _crewPositions;
+			
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsW = [
+				unitsW param [5, ""],  // Rifleman
+				unitsW param [2, ""],  // Autorifleman
+				unitsW param [9, ""],  // Grenadier
+				unitsW param [7, ""],  // Marksman
+				unitsW param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsW == 0) then {
+				_riflemanW = unitsW param [5, ""];
+				if (_riflemanW != "") then {
+					_cargoUnitsW = [_riflemanW];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsW > 0 && count _cargoPositions > 0) then {
+				{
+					_unit = _grpArmW2 createUnit [selectRandom _cargoUnitsW, posW2, [], 0, "NONE"];
+					_unit moveInCargo aiArmW2;
+				} forEach _cargoPositions;
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
@@ -539,30 +627,65 @@ call
 			aiVehE = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehE,[_tex,1]] call bis_fnc_initVehicle;
 			
-			// Naudojame originalo metodą - createVehicleCrew automatiškai sukuria įgulą pagal transporto configą
-			// Tai užtikrina, kad transportas turės įgulą ir nesprogs
-			createVehicleCrew aiVehE;
-			
-			// Dabar pakeičiame įgulą pagal mūsų configą
-			// Pirmiausia pašaliname seną įgulą
-			{aiVehE deleteVehicleCrew _x} forEach crew aiVehE;
-			
-			// Sukuriame naują įgulą pagal mūsų configą naudojant emptyPositions (kaip kitur kode)
+			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
+			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
+			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
 			_grpVehE = createGroup [sideE, true];
-			// Driver pozicija
-			if(aiVehE emptyPositions "Driver" > 0) then {
+
+			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			if (aiVehE emptyPositions "Driver" > 0) then {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInDriver aiVehE;
 			};
-			// Gunner pozicija
-			for "_i" from 1 to (aiVehE emptyPositions "Gunner") step 1 do {
+
+			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			for "_i" from 1 to (aiVehE emptyPositions "Gunner") do {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInGunner aiVehE;
 			};
-			// Commander pozicija
-			for "_i" from 1 to (aiVehE emptyPositions "Commander") step 1 do {
+
+			// Commander pozicijos - kai kuriose transporto priemonėse
+			for "_i" from 1 to (aiVehE emptyPositions "Commander") do {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInCommander aiVehE;
+			};
+
+			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			_turretPaths = allTurrets [aiVehE, true];
+			{
+				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
+				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
+				_turretCrew = aiVehE turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
+					_unit moveInTurret [aiVehE, _x];
+				};
+			} forEach _turretPaths;
+
+			// Keleiviai (Cargo) - random kareiviai iš tinkamų kategorijų (paprasčiau ir greičiau!)
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsE = [
+				unitsE param [5, ""],  // Rifleman
+				unitsE param [2, ""],  // Autorifleman
+				unitsE param [9, ""],  // Grenadier
+				unitsE param [7, ""],  // Marksman
+				unitsE param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsE == 0) then {
+				_riflemanE = unitsE param [5, ""];
+				if (_riflemanE != "") then {
+					_cargoUnitsE = [_riflemanE];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus (saugumas pagal dokumentaciją)
+			if (count _cargoUnitsE > 0) then {
+				for "_i" from 1 to (aiVehE emptyPositions "Cargo") do {
+					_unit = _grpVehE createUnit [selectRandom _cargoUnitsE, _spawnPos, [], 0, "NONE"];
+					_unit moveInCargo aiVehE;
+				};
 			};
 
 			{ _x addMPEventHandler
@@ -644,59 +767,80 @@ call
 			aiArmE = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE,[_tex,1]] call bis_fnc_initVehicle;
 
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
+			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
+			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
 			_grpArmE = createGroup [sideE, true];
-			_crewPositions = fullCrew aiArmE;
 
-			// Debug informacija apie crew pozicijas
-			if(DBG)then{
-				["AI Vehicle Debug: fullCrew returned %1 positions for aiArmE", count _crewPositions] remoteExec ["systemChat", 0, false];
-				{["AI Vehicle Debug: Position %1: %2", _forEachIndex, _x] remoteExec ["systemChat", 0, false];} forEach _crewPositions;
+			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			if (aiArmE emptyPositions "Driver" > 0) then {
+				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInDriver aiArmE;
 			};
 
+			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			for "_i" from 1 to (aiArmE emptyPositions "Gunner") do {
+				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInGunner aiArmE;
+			};
+
+			// Commander pozicijos - kai kuriose transporto priemonėse
+			for "_i" from 1 to (aiArmE emptyPositions "Commander") do {
+				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInCommander aiArmE;
+			};
+
+			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			_turretPaths = allTurrets [aiArmE, true];
+			{
+				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
+				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
+				_turretCrew = aiArmE turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
+					_unit moveInTurret [aiArmE, _x];
+				};
+			} forEach _turretPaths;
+
+			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
+			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			// Pagal interneto ekspertų rekomendacijas, fullCrew su filtravimu yra patikimesnis tankuose
+			_crewPositions = fullCrew [aiArmE, "", true];
+			_cargoPositions = [];
 			{
 				_role = _x select 1;
 				_turretPath = _x select 2;
-				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
-
-				// Debug informacija apie unit kūrimą
-				if(DBG)then{
-					if(isNull _unit)then{
-						["AI Vehicle Debug: FAILED to create unit for role %1", _role] remoteExec ["systemChat", 0, false];
-					}else{
-						["AI Vehicle Debug: Created unit %1 for role %2", _unit, _role] remoteExec ["systemChat", 0, false];
-					};
-				};
-
-				if(!isNull _unit)then{
-					switch (_role) do {
-						case "driver": {
-							_unit moveInDriver aiArmE;
-							if(DBG && !(driver aiArmE isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into driver position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "commander": {
-							_unit moveInCommander aiArmE;
-							if(DBG && !(commander aiArmE isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into commander position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "gunner": {
-							_unit moveInGunner aiArmE;
-							if(DBG && !(gunner aiArmE isEqualTo _unit))then{
-								["AI Vehicle Debug: FAILED to move unit into gunner position"] remoteExec ["systemChat", 0, false];
-							};
-						};
-						case "turret": {
-							_unit moveInTurret [aiArmE, _turretPath];
-							if(DBG && !(_unit in (aiArmE turretUnit _turretPath)))then{
-								["AI Vehicle Debug: FAILED to move unit into turret position %1", _turretPath] remoteExec ["systemChat", 0, false];
-							};
-						};
-					};
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
 				};
 			} forEach _crewPositions;
+			
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsE = [
+				unitsE param [5, ""],  // Rifleman
+				unitsE param [2, ""],  // Autorifleman
+				unitsE param [9, ""],  // Grenadier
+				unitsE param [7, ""],  // Marksman
+				unitsE param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsE == 0) then {
+				_riflemanE = unitsE param [5, ""];
+				if (_riflemanE != "") then {
+					_cargoUnitsE = [_riflemanE];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsE > 0 && count _cargoPositions > 0) then {
+				{
+					_unit = _grpArmE createUnit [selectRandom _cargoUnitsE, posE2, [], 0, "NONE"];
+					_unit moveInCargo aiArmE;
+				} forEach _cargoPositions;
+			};
 
 			// Debug informacija apie galutinį crew skaičių
 			if(DBG)then{
@@ -799,6 +943,44 @@ call
 					case "turret": {_unit moveInTurret [aiArmE2, _turretPath];};
 				};
 			} forEach _crewPositions;
+
+			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
+			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			_cargoPositions = [];
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
+				};
+			} forEach _crewPositions;
+			
+			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
+			_cargoUnitsE = [
+				unitsE param [5, ""],  // Rifleman
+				unitsE param [2, ""],  // Autorifleman
+				unitsE param [9, ""],  // Grenadier
+				unitsE param [7, ""],  // Marksman
+				unitsE param [16, ""]  // Recon Scout (Rifleman)
+			] select { _x != "" }; // Pašaliname tuščius elementus
+			
+			// Fallback: jei visi tušti, naudojame rifleman (tik jei jis nėra tuščias)
+			if (count _cargoUnitsE == 0) then {
+				_riflemanE = unitsE param [5, ""];
+				if (_riflemanE != "") then {
+					_cargoUnitsE = [_riflemanE];
+				};
+			};
+			
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsE > 0 && count _cargoPositions > 0) then {
+				{
+					_unit = _grpArmE2 createUnit [selectRandom _cargoUnitsE, posE2, [], 0, "NONE"];
+					_unit moveInCargo aiArmE2;
+				} forEach _cargoPositions;
+			};
 
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];

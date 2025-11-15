@@ -34,6 +34,7 @@ aaW=[]; //Anti Air
 artiW=[]; //artillery
 mortW = []; //mortar
 crewW=""; //crew
+soldierW=""; //rifleman (for cargo positions)
 
 boatTrW=[]; //small boat
 boatArW=[]; //patrol boat
@@ -100,6 +101,7 @@ aaE=[]; //Anti Air
 artiE=[]; //artillery
 mortE = []; //mortar
 crewE=""; //crew
+soldierE=""; //rifleman (for cargo positions)
 
 boatTrE=[]; //small boat
 boatArE=[]; //patrol boat

@@ -996,10 +996,14 @@ call //fog
 {
 	//Random
 	if (fogLevel == 0) exitWith {0 setFog selectRandom fogs;};
-	//Yes
+	//Light
 	if (fogLevel == 1) exitWith {0 setFog (fogs select 1);};
+	//Medium
+	if (fogLevel == 2) exitWith {0 setFog (fogs select 2);};
+	//Heavy
+	if (fogLevel == 3) exitWith {0 setFog (fogs select 3);};
 	//No
-	if (fogLevel == 2) exitWith {0 setFog (fogs select 0);};
+	if (fogLevel == 4) exitWith {0 setFog (fogs select 4);};
 };
 
 _rain = [0, 0.5, 1, 0];

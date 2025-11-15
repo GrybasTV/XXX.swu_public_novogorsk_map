@@ -358,6 +358,139 @@ Neatidumas rūšiavimo kaštams yra dažnas našumo nuosmukio šaltinis. Kai mis
 | for / while ciklai | Vykdoma suplanuotoje aplinkoje be sleep | Aukštas (Gali išsekinti simuliatorių, jei > 3ms) | Įterpti sleep arba pertvarkyti kaip būsenos mašinas (FSM) arba kadrų tvarkykles (PFHs) kritiniams nestabdymo poreikiams. |
 | Globalūs Kintamieji | Dažnas skaitymas/rašymas | Vidutinis (Aprėpties paieškos kaštai) | Naudoti privačius (lokalius) kintamiesiems (_variable), užtikrinant greitą vietinę paiešką. |
 
+#### C. Transporto Priemonių Įgulos Spawninimo Geriausios Praktikos
+
+Spawninant AI transporto priemones su įgula, būtina naudoti teisingus metodus užtikrinant, kad visos pozicijos būtų užpildytos patikimai.
+
+##### 1. emptyPositions vs fullCrew Metodų Palyginimas
+
+**emptyPositions** yra **paprastas ir patikimas** metodas paprastiems atvejams:
+- Grąžina **skaičių** (integer) tuščių pozicijų
+- **Rekomenduojamas** driver, gunner, commander, cargo pozicijoms
+- **Sintaksė**: `vehicle emptyPositions "Driver"` arba `vehicle emptyPositions "Gunner"`
+
+**fullCrew** (nuo Arma 3 1.54) yra **galingesnis** sudėtingiems atvejams:
+- Grąžina **detalų masyvą** su visomis pozicijomis
+- **Rekomenduojamas** kai reikia detalių informacijos arba sudėtingų turret pozicijų
+- **Sintaksė**: `fullCrew [vehicle, "", true]` (true = įtraukti tuščias pozicijas)
+
+##### 2. Turret Pozicijų Tvarkymas
+
+**KRITINĖ PROBLEMA**: `emptyPositionsTurret` komanda gali sukelti sintaksės klaidas dėl versijų skirtumų arba netinkamo formato.
+
+**REKOMENDUOJAMAS SPRENDIMAS**: Naudoti `turretUnit` metodą vietoj `emptyPositionsTurret`:
+
+```sqf
+// ❌ NETEISINGA - gali sukelti "Error Missing )" klaidą
+if (emptyPositionsTurret [vehicle, _turretPath, "Gunner"] > 0) then {
+    // spawn crew
+};
+
+// ✅ TEISINGA - patikimesnis ir paprastesnis metodas
+_turretCrew = vehicle turretUnit _turretPath;
+if (isNull _turretCrew) then {
+    _unit = _group createUnit [crewType, _spawnPos, [], 0, "NONE"];
+    _unit moveInTurret [vehicle, _turretPath];
+};
+```
+
+**Kodėl `turretUnit` yra geresnis**:
+- ✅ **Patikimas** - palaikomas visose Arma 3 versijose
+- ✅ **Paprastas** - grąžina unit objektą arba null
+- ✅ **Efektyvus** - mažiau operacijų nei `emptyPositionsTurret`
+- ✅ **Tiesioginis patikrinimas** - nereikia sudėtingų parametrų
+
+##### 3. Hibridinis Metodas (Rekomenduojamas)
+
+**Optimalus sprendimas** - naudoti **emptyPositions** pagrindinėms pozicijoms ir **turretUnit** turret pozicijoms:
+
+```sqf
+// Driver - emptyPositions (patikimas)
+if (vehicle emptyPositions "Driver" > 0) then {
+    _unit = _group createUnit [crewType, _spawnPos, [], 0, "NONE"];
+    _unit moveInDriver vehicle;
+};
+
+// Gunner - emptyPositions (patikimas tankams)
+for "_i" from 1 to (vehicle emptyPositions "Gunner") do {
+    _unit = _group createUnit [crewType, _spawnPos, [], 0, "NONE"];
+    _unit moveInGunner vehicle;
+};
+
+// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret)
+_turretPaths = allTurrets [vehicle, true];
+{
+    _turretCrew = vehicle turretUnit _x;
+    if (isNull _turretCrew) then {
+        _unit = _group createUnit [crewType, _spawnPos, [], 0, "NONE"];
+        _unit moveInTurret [vehicle, _x];
+    };
+} forEach _turretPaths;
+
+// Cargo - emptyPositions (keleiviai) - PATIKIMAS PAPRASTIEMS TRANSPORTO PRIEMONĖMS
+for "_i" from 1 to (vehicle emptyPositions "Cargo") do {
+    _unit = _group createUnit [soldierType, _spawnPos, [], 0, "NONE"];
+    _unit moveInCargo vehicle;
+};
+```
+
+##### 3.1. Cargo Pozicijų Problema Tankuose (KRITINĖ INFORMACIJA)
+
+**PROBLEMA**: `emptyPositions "Cargo"` gali būti **netikslus tankuose** - jis gali skaičiuoti turret pozicijas kaip cargo, todėl cargo pozicijose gali atsirasti crew nariai vietoj keleivių.
+
+**SPRENDIMAS**: Tankuose naudokite **fullCrew su filtravimu** cargo pozicijoms:
+
+```sqf
+// ❌ NETEISINGA tankuose - gali sukelti neteisingą cargo skaičių
+for "_i" from 1 to (tank emptyPositions "Cargo") do {
+    _unit = _group createUnit [soldierType, _spawnPos, [], 0, "NONE"];
+    _unit moveInCargo tank; // Gali būti per daug crew narių!
+};
+
+// ✅ TEISINGA tankuose - naudojame fullCrew su filtravimu
+_crewPositions = fullCrew [tank, "", true];
+_cargoPositions = [];
+{
+    _role = _x select 1;
+    _turretPath = _x select 2;
+    _unit = _x select 0;
+    // Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+    if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+        _cargoPositions pushBack _x;
+    };
+} forEach _crewPositions;
+
+// Spawniname keleivius tik į tikras cargo pozicijas
+if (count _cargoPositions > 0) then {
+    {
+        _unit = _group createUnit [soldierType, _spawnPos, [], 0, "NONE"];
+        _unit moveInCargo tank;
+    } forEach _cargoPositions;
+};
+```
+
+**Kada naudoti ką**:
+- **Paprastoms transporto priemonėms** (pvz., HMMWV, Ural): `emptyPositions "Cargo"` yra patikimas
+- **Tankams ir šarvuočiams** (pvz., Abrams, T-72): naudokite `fullCrew` su filtravimu cargo pozicijoms
+
+##### 4. Svarbios Pastabos
+
+- **NEREIKIA `createVehicleCrew`** - jei spawninate custom įgulą, nereikia kurti ir pašalinti standartinės įgulos
+- **Naudokite `allTurrets [vehicle, true]`** - gauti visas turret pozicijas, įskaitant commander turret
+- **Patikrinkite ar pozicija tuščia** - visada patikrinkite prieš spawninant įgulą
+- **Praktinis testavimas svarbus** - net jei dokumentacija teisinga, Arma 3 variklis gali turėti versijų skirtumus
+
+**Lentelė IV: Vehicle Crew Spawning Metodų Palyginimas**
+
+| Metodas | Sintaksė | Patikimumas | Našumas | Rekomendacija |
+|---------|----------|-------------|----------|---------------|
+| **emptyPositions** | `vehicle emptyPositions "Driver"` | ⭐⭐⭐⭐⭐ Aukštas | ⭐⭐⭐⭐⭐ Greitas | **Pagrindinėms pozicijoms** |
+| **emptyPositions "Cargo"** | `vehicle emptyPositions "Cargo"` | ⭐⭐⭐⭐ Aukštas (paprastoms) ⚠️ Netikslus (tankuose) | ⭐⭐⭐⭐⭐ Greitas | **Paprastoms transporto priemonėms** |
+| **fullCrew + filtravimas** | `fullCrew [vehicle, "", true]` + filtravimas | ⭐⭐⭐⭐⭐ Aukštas | ⭐⭐⭐⭐ Greitas | **Tankų cargo pozicijoms** |
+| **fullCrew** | `fullCrew [vehicle, "", true]` | ⭐⭐⭐⭐⭐ Aukštas | ⭐⭐⭐⭐ Greitas | **Sudėtingiems atvejams** |
+| **turretUnit** | `vehicle turretUnit turretPath` | ⭐⭐⭐⭐⭐ Aukštas | ⭐⭐⭐⭐⭐ Greitas | **Turret pozicijoms** |
+| **emptyPositionsTurret** | `emptyPositionsTurret [vehicle, turretPath, type]` | ⚠️ Gali neveikti | ⭐⭐⭐⭐ Greitas | **Nerekomenduojamas** (versijų skirtumai) |
+
 ### III. Desinchronizacija („Desync") ir „Nematomumo" Fenomenas
 
 Vartotojo aprašytas DI tapimas „nematomu" yra klasikinis tinklo desinchronizacijos simptomas, kai kliento numanoma objekto būsena smarkiai skiriasi nuo serverio autoritetingos būsenos.
@@ -502,8 +635,24 @@ Nors SQF išlieka pagrindine kalba "Arma 3" platformoje, kūrėjai turėtų prip
 
 ---
 
-**Paskutinis Atnaujinimas**: 2025-11-13
-**Versija**: 5.2
+**Paskutinis Atnaujinimas**: 2025-01-XX
+**Versija**: 5.4
+**Pakeitimai v5.4**:
+- **KRITINĖ INFORMACIJA**: `emptyPositions "Cargo"` gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+- **REKOMENDUOJAMAS SPRENDIMAS**: Tankuose naudoti `fullCrew` su filtravimu cargo pozicijoms
+- Pridėta nauja sekcija "Cargo Pozicijų Problema Tankuose" su išsamiu paaiškinimu ir pavyzdžiais
+- Atnaujinta palyginimo lentelė su `emptyPositions "Cargo"` ir `fullCrew + filtravimas` metodais
+- Išplėsta praktinė rekomendacija apie tai, kada naudoti ką (paprastos transporto priemonės vs tankai)
+
+**Pakeitimai v5.3**:
+- Pridėta nauja sekcija "Transporto Priemonių Įgulos Spawninimo Geriausios Praktikos"
+- Dokumentuotas emptyPositions vs fullCrew metodų palyginimas
+- **KRITINĖ INFORMACIJA**: emptyPositionsTurret gali sukelti sintaksės klaidas dėl versijų skirtumų
+- **REKOMENDUOJAMAS SPRENDIMAS**: Naudoti turretUnit metodą vietoj emptyPositionsTurret turret pozicijoms
+- Pridėtas hibridinis metodas (emptyPositions + turretUnit) kaip optimalus sprendimas
+- Pridėta palyginimo lentelė su visais vehicle crew spawning metodais
+- Išplėsta praktinė rekomendacija apie praktinio testavimo svarbą net jei dokumentacija teisinga
+
 **Pakeitimai v5.2**:
 - **KRITINIS TAISYMAS** (patvirtinta interneto paieška): Ištaisytas neteisingas OnOwnerChange callback'ų rekomendavimas - BIS sektorių moduliuose būtinas string formatas su escaping'u, ne code block formatas
 - Code block formatas nesuderinamas su BIS modulio sistema ir callback'ai neveiks

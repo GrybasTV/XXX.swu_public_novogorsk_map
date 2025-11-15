@@ -1,8 +1,60 @@
 # Changelog
 
-## [Neišleistas] - 2025-11-XX
+## [Neišleistas] - 2025-01-XX
 
 ### Ištaisytos klaidos
+- **Tankų cargo pozicijų spawninimas pataisytas**: Tankuose cargo pozicijose dabar spawnina random kariai, o ne crew nariai
+  - **PROBLEMA**: `emptyPositions "Cargo"` tankuose gali būti netikslus - jis gali skaičiuoti turret pozicijas kaip cargo
+  - **SPRENDIMAS**: Naudojame `fullCrew` su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
+  - **LOGIKA**: Filtruojame tik tas pozicijas, kur `role == "cargo"` ir `turretPath` tuščias (ne turret pozicija)
+  - **PATAISYTA**: `aiArmW`, `aiArmE`, `aiArmW2`, `aiArmE2` - visi armor kodai dabar naudoja `fullCrew` su filtravimu cargo pozicijoms
+  - Cargo pozicijose dabar spawnina random kariai (rifleman, autorifleman, grenadier, marksman, recon scout), o ne crew nariai
+  - **VALIDUOTA**: Pagal interneto ekspertų rekomendacijas, `fullCrew` su filtravimu yra patikimesnis tankuose nei `emptyPositions "Cargo"`
+
+### Dokumentacija
+- **ANALYSIS_CAS.md sukurtas**: Išsamus CAS (Close Air Support) funkcionalumo analizės dokumentas
+  - Analizuojamas AI CAS kviečiamas ir palyginimas su originaliu kodu
+  - Dokumentuotos sąlygos, kada AI kviečia CAS
+  - **IŠVADA**: AI kviečia CAS tik jei nėra žaidėjų ARBA nėra squad leader'ių
+  - **SĄLYGOS**: CAS sektorius turi būti užimtas, turi būti lėktuvai, turi būti taikiniai (Artillery, Base 1, Base 2)
+  - **TAIKINIAI**: Artillery (prioritetas 1), Base 1 (prioritetas 2), Base 2 (prioritetas 3, tik jei nėra kitų)
+  - **CAS TIPAI**: Type 2 (Bombing), Type 3 (Strafe) - parenkami atsitiktinai
+  - **SKIRTUMAS**: Dabartiniame faile pridėtas patikrinimas, ar aerodromai (`plHW`, `plHE`) yra apibrėžti
+- **ANALYSIS_ARTILLERY.md sukurtas**: Išsamus artilerijos funkcionalumo analizės dokumentas
+  - Analizuojamas AI artilerijos naudojimas ir palyginimas su originaliu kodu
+  - Dokumentuoti skirtumai tarp originalaus ir dabartinio kodo
+  - **IŠVADA**: AI gali naudoti artileriją - transporto priemonės sukuriamos su įgula (Gunner ir Commander)
+  - **SKIRTUMAI**: Originaliame faile AI artilerija veikia tik jei nėra žaidėjų ARBA nėra squad leader'ių
+  - **DABARTINIAME**: AI artilerija veikia visada + papildoma logika priešo transporto priemonėms ir didelėms grupėms
+  - Pateikiamos rekomendacijos grįžti prie originalios logikos arba palikti dabartinę (geresnę)
+- **SQF_SYNTAX_BEST_PRACTICES.md atnaujinta (v5.3)**: Pridėta nauja sekcija apie transporto priemonių įgulos spawninimo geriausias praktikas
+  - Dokumentuotas emptyPositions vs fullCrew metodų palyginimas
+  - **KRITINĖ INFORMACIJA**: emptyPositionsTurret gali sukelti sintaksės klaidas dėl versijų skirtumų
+  - **REKOMENDUOJAMAS SPRENDIMAS**: Naudoti turretUnit metodą vietoj emptyPositionsTurret turret pozicijoms
+  - Pridėtas hibridinis metodas (emptyPositions + turretUnit) kaip optimalus sprendimas
+  - Pridėta palyginimo lentelė su visais vehicle crew spawning metodais
+  - Išplėsta praktinė rekomendacija apie praktinio testavimo svarbą net jei dokumentacija teisinga
+
+### Ištaisytos klaidos
+- **AI transportai dabar spawnina su pilna įgula ir keleiviais**: Padaryta taip kad transporto priemonės būtų pilnai užpildytos
+  - **GALUTINAI PATOBULINTA į PATIKIMIAUSIĄ emptyPositions metodą** (pagal interneto ekspertų rekomendacijas)
+  - **OPTIMIZUOTA**: Pašalintas nereikalingas `createVehicleCrew` + `deleteVehicleCrew` ciklas
+  - Dabar spawniname custom įgulą iš karto naudojant `emptyPositions` metodą (patikimesnis nei fullCrew su isNull)
+  - **LOGIKA**: emptyPositions patikrina tuščias pozicijas, mes spawniname custom įgulą (crewW/crewE) ir keleivius (soldierW/soldierE)
+  - Dabar spawnina ne tik įgulą (driver/gunner/commander), bet ir riflemanus į cargo vietas
+  - **TANKAMS IR ŠARVUOČIAMS PATIKIMIAUSIA**: Gunner pozicijos bus spawninamos nepriekaištingai naudojant emptyPositions
+  - Turret pozicijos tvarkomos su `allTurrets` + `emptyPositionsTurret` kombinacija
+  - Keleiviai spawnina kaip riflemanai (soldierW/soldierE) cargo pozicijose
+  - **VALIDUOTA pagal interneto ekspertų nuomonę ir SQF_SYNTAX_BEST_PRACTICES.md**
+  - **IŠSAMUS ANALIZĖS DOKUMENTAS**: docs/ANALYSIS_AI_VEHICLE_CREW_SPAWNING.md
+  - **PATAISYTA**: emptyPositionsTurret sintaksės klaida - pakeista į `turretUnit` metodą (patikimesnis ir paprastesnis)
+  - Naudojamas `turretUnit` metodas, kuris grąžina unit'ą turret pozicijoje arba null jei pozicija tuščia
+- **Fog intensyvumo lygiai išplėsti**: Pridėti papildomi fog stiprumo lygiai
+  - Iš 3 lygių (Random/Yes/No) išplėsta į 5 lygius: Random, Light, Medium, Heavy, No
+  - Nauji fog nustatymai: [0,0,0], [0.3,0.4,15], [0.6,0.4,10], [0.9,0.3,5], [0,0,0]
+  - Light (0.3 tankumas), Medium (0.6), Heavy (0.9) - skirtingi matomumo lygiai
+  - Atnaujinta fog pasirinkimo logika visiems naujiems lygiams
+  - Dabar žaidėjai gali pasirinkti norimą fog intensyvumą nuo lengvo iki labai sunkaus
 - **Artillerijos palaikymo sistema ištaisyta**: Žaidėjų HIMARS užklausos neveikė dėl custom transporto priemonių
   - Pakeistos custom transporto priemonės (`himars_krest`, `m109_krest`) į originalias RHS transporto priemones (`rhsusf_M142_usarmy_WD`, `rhsusf_m109_usarmy`)
   - Panaikintas nereikalingas `enableEngineArtillery true` kodas (originaliame faile jo nebuvo)

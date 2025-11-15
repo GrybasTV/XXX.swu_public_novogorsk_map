@@ -208,10 +208,14 @@ class Params
 		title = "   - FOG";
 		texts[] =
 		{
+			"Random - Fog is selected randomly",
+			"Light - Slight visibility reduction",
+			"Medium - Lower visibility",
+			"Heavy - Very low visibility",
 			"No - Good visibility"
 		};
-		values[] = {2};
-		default = 2;
+		values[] = {0,1,2,3,4};
+		default = 4;
 	};
 	class asp5 //Autonomous AI
 	{
