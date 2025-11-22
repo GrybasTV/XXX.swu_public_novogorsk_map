@@ -96,7 +96,8 @@ call
 			
 			_vSel = selectRandom CarArW;
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			// Naudojame findEmptyPosition, kad išvengtume dvigubo spawninimo vienoje vietoje
 			_spawnPos = posW1 findEmptyPosition [0, 10, _typ];
@@ -105,34 +106,31 @@ call
 			aiVehW = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehW,[_tex,1]] call bis_fnc_initVehicle;
 			
-			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
-			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
-			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpVehW = createGroup [sideW, true];
 
-			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
 			if (aiVehW emptyPositions "Driver" > 0) then {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInDriver aiVehW;
 			};
 
-			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			// Gunner pozicijos - emptyPositions (patikimas tankams ir transportams)
 			for "_i" from 1 to (aiVehW emptyPositions "Gunner") do {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInGunner aiVehW;
 			};
 
-			// Commander pozicijos - kai kuriose transporto priemonėse
+			// Commander pozicijos - emptyPositions
 			for "_i" from 1 to (aiVehW emptyPositions "Commander") do {
 				_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
 				_unit moveInCommander aiVehW;
 			};
 
-			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
 			_turretPaths = allTurrets [aiVehW, true];
 			{
-				// Tikriname ar turret pozicija tuščia naudojant fullCrew (patikimesnis metodas)
-				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
 				_turretCrew = aiVehW turretUnit _x;
 				if (isNull _turretCrew) then {
 					_unit = _grpVehW createUnit [crewW, _spawnPos, [], 0, "NONE"];
@@ -140,7 +138,20 @@ call
 				};
 			} forEach _turretPaths;
 
-			// Keleiviai (Cargo) - random kareiviai iš tinkamų kategorijų (paprasčiau ir greičiau!)
+			// Keleiviai (Cargo) - fullCrew su filtravimu (tiksliau nei emptyPositions "Cargo")
+			// emptyPositions "Cargo" gali būti netikslus - jis gali skaičiuoti turret pozicijas kaip cargo
+			_crewPositions = fullCrew [aiVehW, "", true];
+			_cargoPositions = [];
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
+				};
+			} forEach _crewPositions;
+			
 			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
 			_cargoUnitsW = [
 				unitsW param [5, ""],  // Rifleman
@@ -158,12 +169,12 @@ call
 				};
 			};
 			
-			// Spawniname keleivius tik jei turime tinkamus vienetus (saugumas pagal dokumentaciją)
-			if (count _cargoUnitsW > 0) then {
-				for "_i" from 1 to (aiVehW emptyPositions "Cargo") do {
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsW > 0 && count _cargoPositions > 0) then {
+				{
 					_unit = _grpVehW createUnit [selectRandom _cargoUnitsW, _spawnPos, [], 0, "NONE"];
 					_unit moveInCargo aiVehW;
-				};
+				} forEach _cargoPositions;
 			};
 
 			{ _x addMPEventHandler
@@ -240,39 +251,37 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorW1+ArmorW2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			aiArmW = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW,[_tex,1]] call bis_fnc_initVehicle;
 
-			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
-			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
-			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpArmW = createGroup [sideW, true];
 
-			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
 			if (aiArmW emptyPositions "Driver" > 0) then {
 				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
 				_unit moveInDriver aiArmW;
 			};
 
-			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			// Gunner pozicijos - emptyPositions (patikimas tankams)
 			for "_i" from 1 to (aiArmW emptyPositions "Gunner") do {
 				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
 				_unit moveInGunner aiArmW;
 			};
 
-			// Commander pozicijos - kai kuriose transporto priemonėse
+			// Commander pozicijos - emptyPositions
 			for "_i" from 1 to (aiArmW emptyPositions "Commander") do {
 				_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
 				_unit moveInCommander aiArmW;
 			};
 
-			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
 			_turretPaths = allTurrets [aiArmW, true];
 			{
-				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
-				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
 				_turretCrew = aiArmW turretUnit _x;
 				if (isNull _turretCrew) then {
 					_unit = _grpArmW createUnit [crewW, posW2, [], 0, "NONE"];
@@ -394,30 +403,47 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorW1+ArmorW2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			aiArmW2 = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW2,[_tex,1]] call bis_fnc_initVehicle;
 
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpArmW2 = createGroup [sideW, true];
-			_crewPositions = fullCrew aiArmW2;
 
-			{
-				_role = _x select 1;
-				_turretPath = _x select 2;
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
+			if (aiArmW2 emptyPositions "Driver" > 0) then {
 				_unit = _grpArmW2 createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInDriver aiArmW2;
+			};
 
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiArmW2;};
-					case "commander": {_unit moveInCommander aiArmW2;};
-					case "gunner": {_unit moveInGunner aiArmW2;};
-					case "turret": {_unit moveInTurret [aiArmW2, _turretPath];};
+			// Gunner pozicijos - emptyPositions (patikimas tankams)
+			for "_i" from 1 to (aiArmW2 emptyPositions "Gunner") do {
+				_unit = _grpArmW2 createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInGunner aiArmW2;
+			};
+
+			// Commander pozicijos - emptyPositions
+			for "_i" from 1 to (aiArmW2 emptyPositions "Commander") do {
+				_unit = _grpArmW2 createUnit [crewW, posW2, [], 0, "NONE"];
+				_unit moveInCommander aiArmW2;
+			};
+
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
+			_turretPaths = allTurrets [aiArmW2, true];
+			{
+				_turretCrew = aiArmW2 turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpArmW2 createUnit [crewW, posW2, [], 0, "NONE"];
+					_unit moveInTurret [aiArmW2, _x];
 				};
-			} forEach _crewPositions;
+			} forEach _turretPaths;
 
 			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
 			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			_crewPositions = fullCrew [aiArmW2, "", true];
 			_cargoPositions = [];
 			{
 				_role = _x select 1;
@@ -513,33 +539,44 @@ call
 			if(!isNil "plHW") then {
 				_vSel = selectRandom (HeliArW+PlaneW+HeliArW);
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
 
-				aiCasW = createVehicle [_typ, plHW, [], 0, "FLY"];
+				// Pirmiau sukuriame įgulą, tada spawniname orlaivį ant žemės, įdedame įgulą ir tik tada keliam į orą
+				_grpCasW = createGroup [sideW, true];
+				_spawnPos = plHW getRelPos [50, random 360]; // Spawniname šalia aerodromo
+				_spawnPos = _spawnPos findEmptyPosition [0, 50, _typ];
+				if(count _spawnPos == 0) then {_spawnPos = plHW getRelPos [50, random 360];};
+
+				// Sukuriame įgulą ant žemės
+				_crewUnits = [];
+				_crewUnits pushBack (_grpCasW createUnit [crewW, _spawnPos, [], 0, "NONE"]); // Pilot
+				if(_typ isKindOf "Plane") then {
+					_crewUnits pushBack (_grpCasW createUnit [crewW, _spawnPos, [], 0, "NONE"]); // Co-pilot jei lėktuvas
+				};
+
+				// Spawniname orlaivį ant žemės
+				aiCasW = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 				[aiCasW,[_tex,1]] call bis_fnc_initVehicle;
 
-				//Elegantiškas įgulos priskyrimas naudojant fullCrew
-				_grpCasW = createGroup [sideW, true];
-				_crewPositions = fullCrew aiCasW;
+				// Įdedame įgulą į orlaivį
+				(_crewUnits select 0) moveInDriver aiCasW;
+				if(count _crewUnits > 1) then {
+					(_crewUnits select 1) moveInGunner aiCasW; // Co-pilot į gunner poziciją
+				};
 
-				{
-					_role = _x select 1;
-					_turretPath = _x select 2;
-					_unit = _grpCasW createUnit [crewW, plHW, [], 0, "NONE"];
+				// Pakeliame orlaivį į orą su įgula
+				aiCasW setPosATL [getPosATL aiCasW select 0, getPosATL aiCasW select 1, (getPosATL aiCasW select 2) + 100];
+				aiCasW setVelocity [0, 0, 10]; // Pridedame vertikalų greitį
 
-					switch (_role) do {
-						case "driver": {_unit moveInDriver aiCasW;};
-						case "commander": {_unit moveInCommander aiCasW;};
-						case "gunner": {_unit moveInGunner aiCasW;};
-						case "turret": {_unit moveInTurret [aiCasW, _turretPath];};
-					};
-				} forEach _crewPositions;
+				// Nustatome kryptį į posCenter ir judėjimą
+				aiCasW setDir (aiCasW getDir posCenter);
+				(group driver aiCasW) move posCenter;
 
 				{ _x addMPEventHandler
 					["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 				} forEach (crew aiCasW);
 				pltW = crew aiCasW;
-				(group driver aiCasW) move posCenter;
 				publicvariable "aiCasW";
 			};
 			sleep 1;
@@ -618,7 +655,8 @@ call
 			
 			_vSel = selectRandom CarArE;
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			// Naudojame findEmptyPosition, kad išvengtume dvigubo spawninimo vienoje vietoje
 			_spawnPos = posE1 findEmptyPosition [0, 10, _typ];
@@ -627,34 +665,31 @@ call
 			aiVehE = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 			[aiVehE,[_tex,1]] call bis_fnc_initVehicle;
 			
-			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
-			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
-			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpVehE = createGroup [sideE, true];
 
-			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
 			if (aiVehE emptyPositions "Driver" > 0) then {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInDriver aiVehE;
 			};
 
-			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			// Gunner pozicijos - emptyPositions (patikimas tankams ir transportams)
 			for "_i" from 1 to (aiVehE emptyPositions "Gunner") do {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInGunner aiVehE;
 			};
 
-			// Commander pozicijos - kai kuriose transporto priemonėse
+			// Commander pozicijos - emptyPositions
 			for "_i" from 1 to (aiVehE emptyPositions "Commander") do {
 				_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
 				_unit moveInCommander aiVehE;
 			};
 
-			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
 			_turretPaths = allTurrets [aiVehE, true];
 			{
-				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
-				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
 				_turretCrew = aiVehE turretUnit _x;
 				if (isNull _turretCrew) then {
 					_unit = _grpVehE createUnit [crewE, _spawnPos, [], 0, "NONE"];
@@ -662,7 +697,20 @@ call
 				};
 			} forEach _turretPaths;
 
-			// Keleiviai (Cargo) - random kareiviai iš tinkamų kategorijų (paprasčiau ir greičiau!)
+			// Keleiviai (Cargo) - fullCrew su filtravimu (tiksliau nei emptyPositions "Cargo")
+			// emptyPositions "Cargo" gali būti netikslus - jis gali skaičiuoti turret pozicijas kaip cargo
+			_crewPositions = fullCrew [aiVehE, "", true];
+			_cargoPositions = [];
+			{
+				_role = _x select 1;
+				_turretPath = _x select 2;
+				_unit = _x select 0;
+				// Tikras cargo - role == "cargo" ir turretPath tuščias (ne turret pozicija)
+				if (_role == "cargo" && {_turretPath isEqualTo []} && {isNull _unit}) then {
+					_cargoPositions pushBack _x;
+				};
+			} forEach _crewPositions;
+			
 			// Tinkamos kategorijos: rifleman, autorifleman, grenadier, marksman, recon scout
 			_cargoUnitsE = [
 				unitsE param [5, ""],  // Rifleman
@@ -680,12 +728,12 @@ call
 				};
 			};
 			
-			// Spawniname keleivius tik jei turime tinkamus vienetus (saugumas pagal dokumentaciją)
-			if (count _cargoUnitsE > 0) then {
-				for "_i" from 1 to (aiVehE emptyPositions "Cargo") do {
+			// Spawniname keleivius tik jei turime tinkamus vienetus ir tikras cargo pozicijas
+			if (count _cargoUnitsE > 0 && count _cargoPositions > 0) then {
+				{
 					_unit = _grpVehE createUnit [selectRandom _cargoUnitsE, _spawnPos, [], 0, "NONE"];
 					_unit moveInCargo aiVehE;
-				};
+				} forEach _cargoPositions;
 			};
 
 			{ _x addMPEventHandler
@@ -762,39 +810,37 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorE1+ArmorE2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			aiArmE = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE,[_tex,1]] call bis_fnc_initVehicle;
 
-			// Sukuriame įgulą ir keleivius pagal mūsų configą naudojant PATIKIMIAUSIĄ emptyPositions metodą
-			// Pagal interneto ekspertų rekomendacijas, emptyPositions yra patikimesnis nei fullCrew su isNull
-			// NEREIKIA createVehicleCrew - mes spawniname custom įgulą iš karto
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpArmE = createGroup [sideE, true];
 
-			// Driver - visada reikalingas (tankams, šarvuočiams, transportams)
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
 			if (aiArmE emptyPositions "Driver" > 0) then {
 				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
 				_unit moveInDriver aiArmE;
 			};
 
-			// Gunner pozicijos - TANKAMS IR ŠARVUOČIAMS labai svarbu!
+			// Gunner pozicijos - emptyPositions (patikimas tankams)
 			for "_i" from 1 to (aiArmE emptyPositions "Gunner") do {
 				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
 				_unit moveInGunner aiArmE;
 			};
 
-			// Commander pozicijos - kai kuriose transporto priemonėse
+			// Commander pozicijos - emptyPositions
 			for "_i" from 1 to (aiArmE emptyPositions "Commander") do {
 				_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
 				_unit moveInCommander aiArmE;
 			};
 
-			// Turret pozicijos - sudėtingesniems transportams su keliomis turret pozicijomis
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
 			_turretPaths = allTurrets [aiArmE, true];
 			{
-				// Tikriname ar turret pozicija tuščia naudojant turretUnit (patikimesnis metodas)
-				// _x yra turret path masyvas (pvz. [0,0] arba [0,1])
 				_turretCrew = aiArmE turretUnit _x;
 				if (isNull _turretCrew) then {
 					_unit = _grpArmE createUnit [crewE, posE2, [], 0, "NONE"];
@@ -922,30 +968,47 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorE1+ArmorE2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
 
 			aiArmE2 = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE2,[_tex,1]] call bis_fnc_initVehicle;
 
-			//Elegantiškas įgulos priskyrimas naudojant fullCrew
+			// Sukuriame įgulą naudojant hibridinį metodą pagal SQF_SYNTAX_BEST_PRACTICES.md
+			// emptyPositions pagrindinėms pozicijoms (greitesnis), fullCrew su filtravimu cargo pozicijoms (tiksliau)
 			_grpArmE2 = createGroup [sideE, true];
-			_crewPositions = fullCrew aiArmE2;
 
-			{
-				_role = _x select 1;
-				_turretPath = _x select 2;
+			// Driver - emptyPositions (patikimas ir greitas pagal dokumentaciją)
+			if (aiArmE2 emptyPositions "Driver" > 0) then {
 				_unit = _grpArmE2 createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInDriver aiArmE2;
+			};
 
-				switch (_role) do {
-					case "driver": {_unit moveInDriver aiArmE2;};
-					case "commander": {_unit moveInCommander aiArmE2;};
-					case "gunner": {_unit moveInGunner aiArmE2;};
-					case "turret": {_unit moveInTurret [aiArmE2, _turretPath];};
+			// Gunner pozicijos - emptyPositions (patikimas tankams)
+			for "_i" from 1 to (aiArmE2 emptyPositions "Gunner") do {
+				_unit = _grpArmE2 createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInGunner aiArmE2;
+			};
+
+			// Commander pozicijos - emptyPositions
+			for "_i" from 1 to (aiArmE2 emptyPositions "Commander") do {
+				_unit = _grpArmE2 createUnit [crewE, posE2, [], 0, "NONE"];
+				_unit moveInCommander aiArmE2;
+			};
+
+			// Turret pozicijos - turretUnit (patikimesnis nei emptyPositionsTurret pagal dokumentaciją)
+			_turretPaths = allTurrets [aiArmE2, true];
+			{
+				_turretCrew = aiArmE2 turretUnit _x;
+				if (isNull _turretCrew) then {
+					_unit = _grpArmE2 createUnit [crewE, posE2, [], 0, "NONE"];
+					_unit moveInTurret [aiArmE2, _x];
 				};
-			} forEach _crewPositions;
+			} forEach _turretPaths;
 
 			// Keleiviai (Cargo) - naudojame fullCrew su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
 			// emptyPositions "Cargo" gali būti netikslus tankuose - jis gali skaičiuoti turret pozicijas kaip cargo
+			_crewPositions = fullCrew [aiArmE2, "", true];
 			_cargoPositions = [];
 			{
 				_role = _x select 1;
@@ -1041,33 +1104,44 @@ call
 			if(!isNil "plHE") then {
 				_vSel = selectRandom (HeliArE+PlaneE+HeliArE);
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
 
-				aiCasE = createVehicle [_typ, plHE, [], 0, "FLY"];
+				// Pirmiau sukuriame įgulą, tada spawniname orlaivį ant žemės, įdedame įgulą ir tik tada keliam į orą
+				_grpCasE = createGroup [sideE, true];
+				_spawnPos = plHE getRelPos [50, random 360]; // Spawniname šalia aerodromo
+				_spawnPos = _spawnPos findEmptyPosition [0, 50, _typ];
+				if(count _spawnPos == 0) then {_spawnPos = plHE getRelPos [50, random 360];};
+
+				// Sukuriame įgulą ant žemės
+				_crewUnits = [];
+				_crewUnits pushBack (_grpCasE createUnit [crewE, _spawnPos, [], 0, "NONE"]); // Pilot
+				if(_typ isKindOf "Plane") then {
+					_crewUnits pushBack (_grpCasE createUnit [crewE, _spawnPos, [], 0, "NONE"]); // Co-pilot jei lėktuvas
+				};
+
+				// Spawniname orlaivį ant žemės
+				aiCasE = createVehicle [_typ, _spawnPos, [], 0, "NONE"];
 				[aiCasE,[_tex,1]] call bis_fnc_initVehicle;
 
-				//Elegantiškas įgulos priskyrimas naudojant fullCrew
-				_grpCasE = createGroup [sideE, true];
-				_crewPositions = fullCrew aiCasE;
+				// Įdedame įgulą į orlaivį
+				(_crewUnits select 0) moveInDriver aiCasE;
+				if(count _crewUnits > 1) then {
+					(_crewUnits select 1) moveInGunner aiCasE; // Co-pilot į gunner poziciją
+				};
 
-				{
-					_role = _x select 1;
-					_turretPath = _x select 2;
-					_unit = _grpCasE createUnit [crewE, plHE, [], 0, "NONE"];
+				// Pakeliame orlaivį į orą su įgula
+				aiCasE setPosATL [getPosATL aiCasE select 0, getPosATL aiCasE select 1, (getPosATL aiCasE select 2) + 100];
+				aiCasE setVelocity [0, 0, 10]; // Pridedame vertikalų greitį
 
-					switch (_role) do {
-						case "driver": {_unit moveInDriver aiCasE;};
-						case "commander": {_unit moveInCommander aiCasE;};
-						case "gunner": {_unit moveInGunner aiCasE;};
-						case "turret": {_unit moveInTurret [aiCasE, _turretPath];};
-					};
-				} forEach _crewPositions;
+				// Nustatome kryptį į posCenter ir judėjimą
+				aiCasE setDir (aiCasE getDir posCenter);
+				(group driver aiCasE) move posCenter;
 
 				{ _x addMPEventHandler
 					["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 				} forEach (crew aiCasE);
 				publicvariable "aiCasE";
-				(group driver aiCasE) move posCenter;
 				pltE = crew aiCasE;
 				sleep 1;
 			};
@@ -1091,15 +1165,19 @@ call
 			{
 				_vSel = selectRandom aaW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objAAW = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom aaE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objAAW = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objAAW lockDriver true;
@@ -1170,15 +1248,19 @@ call
 			{
 				_vSel = selectRandom aaE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objAAE = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom aaW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objAAE = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objAAE lockDriver true;
@@ -1250,15 +1332,19 @@ call
 			{
 				_vSel = selectRandom artiW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objArtiW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom artiE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objArtiW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objArtiW lockDriver true;			
@@ -1340,15 +1426,19 @@ call
 			{
 				_vSel = selectRandom artiE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objArtiE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom artiW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objArtiE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objArtiE lockDriver true;			
@@ -1430,15 +1520,19 @@ call
 			{
 				_vSel = selectRandom mortW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objMortW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom mortE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objMortW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objMortW lockDriver true;
@@ -1520,15 +1614,19 @@ call
 			{
 				_vSel = selectRandom mortE;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objMortE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objMortE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortE,[_tex,1]] call bis_fnc_initVehicle;
 			}else
 			{
 				_vSel = selectRandom mortW;
 				_typ="";_tex="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-				objMortE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				objMortE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortE,[_tex,1]] call bis_fnc_initVehicle;
 			};
 			objMortE lockDriver true;

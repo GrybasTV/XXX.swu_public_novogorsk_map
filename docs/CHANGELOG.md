@@ -3,6 +3,12 @@
 ## [Neišleistas] - 2025-01-XX
 
 ### Ištaisytos klaidos
+- **Orlaivių įgulos spawninimas pataisytas**: AI orlaiviai (heli ir plane) dabar spawninami su įgula
+  - **PROBLEMA**: Orlaiviai buvo spawninami ore ("FLY") ir tada bandoma įdėti įgulą, bet tai neveikia
+  - **SPRENDIMAS**: Pirmiau kuriame įgulą ant žemės, spawniname orlaivį ant žemės, įdedame įgulą, tada keliam į orą
+  - **LOGIKA**: Sukuriame pilotą (ir co-pilot jei lėktuvas), spawniname orlaivį ant žemės, moveIn į pozicijas, tada setPos į orą
+  - **PATAISYTA**: `aiCasW` ir `aiCasE` funkcijos dabar naudoja naują spawninimo logiką
+  - **VALIDUOTA**: Arma 3 dokumentacija rekomenduoja įgulą įdėti prieš spawninant orlaivį ore
 - **Tankų cargo pozicijų spawninimas pataisytas**: Tankuose cargo pozicijose dabar spawnina random kariai, o ne crew nariai
   - **PROBLEMA**: `emptyPositions "Cargo"` tankuose gali būti netikslus - jis gali skaičiuoti turret pozicijas kaip cargo
   - **SPRENDIMAS**: Naudojame `fullCrew` su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
