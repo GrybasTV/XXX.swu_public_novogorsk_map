@@ -2,233 +2,49 @@
 
 ## [Neišleistas] - 2025-01-XX
 
-### Ištaisytos klaidos
-- **Orlaivių įgulos spawninimas pataisytas**: AI orlaiviai (heli ir plane) dabar spawninami su įgula
-  - **PROBLEMA**: Orlaiviai buvo spawninami ore ("FLY") ir tada bandoma įdėti įgulą, bet tai neveikia
-  - **SPRENDIMAS**: Pirmiau kuriame įgulą ant žemės, spawniname orlaivį ant žemės, įdedame įgulą, tada keliam į orą
-  - **LOGIKA**: Sukuriame pilotą (ir co-pilot jei lėktuvas), spawniname orlaivį ant žemės, moveIn į pozicijas, tada setPos į orą
-  - **PATAISYTA**: `aiCasW` ir `aiCasE` funkcijos dabar naudoja naują spawninimo logiką
-  - **VALIDUOTA**: Arma 3 dokumentacija rekomenduoja įgulą įdėti prieš spawninant orlaivį ore
-- **Tankų cargo pozicijų spawninimas pataisytas**: Tankuose cargo pozicijose dabar spawnina random kariai, o ne crew nariai
-  - **PROBLEMA**: `emptyPositions "Cargo"` tankuose gali būti netikslus - jis gali skaičiuoti turret pozicijas kaip cargo
-  - **SPRENDIMAS**: Naudojame `fullCrew` su filtravimu, kad tiksliai nustatytume tikras cargo pozicijas
-  - **LOGIKA**: Filtruojame tik tas pozicijas, kur `role == "cargo"` ir `turretPath` tuščias (ne turret pozicija)
-  - **PATAISYTA**: `aiArmW`, `aiArmE`, `aiArmW2`, `aiArmE2` - visi armor kodai dabar naudoja `fullCrew` su filtravimu cargo pozicijoms
-  - Cargo pozicijose dabar spawnina random kariai (rifleman, autorifleman, grenadier, marksman, recon scout), o ne crew nariai
-  - **VALIDUOTA**: Pagal interneto ekspertų rekomendacijas, `fullCrew` su filtravimu yra patikimesnis tankuose nei `emptyPositions "Cargo"`
-
-### Dokumentacija
-- **ANALYSIS_CAS.md sukurtas**: Išsamus CAS (Close Air Support) funkcionalumo analizės dokumentas
-  - Analizuojamas AI CAS kviečiamas ir palyginimas su originaliu kodu
-  - Dokumentuotos sąlygos, kada AI kviečia CAS
-  - **IŠVADA**: AI kviečia CAS tik jei nėra žaidėjų ARBA nėra squad leader'ių
-  - **SĄLYGOS**: CAS sektorius turi būti užimtas, turi būti lėktuvai, turi būti taikiniai (Artillery, Base 1, Base 2)
-  - **TAIKINIAI**: Artillery (prioritetas 1), Base 1 (prioritetas 2), Base 2 (prioritetas 3, tik jei nėra kitų)
-  - **CAS TIPAI**: Type 2 (Bombing), Type 3 (Strafe) - parenkami atsitiktinai
-  - **SKIRTUMAS**: Dabartiniame faile pridėtas patikrinimas, ar aerodromai (`plHW`, `plHE`) yra apibrėžti
-- **ANALYSIS_ARTILLERY.md sukurtas**: Išsamus artilerijos funkcionalumo analizės dokumentas
-  - Analizuojamas AI artilerijos naudojimas ir palyginimas su originaliu kodu
-  - Dokumentuoti skirtumai tarp originalaus ir dabartinio kodo
-  - **IŠVADA**: AI gali naudoti artileriją - transporto priemonės sukuriamos su įgula (Gunner ir Commander)
-  - **SKIRTUMAI**: Originaliame faile AI artilerija veikia tik jei nėra žaidėjų ARBA nėra squad leader'ių
-  - **DABARTINIAME**: AI artilerija veikia visada + papildoma logika priešo transporto priemonėms ir didelėms grupėms
-  - Pateikiamos rekomendacijos grįžti prie originalios logikos arba palikti dabartinę (geresnę)
-- **SQF_SYNTAX_BEST_PRACTICES.md atnaujinta (v5.3)**: Pridėta nauja sekcija apie transporto priemonių įgulos spawninimo geriausias praktikas
-  - Dokumentuotas emptyPositions vs fullCrew metodų palyginimas
-  - **KRITINĖ INFORMACIJA**: emptyPositionsTurret gali sukelti sintaksės klaidas dėl versijų skirtumų
-  - **REKOMENDUOJAMAS SPRENDIMAS**: Naudoti turretUnit metodą vietoj emptyPositionsTurret turret pozicijoms
-  - Pridėtas hibridinis metodas (emptyPositions + turretUnit) kaip optimalus sprendimas
-  - Pridėta palyginimo lentelė su visais vehicle crew spawning metodais
-  - Išplėsta praktinė rekomendacija apie praktinio testavimo svarbą net jei dokumentacija teisinga
+### Dokumentacijos atnaujinimai
+- **Dokumentacijos validavimas**: Atlikta interneto paieška ir patikrintos kritinės techninės tezės
+  - Patikslinta `waitUntil` terminologija: "server freeze" → "scheduler starvation"
+  - Koreguota OnOwnerChange callback formato informacija
+  - Paaiškinti skirtingi AI freeze problemų tipai
+- **Dokumentacijos sistemingumas**: Standartizuoti versijų ir datų formatai visuose dokumentuose
+- **README.md atnaujinimas**: Pridėtas JIP_FIX.md ir patikslinta legacy reference informacija
 
 ### Ištaisytos klaidos
-- **AI transportai dabar spawnina su pilna įgula ir keleiviais**: Padaryta taip kad transporto priemonės būtų pilnai užpildytos
-  - **GALUTINAI PATOBULINTA į PATIKIMIAUSIĄ emptyPositions metodą** (pagal interneto ekspertų rekomendacijas)
-  - **OPTIMIZUOTA**: Pašalintas nereikalingas `createVehicleCrew` + `deleteVehicleCrew` ciklas
-  - Dabar spawniname custom įgulą iš karto naudojant `emptyPositions` metodą (patikimesnis nei fullCrew su isNull)
-  - **LOGIKA**: emptyPositions patikrina tuščias pozicijas, mes spawniname custom įgulą (crewW/crewE) ir keleivius (soldierW/soldierE)
-  - Dabar spawnina ne tik įgulą (driver/gunner/commander), bet ir riflemanus į cargo vietas
-  - **TANKAMS IR ŠARVUOČIAMS PATIKIMIAUSIA**: Gunner pozicijos bus spawninamos nepriekaištingai naudojant emptyPositions
-  - Turret pozicijos tvarkomos su `allTurrets` + `emptyPositionsTurret` kombinacija
-  - Keleiviai spawnina kaip riflemanai (soldierW/soldierE) cargo pozicijose
-  - **VALIDUOTA pagal interneto ekspertų nuomonę ir SQF_SYNTAX_BEST_PRACTICES.md**
-  - **IŠSAMUS ANALIZĖS DOKUMENTAS**: docs/ANALYSIS_AI_VEHICLE_CREW_SPAWNING.md
-  - **PATAISYTA**: emptyPositionsTurret sintaksės klaida - pakeista į `turretUnit` metodą (patikimesnis ir paprastesnis)
-  - Naudojamas `turretUnit` metodas, kuris grąžina unit'ą turret pozicijoje arba null jei pozicija tuščia
-- **Fog intensyvumo lygiai išplėsti**: Pridėti papildomi fog stiprumo lygiai
-  - Iš 3 lygių (Random/Yes/No) išplėsta į 5 lygius: Random, Light, Medium, Heavy, No
-  - Nauji fog nustatymai: [0,0,0], [0.3,0.4,15], [0.6,0.4,10], [0.9,0.3,5], [0,0,0]
-  - Light (0.3 tankumas), Medium (0.6), Heavy (0.9) - skirtingi matomumo lygiai
-  - Atnaujinta fog pasirinkimo logika visiems naujiems lygiams
-  - Dabar žaidėjai gali pasirinkti norimą fog intensyvumą nuo lengvo iki labai sunkaus
-- **Artillerijos palaikymo sistema ištaisyta**: Žaidėjų HIMARS užklausos neveikė dėl custom transporto priemonių
-  - Pakeistos custom transporto priemonės (`himars_krest`, `m109_krest`) į originalias RHS transporto priemones (`rhsusf_M142_usarmy_WD`, `rhsusf_m109_usarmy`)
-  - Panaikintas nereikalingas `enableEngineArtillery true` kodas (originaliame faile jo nebuvo)
-  - Dabar žaidėjų artilerijos užklausos turėtų veikti kaip originaliame faile
-- **KRITIŠKA: Serverio scheduler starvation problema išspręsta**: AI sustojimas, žaidėjai negali prisijungti dėl serverio perkrovos
-  - **fn_V2secBE1.sqf, fn_V2secBE2.sqf, fn_V2secBW1.sqf, fn_V2secBW2.sqf**: While ciklai neturėjo sleep pradžioje, sukeldami begalinį vykdymą be pertraukos
-    - Pridėtas `sleep 0.1` kiekvieno while ciklo pradžioje minimaliam scheduler starvation išvengimui
-    - Padidintas intervalas nuo 5 iki 10 sekundžių mažinti apkrovą (allUnits forEach kas 10 sek. vietoj 5)
-  - **fn_V2aiVehicle.sqf**: Įstrigimo aptikimo while ciklai (_eBW1, _eBW2, _eBE1, _eBE2) neturėjo sleep pradžioje
-    - Pridėtas `sleep 0.1` kiekvieno ciklo pradžioje užtikrinti, kad ciklai neužblokuotų scheduler'io
-  - Šie pakeitimai išsprendžia pagrindinę priežastį dėl kurios AI sustodavo judėti ir žaidėjai negalėdavo prisijungti prie serverio
-- **fn_V2flagActions.sqf "isnull: Type String, expected Object" klaida**: Netinkamas kintamųjų tipų patikrinimo tvarka
-  - Pakeista patikrinimo tvarka: pirmiau tikriname ar nėra tuščia string, tada ar nėra null objektas
-  - Išvengiama `isNull` kvietimo ant string tipo kintamųjų
-- **fn_V2aiMove.sqf "Undefined variable in expression: wrm_fnc_V2aiStuckCheck" klaida**: Funkcija buvo nepridėta į cfgFunctions.hpp
-  - Pridėta `V2aiStuckCheck` į cfgFunctions.hpp serverio sekciją
-  - Funkcija dabar gali būti kviečiama iš AI judėjimo logikos
-- **Bazės pavadinimų logika pataisyta**: Pridėti trūkstami bazės pavadinimai missType==2 ir missType==3
-  - Dabar visi 3 misijos tipai turi teisingus bazės pavadinimus
-  - Transport base + Helicopter/Armor base pagal misijos tipą
-  - Išspręsta problema kai abi bazės rodė kaip "Armor base"
-- **Fortifikacijų statymo sistema patobulinta**: Tranšėjos atsiranda tik po statybos užbaigimo
-  - Pakeistas statybos procesas: vietoj iškart atsirandančios tranšėjos, statybos metu rodoma laikina žalia žymė
-  - Tranšėja sukuriama tik po sėkmingo statybos proceso užbaigimo
-  - Išvengta problemos kai žaidėjas gali vaikščioti aplink jau pastatytą tranšėją statybos metu
-- **Fortifikacijų statymo apribojimas**: Tranšėjų nebegalima statyti vaikštant
-- **AI transportų įgulos priskyrimo bugas (patobulinta versija)**: AI įgula nebūdavo priskirta pagal pozicijas (driver, gunner, commander)
-  - Pakeista `createVehicleCrew` į elegantišką sprendimą naudojant `fullCrew` funkciją
-  - Dabar sistema automatiškai aptinka visas įgulos pozicijas transporte ir priskiria įgulos narius pagal jų vaidmenis
-  - Palaiko įvairius transportų tipus su skirtingomis pozicijų kombinacijomis (be driver, be commander, etc.)
-  - Įgulos nariai yra teisingai priskiriami į driver, gunner, commander ir turret pozicijas
-  - Išspręsta problema kai AI būdavo tiesiog "priskirti mašinoje" be konkrečių vaidmenų
-  - Pridėtas `speed player < 0.1` patikrinimas į visus 3 tranšėjų tipus
-  - Užkerta kelią statymui judant, užtikrina stabilesnį statybos procesą
-- **UAV cooldown sistema sustiprinimas**: Pridėtas serverio pusės cooldown patikrinimas
-  - Serverio pusėje nebeleidžiama kurti naujų UAV, jei grupė turi aktyvų cooldown
-  - Pakeistas cooldown nustatymas iš asinchroninio į sinchroninį (`spawn` → `call`)
-  - Atnaujintas cooldown atnaujinimo mechanizmas su geresne sinchronizacija
-  - Pakeistas cooldown atnaujinimo intervalas iš 10 sekundžių į 1 sekundę geresniam tikslumui
-  - Pridėti debug pranešimai apie cooldown pradžią ir pabaigą
-  - Užtikrinamas tikslus 3 minučių (180 sekundžių) cooldown laikotarpis
-- **V2aiStart.sqf "Undefined variable in expression: pLhW" klaida**: Ištaisytas `plHW` ir `plHE` kintamųjų naudojimas kai jie gali būti `nil`
-  - Pašalinti tarpiniai `_plHWDefined` ir `_plHEDefined` kintamieji ir perkeltas patikrinimas tiesiai į sąlygą
-  - Naudojamas `!isNil "plHW" && {!isNull plHW} && (_x distance plHW > 200)` patikrinimas
-  - Užkerta kelią "Undefined variable" klaidoms kai heliport'ai nėra sukurti
-- **fn_V2flagActions.sqf "Type String, expected Object" klaida**: Ištaisytas `addAction` klaida kai flag objektai buvo string'ai vietoj objektų
-  - Pridėti `!isNull` ir `isNotEqualTo ""` patikrinimai prieš pridedant `flgJetW` ir `flgJetE` į `_flgs` masyvą
-  - Užkerta kelią bandymui kviesti `addAction` ant neegzistuojančių flag objektų
-- **V2startServer.sqf SQF geriausių praktikų optimizavimas**: Ištaisytos kritinės klaidos ir pritaikytas kodas pagal SQF_SYNTAX_BEST_PRACTICES.md dokumentaciją
-  - OnOwnerChange callback'ai palikti string formatu dėl BIS modulio sistemos reikalavimų (nesuderinama su code block formatu)
-  - Ištaisytos visos kabutės OnOwnerChange callback'uose - visos string reikšmės tinkamai escape'intos su "" (dvigubomis kabutėmis)
-  - Ištaisytos kabutės komentaruose format string'uose, kurios kėlė "Error Missing ]" klaidas (pašalintos kabutės iš komentarų)
-  - Pašalinti per ilgi komentarai, kurie kėlė "Error Invalid number in expression" klaidas
-  - Pakeisti select operacijos į param funkcijas saugiam masyvo elementų pasiekimui (pvz., HeliArW select 0 → HeliArW param [0, []])
-  - Inicializuoti objekto kintamieji (objAAW, objAAE, objArtiW, objArtiE) prieš jų naudojimą pagal SQF geriausias praktikas
-  - Pridėti saugumo patikrinimai prieš objektų naudojimą su if(!isNull obj) sąlygomis
-  - Ištaisytos potencialios "Error Undefined variable" klaidos inicializuojant kintamuosius
+- **Kritinis serverio optimizavimas**: AI transporto spawninimo ciklai optimizuoti, kad neapkrautų serverio
+  - **PROBLEMA**: Serveris "lūždavo" su "f16 Overflow" klaida dėl per dažno (10 kartų per sekundę) visų vienetų tikrinimo `fn_V2aiVehicle.sqf` faile
+  - **SPRENDIMAS**: Padidintas `sleep` intervalas nuo 0.1s iki 5s visuose bazės gynybos patikrinimo cikluose
+  - **REZULTATAS**: Drastiškai sumažinta serverio apkrova ir tinklo srautas, išvengta "f16 Overflow" klaidų
 
-- **fn_V2aiMove.sqf sintaksės pataisymai**: Ištaisytos sintaksės klaidos pagal SQF geriausių praktikų dokumentaciją
-  - Pašalinti dvigubi kabliataškiai (;;) kurie galėjo sukelti sintaksės klaidas
-- **UAV pozicijos pataisymas**: Ištaisytas UAV sukūrimo pozicionavimas - UAV visada atsiranda virš žaidėjo galvos, ne oro bazėje
-  - Pašalinta logika kuri pirmiau tikrindavo oro bazės egzistavimą (`plHW`/`plHE`)
-  - UAV dabar visada kuriamas 100m virš žaidėjo galvos naudojant `eyePos player`
-  - UAV po sukūrimo visada juda į žemėlapio centro poziciją (`posCenter`)
+- **Coop režimo balansas sutvarkytas**: AI parama dabar teikiama abiem pusėms nepriklausomai nuo žaidėjų skaičiaus
+  - **PROBLEMA**: Coop režime AI parama buvo išjungiama žaidėjų pusei, kas sukeldavo disbalansą
+  - **SPRENDIMAS**: Priverstinai nustatytas `coop = 0` (Balanced) režimas `fn_V2aiVehicle.sqf` ir `fn_V2dynamicAIon.sqf` failuose
+  - **REZULTATAS**: Abi pusės visada gauna AI paramą, o balansas reguliuojamas dinamiškai pagal sektorių kontrolę (`AIon` lygis)
 
-- **UAV cooldown sistema**: Ištaisytas trūkumas, kai UAV galėjo būti kviečiamas iškart po pirmo sunaikinimo. Dabar įgyvendinta 3 minučių cooldown sistema per būrį visoms frakcijoms.
-  - Pakeista sistema iš globalių cooldown kintamųjų (`uavWr`, `uavEr`) į grupės-based sistemą (`uavGroupCooldowns`)
-  - Pridėtas patikrinimas prieš UAV sukūrimą, ar grupė neturi aktyvaus cooldown
-  - Išsaugoma grupės informacija serverio pusėje su `uavGroupObjects` masyvu
-  - Automatinis cooldown pradėjimas UAV sunaikinimo metu naudojant `fn_V2uavGroupRemove`
+- **Teleportacija į bazes sutvarkyta**: Pašalintos sąlygos, kurios blokavo teleportaciją
+  - **PROBLEMA**: Žaidėjai negalėjo teleportuotis į bazes per vėliavas dėl neteisingų sąlygų (`flgDel`, `sideA`)
+  - **SPRENDIMAS**: Pašalintos sąlygos iš `addAction` komandų `fn_V2flagActions.sqf` faile
+  - **REZULTATAS**: Teleportacijos veiksmai dabar visada matomi ir veikia
 
-- **Fortifikacijų ištrynimo klaida**: Ištaisytas kritinis trūkumas fortifikacijų ištrynimo sistemoje, kai bandant ištrinti tranšėjas su pasirinkimu buvo meta klaida.
-  - Pakeista neteisinga masyvo manipuliavimo sintaksė `fortifications_player = fortifications_player - [_nearestFort]` į teisingą `deleteAt` metodą
-  - Pridėtas saugus objekto patikrinimas prieš `deleteVehicle` iškvietimą
-  - Pakeistas artimiausios fortifikacijos paieškos algoritmas naudojant `_forEachIndex` vietoj tiesioginio elemento lyginimo
-  - Ištaisytas limitų tikrinimo funkcijos (`fnc_checkFortLimits`) masyvo valdymas
+- **Bazių pavadinimai suvienodinti**: Ištaisyta painiava tarp "Infantry", "Armor" ir "Transport" bazių
+  - **PROBLEMA**: Bazių pavadinimai keitėsi priklausomai nuo misijos tipo, sukeldami painiavos (pvz., abi bazės vadinosi "Armor base")
+  - **SPRENDIMAS**: `V2aoCreate.sqf` faile nustatyta, kad Bazė 1 visada yra "Transport base", o Bazė 2 - "Armor base"
+  - **REZULTATAS**: Aiškesnis bazių identifikavimas žaidėjams
 
-### Optimizuota pagal SQF geriausių praktikų dokumentaciją
-- **AI našumo optimizavimas**: Ištaisytos kritinės našumo problemos remiantis SQF_SYNTAX_BEST_PRACTICES.md dokumentacija
-  - Pakeistas begalinis ciklas `for "_i" from 0 to 1 step 0 do` į aiškesnį `while {true} do` sintaksę
+- **"Undefined variable" klaidos V2aoRespawn.sqf faile ištaisytos**:
+  - **PROBLEMA**: Scriptas lūždavo dėl neapibrėžtų kintamųjų `_objDir`, `_res`, `_baseDirW2`
+  - **SPRENDIMAS**: 
+    - Pašalinti `_objDir` naudojimai, pakeisti matematiniais skaičiavimais
+    - Pridėti saugumo patikrinimai `!isNil "_res"`
+    - Apibrėžtas trūkstamas `_baseDirW2` kintamasis
+  - **REZULTATAS**: Stabilus respawn sistemos veikimas
 
-- **Sektorių stabilumo optimizavimas**: Ištaisytos misijos užstrigimo problemos sektorių keitimosi metu pagal SQF_SYNTAX_BEST_PRACTICES.md
-  - Pakeisti visi OnOwnerChange callback'ai iš string formato į code block formatą, užkertant kelią "Error Missing ]" klaidoms
-  - Pridėtas įstrigimo aptikimo mechanizmas į AI judėjimo logiką naudojant delta pozicijos stebėjimą
-  - Optimizuotas AI judėjimo iškvietimų vykdymas pakeičiant iš `call` į `spawn` OnOwnerChange kontekste
-  - Pridėti komentarai apie optimizacijas ir jų pagrindimą
-  - Pridėtas AI įstrigimo aptikimas su pozicijos delta stebėjimu vietoj nepapikimo `canMove` komandos
-  - Sukurta nauja funkcija `fn_V2aiStuckCheck.sqf` įstrigimo aptikimui ir taisymui
-  - Padidintas AI atnaujinimo ciklo intervalas nuo 30 iki 45 sekundžių
-  - Optimizuotos `nearRoads` komandos - sumažinti spinduliai nuo 200->150 ir 30->20
-  - Optimizuota `nearestLocations` - sumažintas spindulys nuo worldSize/2 iki worldSize/4
-  - Įjungta Dinaminė Simuliacija tolimiems AI vienetams išjungti su atstumais: Group-1000m, Vehicle-2500m, EmptyVehicle-500m
-
-### Pridėta
-- **Fortifikacijų valdymo sistema**: Įgyvendintas fortifikacijų griovimo mechanizmas su limitais
-  - Maksimalus kiekis: po 3 kiekvieno tipo fortifikacijas (Trench T, Trench Bunker, Trench Firing Position)
-  - Automatinis seniausių ištrynimas viršijus limitą
-  - Rankinis ištrynimas: lyderiai gali ištrinti artimiausią savo fortifikaciją (10m spindulys)
-  - Pagerinta serverio našumas išvalant null objektus ir sugadintas fortifikacijas
-
-### Pataisyta
-- **autoStart.sqf**: Pašalintas 30 sekundžių laukimas prieš misijos pradžią
-  - Pašalintas komentaras "// Wait 30 seconds to allow the server and players to initialize properly."
-  - Pašalinta `sleep 30;` komanda
-  - Misija dabar prasideda greičiau, iškart po žaidėjų inicializacijos
-- **V2startServer.sqf**: Pataisyta kritinė klaida "Error Undefined variable in expression: plhe" ir "Error Undefined variable in expression: plhw" 964 eilutėje ir kitose vietose
-  - Pataisyta klaida "Error Undefined variable in expression: _x" 411 eilutėje (anksčiau)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHE` ir `plHW` kintamuosius
-  - Pataisyta klaida, kai `plHE` arba `plHW` kintamieji nebuvo apibrėžti prieš jų naudojimą
-  - Pridėti saugumo patikrinimai visose vietose, kur naudojami šie kintamieji:
-    - Kintamųjų inicializacijoje (437-473 eilutės) - pridėti patikrinimai, kad `plHE` ir `plHW` būtų apibrėžti prieš juos naudojant `publicVariable`
-    - Combat Support modulių pozicijose (477-483 eilutės)
-    - Respawn pozicijose (517-549 eilutės) - pakeista logika, kad palyginimai būtų vykdomi tik jei kintamieji apibrėžti
-    - Lėktuvų kūrime (551-592 eilutės)
-    - Gunship kūrime (594-640 eilutės) - pakeista logika, kad palyginimai būtų vykdomi tik jei kintamieji apibrėžti
-    - Flag kūrime (976-1013 eilutės) - pakeista logika, kad palyginimai būtų vykdomi tik jei kintamieji apibrėžti
-  - Pakeista logika: vietoj ilgų `isNil` patikrinimų kiekvienoje sąlygoje, dabar naudojami lokalūs kintamieji `_plHWDefined`, `_plHEDefined`, `_planesCheck`, kurie patikrinami vieną kartą ir naudojami visur
-- **fn_V2flagActions.sqf**: Jau turėjo `isNil` patikrinimus, bet patikrinta, kad jie veikia teisingai
-- **V2aiStart.sqf**: Pataisyta kritinė klaida "Error Undefined variable in expression: plhw" 93 eilutėje
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - Pakeista logika: vietoj ilgų sąlygų su `isNil` patikrinimais, dabar naudojami lokalūs kintamieji `_plHWDefined` ir `_plHEDefined`
-  - Pataisyta klaida, kai `plHW` arba `plHE` kintamieji nebuvo apibrėžti prieš jų naudojimą distance operacijose
-  - Kintamieji dabar tikrinami tik jei jie apibrėžti, prieš juos naudojant
-- **fn_V2uavRequest.sqf**: Pataisyta klaida, kai `plHW` ir `plHE` naudojami be patikrinimų (155, 176 eilutės)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - Pridėti fallback pranešimai, jei aerodromai neapibrėžti
-- **fn_V2aiVehicle.sqf**: Pataisyta klaida, kai `plHW` ir `plHE` naudojami be patikrinimų (312, 610 eilutės)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - AI transporto priemonės dabar kuriamos tik jei aerodromai apibrėžti
-- **fn_V2rearmVeh.sqf**: Pataisyta klaida, kai `plHW` ir `plHE` naudojami be patikrinimų (28, 29, 33, 34 eilutės)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - Naudojami lokalūs kintamieji `_plHWDefined` ir `_plHEDefined` efektyvesniam kodo vykdymui
-- **fn_V2aiCAS.sqf**: Pataisyta klaida, kai `plHW` ir `plHE` naudojami be patikrinimų (81, 130 eilutės)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - CAS moduliai dabar nustato kryptį tik jei aerodromai apibrėžti
-- **fn_V2entityKilled.sqf**: Pataisyta klaida, kai `plHW` ir `plHE` naudojami be patikrinimų (62, 69, 72, 79 eilutės)
-  - Pridėti `isNil` patikrinimai prieš naudojant `plHW` ir `plHE` kintamuosius
-  - Naudojami lokalūs kintamieji `_plHWDefined` ir `_plHEDefined` efektyvesniam kodo vykdymui
-  - Transporto priemonės dabar respawninamos tik jei aerodromai apibrėžti
-- **V2startServer.sqf**: Pataisyta kritinė klaida "Error Undefined variable in expression: _x" 406 eilutėje
-  - Pridėti `isNil` patikrinimai prieš naudojant `plH1`, `plH2`, `plH3`, `plH4`, `plH5` kintamuosius
-  - Pakeista logika: vietoj tiesioginio masyvo kūrimo, dabar patikriname ar kintamieji apibrėžti prieš juos pridedant
-  - Pagerinta forEach ciklo logika: filtruojame masyvą, pašalindami nil arba neapibrėžtus elementus
-  - Tai išsprendžia klaidą, kai `_x` kintamasis nebuvo pasiekiamas forEach cikle dėl nil elementų masyve
-- **fn_V2flagActions.sqf**: Pataisyta kritinė klaida "Error Undefined variable in expression: plhe" 124 eilutėje
-  - Pakeista logika: vietoj ilgų sąlygų su `isNil` patikrinimais, dabar naudojami lokalūs kintamieji `_plHWDefined`, `_plHEDefined`, `_planesCheck`
-  - Palyginimai dabar vykdomi tik jei visi kintamieji apibrėžti, panašiai kaip V2startServer.sqf faile
-  - Tai išsprendžia klaidą, kai `plHE` kintamasis buvo naudojamas palyginimuose net jei jis nebuvo apibrėžtas
-- **fn_V2uavRequest.sqf**: Pataisyta kritinė klaida "Error Undefined variable in expression: _groupuavlocal" 134 eilutėje
-  - Pakeista logika: pagal SQF geriausias praktikas, `spawn` sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per `_this`
-  - Pridėtas papildomas tikrinimas prieš sukurdamas naują UAV, kad apsaugotų nuo greitų paspaudimų
-  - Tai išsprendžia klaidą, kai `_groupUavLocal` kintamasis nebuvo pasiekiamas `spawn` bloke
-- **fn_V2uavGroupAdd.sqf**: Pridėtas papildomas tikrinimas serverio pusėje, kad apsaugotų nuo kelių UAV sukūrimo
-  - Jei grupė jau turi aktyvų UAV, naujas UAV bus sunaikintas
-  - Tai apsaugo nuo greitų užklausų, kurios gali sukurti kelis UAV vienu metu
-- **V2aoCreate.sqf**: Pataisyta kritinė klaida, kai `nameBW1` ir `nameBE1` kintamieji nebuvo apibrėžti prieš jų naudojimą
-  - Pridėtas `isNil` patikrinimas, kad kintamieji būtų apibrėžti tik jei jie dar neapibrėžti
-  - Tai išsprendžia "Error Undefined variable in expression: namebwl" ir "Error Undefined variable in expression: namebel" klaidas
-  - Misijos generavimas dabar turėtų veikti be klaidų
-- **V2startServer.sqf**: Pridėtas laukimas iki misijos objektų (aerodromų) inicializacijos
-  - Pridėta `waitUntil {sleep 1; !isNull plH1};` prieš "CLIENTS START SCRIPT" sekciją
-  - Tai užtikrina, kad misijos objektai būtų inicializuoti prieš pradedant klientų skriptus
-  - Išvengiama galimų klaidų, kai objektai dar nėra sukurti
-
-### Paaiškinimas
-- `nameBW1` ir `nameBE1` kintamieji naudojami 249, 300, 332, 370, 420, 452 eilutėse `V2aoCreate.sqf` faile
-- Anksčiau šie kintamieji buvo apibrėžti tik `V2startServer.sqf` faile, bet tik po `V2aoCreate.sqf` vykdymo
-- Dabar `V2aoCreate.sqf` pats apibrėžia šiuos kintamuosius, jei jie dar neapibrėžti, taip užtikrinant, kad jie visada būtų prieinami
-- **Kritinis**: Jei `nameBW1` arba `nameBE1` nebuvo apibrėžti, kodas galėjo "crash'inti" ir stabdyti AO kūrimą, dėl ko `AOcreated` likdavo kaip `0` arba `2`, o `V2startServer.sqf` interpretuodavo tai kaip "failed to create AO"
-- Pridėti saugumo patikrinimai `factionW`, `factionE` ir `missType` kintamiesiems, kad būtų užtikrinta, kad jie visada būtų apibrėžti prieš naudojimą
-
+- **Transporto susidubliuojimas pataisytas**: BASE 2 dabar neturi transporto sraigtasparnio
+  - **PROBLEMA**: Transporto bazėje (BASE 1) atsirado du transporto sraigtasparniai, kurių neturėtų būti. Armor bazėje (BASE 2) atsirado per daug technikos (dešimtys), o oro bazė dingo
+  - **ANALIZĖ**: `V2aoRespawn.sqf` kuria transporto sraigtasparnius (HeliTrW/HeliTrE) abiejose bazėse - BASE 1 ir BASE 2 abi prideda pozicijas į tą patį rHeliTrW/rHeliTrE masyvą, todėl transporto bazėje atsiranda du sraigtasparniai. Taip pat pakeista logika, kad kiekvienam transportui masyve būtų kuriama atskira pozicija, sukėlė per daug technikos armor bazėje
+  - **SPRENDIMAS**: BASE 2 neturi transporto sraigtasparnio visai - transporto sraigtasparniai turėtų būti tik BASE 1 (Transport base). Grįžta prie senos logikos - kiekvienam masyvui kuriama viena pozicija (ne kiekvienam transportui)
+  - **PATAISYTA**: 
+    - `V2aoRespawn.sqf`: Pridėtas missType inicializavimas ir patikrinimas
+    - `V2aoRespawn.sqf`: WEST BASE 2 - naudojamas `[ArmorW1, ArmorW2]` (be HeliTrW), kiekvienam masyvui kuriama viena pozicija
+    - `V2aoRespawn.sqf`: EAST BASE 2 - naudojamas `[ArmorE1, ArmorE2]` (be HeliTrE), kiekvienam masyvui kuriama viena pozicija
+  - **REZULTATAS**: Dabar transporto bazėje (BASE 1) yra tik vienas transporto sraigtasparnis (nėra dubliavimosi), o armor bazėje (BASE 2) yra normalus kiekis technikos - po vieną poziciją kiekvienam masyvui (ArmorW1, ArmorW2). Oro bazė turėtų būti kuriama V2startServer.sqf, jei missType == 3
