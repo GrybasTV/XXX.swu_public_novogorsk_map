@@ -1,7 +1,7 @@
 # Development Guidelines & Critical Safety Rules
 
-**Version:** 1.0
-**Last Updated:** 2025-12-09
+**Version:** 1.1
+**Last Updated:** 2025-12-11
 
 This document summarizes the **golden rules** for developing in this mission. Following these rules is **mandatory** to prevent server crashes and freezes.
 
@@ -41,8 +41,10 @@ while {(count _result < 8) && (_attempts < 100)} do {
     _attempts = _attempts + 1;
     _result pushBackUnique (selectRandom _pool);
 };
-// Fallback if failed
-if (count _result < 8) then { /* fill with duplicates */ };
+// Fallback: užtikrinti tikslų skaičių (geriau nei tik komentarai!)
+while {(count _result < 8)} do {
+    _result pushBack (selectRandom _pool); // Leidžiami dublikatai
+};
 ```
 
 ---

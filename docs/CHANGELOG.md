@@ -9,6 +9,7 @@
   - Paaiškinti skirtingi AI freeze problemų tipai
 - **Dokumentacijos sistemingumas**: Standartizuoti versijų ir datų formatai visuose dokumentuose
 - **README.md atnaujinimas**: Pridėtas JIP_FIX.md ir patikslinta legacy reference informacija
+- **DEVELOPMENT_GUIDELINES.md v1.1**: Patobulintas SAFE while loops pavyzdys su konkrečia fallback logika vietoj komentarų
 
 ### Ištaisytos klaidos
 - **Kritinis serverio optimizavimas**: AI transporto spawninimo ciklai optimizuoti, kad neapkrautų serverio
