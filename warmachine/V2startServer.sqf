@@ -69,8 +69,7 @@ if (aoType==0) then
 {
 	//select random location on the map
 	AOcreated = 0;
-	//Optimizuota pagal dokumentacijos rekomendacijas - sumažintas spindulys ir naudojamas efektyvesnis metodas
-	_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], worldSize/4]; //Sumažintas spindulys nuo worldSize/2 iki worldSize/4
+	_locations = nearestLocations [[worldSize/2,worldSize/2], ["NameCity","NameCityCapital","NameVillage","NameLocal","Airport"], (worldSize/2)];
 	_i=1;
 	_l=count _locations;
 	while {(AOcreated == 0)&&(count _locations>0)} do 
@@ -80,9 +79,18 @@ if (aoType==0) then
 		_locations = _locations - [_loc];
 		_p = locationPosition _loc;
 		[_p] execVM "warmachine\V2aoCreate.sqf";
-		waitUntil {AOcreated == 2};
-		waitUntil {AOcreated != 2};
+		
+		// Added timeout to prevent infinite hang if V2aoCreate fails to start/update
+		_t = time + 30;
+		waitUntil {AOcreated == 2 || time > _t};
+		if (time > _t && AOcreated != 2) then {AOcreated = 0; systemChat "AO Creation timed out (start)";};
+		
+		_t = time + 300; // 5 min timeout for generation
+		waitUntil {AOcreated != 2 || time > _t};
+		if (time > _t && AOcreated == 2) then {AOcreated = 0; systemChat "AO Creation timed out (finish)";};
+		
 		_i=_i+1;
+		sleep 1; // Give server a breath
 	};
 };
 
@@ -107,22 +115,6 @@ if(missType==1)then
 	if(count HeliTrE==0)then{nameBE2 = format ["%1 Infantry base",factionE];};
 	publicvariable "nameBW2";
 	publicvariable "nameBE2";
-};
-
-if(missType==2)then
-{
-	nameBW1 = format ["%1 Transport base",factionW]; publicvariable "nameBW1";
-	nameBE1 = format ["%1 Transport base",factionE]; publicvariable "nameBE1";
-	nameBW2 = format ["%1 Armor base",factionW]; publicvariable "nameBW2";
-	nameBE2 = format ["%1 Armor base",factionE]; publicvariable "nameBE2";
-};
-
-if(missType==3)then
-{
-	nameBW1 = format ["%1 Transport base",factionW]; publicvariable "nameBW1";
-	nameBE1 = format ["%1 Transport base",factionE]; publicvariable "nameBE1";
-	nameBW2 = format ["%1 Armor base",factionW]; publicvariable "nameBW2";
-	nameBE2 = format ["%1 Armor base",factionE]; publicvariable "nameBE2";
 };
 
 if(DBG)then{"warmachine\V2debug.sqf" remoteExec ["execVM", 0, false];}; //delete debug vehicles
@@ -248,6 +240,7 @@ AmmoW2 = (selectRandom supplyW) createVehicle (objBaseW2 getRelPos [12, 0]);
 AmmoW2 setDir dirBW;
 publicVariable "AmmoW1";
 publicVariable "AmmoW2";
+sleep 1;
 
 //BASE 1 EAST (UAV Transport)
 [parseText format ["Creating structures<br/>%1",nameBE1]] remoteExec ["hint", 0, false];
@@ -323,6 +316,7 @@ AmmoE2 = (selectRandom supplyE) createVehicle (objBaseE2 getRelPos [12, 0]);
 AmmoE2 setDir dirBE;
 publicVariable "AmmoE1";
 publicVariable "AmmoE2";
+sleep 1;
 if (modA=="GM") then 
 {
 	[AmmoW1,sideW] call wrm_fnc_supplyBox;
@@ -330,6 +324,10 @@ if (modA=="GM") then
 	[AmmoE1,sideE] call wrm_fnc_supplyBox;
 	[AmmoE2,sideE] call wrm_fnc_supplyBox;
 };
+
+//Load Arsenal Config (Whitelist/Blacklist)
+[] execVM "warmachine\arsenal_config.sqf";
+sleep 0.1;
 
 //ARSENAL
 call
@@ -412,55 +410,47 @@ publicVariable "posCenter";
 publicVariable "minDis";
 
 //sort plHs
-// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-// Pagal SQF geriausias praktikas: isNil yra saugus su neapibrėžtais kintamaisiais, bet !isNull reikalauja, kad kintamasis būtų apibrėžtas
 _plHs = [];
-if(!isNil "plH1") then {
-	if(!isNull plH1) then {_plHs pushBack plH1;};
-};
-if(!isNil "plH2") then {
-	if(!isNull plH2) then {_plHs pushBack plH2;};
-};
-if(!isNil "plH3") then {
-	if(!isNull plH3) then {_plHs pushBack plH3;};
-};
-call
-{
-	if(plH==4 && !isNil "plH4") then {
-		if(!isNull plH4) then {_plHs pushBack plH4;};
-	};
-	if(plH==5 && !isNil "plH5") then {
-		if(!isNull plH5) then {_plHs pushBack plH5;};
-	};
+// Safely add existing helipads
+if (!isNil "plH1") then {_plHs pushBack plH1;};
+if (!isNil "plH2") then {_plHs pushBack plH2;};
+if (!isNil "plH3") then {_plHs pushBack plH3;};
+
+if (!isNil "plH") then {
+	if (plH >= 4 && {!isNil "plH4"}) then {_plHs pushBack plH4;};
+	if (plH >= 5 && {!isNil "plH5"}) then {_plHs pushBack plH5;};
 };
 
-//remove plHs too close
-// Patikriname, ar visi elementai yra apibrėžti prieš naudojant forEach
-// Filtruojame masyvą, pašalindami nil arba neapibrėžtus elementus
-_plHsFiltered = [];
-{
-	// Patikriname, ar elementas yra apibrėžtas (nėra nil) ir nėra null objektas
-	// isNil neveikia su _x forEach cikle, todėl naudojame typeName arba tiesiog patikriname ar objektas egzistuoja
-	if(!isNull _x && {_x distance posCenter >= minDis}) then {
-		_plHsFiltered pushBack _x;
-	};
-} forEach _plHs;
-_plHs = _plHsFiltered;
+//remove plHs too close using select (safer than forEach modification)
+_plHs = _plHs select { 
+	!isNil "_x" && 
+	{!isNull _x} && 
+	{(_x distance posCenter) >= minDis} 
+};
 
 //sort plHs for each side
-// Pašalintas call blokas, kad _x kintamasis būtų pasiekiamas forEach cikle
 _plHsW=[]; _plHsE=[]; _disW=[]; _disE=[];
-{
-	_d1=posBaseW1 distance _x;
-	_d2=posBaseW2 distance _x;
-	_d3=posBaseE1 distance _x;
-	_d4=posBaseE2 distance _x;
-	// Nustatome, kuriai pusei priklauso šis plH, pagal artimiausią bazę
-	if(_d1<_d2&&_d1<_d3&&_d1<_d4)exitWith{_plHsW pushBackUnique _x; _disW pushBackUnique _d1;};
-	if(_d2<_d1&&_d2<_d3&&_d2<_d4)exitWith{_plHsW pushBackUnique _x; _disW pushBackUnique _d2;};
-	if(_d3<_d1&&_d3<_d2&&_d3<_d4)exitWith{_plHsE pushBackUnique _x; _disE pushBackUnique _d3;};
-	if(_d4<_d1&&_d4<_d2&&_d4<_d3)exitWith{_plHsE pushBackUnique _x; _disE pushBackUnique _d4;};
-} forEach _plHs;
+//sort plHs for each side
+_plHsW=[]; _plHsE=[]; _disW=[]; _disE=[];
+
+if (count _plHs > 0) then {
+	for "_i" from 0 to (count _plHs - 1) do {
+		_currentPlH = _plHs select _i;
+		if (!isNil "_currentPlH" && {!isNull _currentPlH}) then {
+			_d1=posBaseW1 distance _currentPlH;
+			_d2=posBaseW2 distance _currentPlH;
+			_d3=posBaseE1 distance _currentPlH;
+			_d4=posBaseE2 distance _currentPlH;
+			call
+			{
+				if(_d1<_d2&&_d1<_d3&&_d1<_d4)exitwith{_plHsW pushBackUnique _currentPlH; _disW pushBackUnique _d1;};
+				if(_d2<_d1&&_d2<_d3&&_d2<_d4)exitwith{_plHsW pushBackUnique _currentPlH; _disW pushBackUnique _d2;};
+				if(_d3<_d1&&_d3<_d2&&_d3<_d4)exitwith{_plHsE pushBackUnique _currentPlH; _disE pushBackUnique _d3;};
+				if(_d4<_d1&&_d4<_d2&&_d4<_d3)exitwith{_plHsE pushBackUnique _currentPlH; _disE pushBackUnique _d4;};
+			};
+		};
+	};
+};
 
 //selection, select an airfield with the best position
 _index=0;
@@ -468,179 +458,120 @@ if (count _plHsW > 0) then
 {
 	minW = selectMin _disW;
 	{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
-	// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
-	plHW = _plHsW param [_index, objNull];
-	if(isNull plHW) then {
-		plHW = nil;
-	};
+	plHW = _plHsW select _index;
 };
 if (count _plHsE > 0) then 
 {
 	minE = selectMin _disE;
 	{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
-	// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
-	plHE = _plHsE param [_index, objNull];
-	if(isNull plHE) then {
-		plHE = nil;
-	};
+	plHE = _plHsE select _index;
 };
 if (count _plHsW <= 0) then 
 {
-	// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant
-	if(!isNil "plHE" && count _plHsE > 0) then {
-		_plHsW = _plHsE - [plHE];
-		_disW = _disE - [minE];
-		if(count _disW > 0) then {
-			minW = selectMin _disW;
-			{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
-			// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
-			plHW = _plHsW param [_index, objNull];
-			if(isNull plHW) then {
-				plHW = nil;
-			};
-		};
-	};
+	_plHsW = _plHsE - [plHE];
+	_disW = _disE - [minE];
+	minW = selectMin _disW;
+	{if (_x == minW) then {_index = _forEachIndex};} forEach _disW;
+	plHW = _plHsW select _index;
 };
 if (count _plHsE <= 0) then 
 {
-	// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
-	if(!isNil "plHW" && count _plHsW > 0) then {
-		_plHsE = _plHsW - [plHW];
-		_disE = _disW - [minW];
-		if(count _disE > 0) then {
-			minE = selectMin _disE;
-			{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
-			// Naudojame param vietoj select saugesniam masyvo elementų pasiekimui (pagal SQF geriausias praktikas)
-			plHE = _plHsE param [_index, objNull];
-			if(isNull plHE) then {
-				plHE = nil;
-			};
-		};
-	};
+	_plHsE = _plHsW - [plHW];
+	_disE = _disW - [minW];
+	minE = selectMin _disE;
+	{if (_x == minE) then {_index = _forEachIndex};} forEach _disE;
+	plHE = _plHsE select _index;
 };
-// PublicVariable tik jei kintamieji yra apibrėžti
-if(!isNil "plHW") then {
-	publicVariable "plHW";
-};
-if(!isNil "plHE") then {
-	publicVariable "plHE";
-};
+publicVariable "plHW";
+publicVariable "plHE";
 
 //COMBAT SUPPORT modules
-// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-if(!isNil "plHW") then {
-	{_x setPos (plHW getRelPos [20, 90]);} forEach [SupCasHW, SupCasBW];
+{_x setPos (plHW getRelPos [20, 90]);} forEach [SupCasHW, SupCasBW];
+{_x setPos (plHE getRelPos [20, 90]);} forEach [SupCasHE, SupCasBE];
+{[_x,["bis_supp_cooldown", arTime]] remoteExec ["setVariable",0,true];} forEach [SupCasHW,SupCasBW,SupCasHE,SupCasBE]; //set coolDown time == arTime
+
+_fnc_extractClasses = {
+	params ["_inputArray"];
+	private _outputArray = [];
+	if (isNil "_inputArray") exitWith {[]};
+	{
+		if (_x isEqualType []) then {
+			_outputArray pushBackUnique (_x select 0);
+		} else {
+			_outputArray pushBackUnique _x;
+		};
+	} forEach _inputArray;
+	_outputArray
 };
-if(!isNil "plHE") then {
-	{_x setPos (plHE getRelPos [20, 90]);} forEach [SupCasHE, SupCasBE];
-};
-{[_x,["bis_supp_cooldown", arTime]] remoteExec ["setVariable",0,false];} forEach [SupCasHW,SupCasBW,SupCasHE,SupCasBE]; //set coolDown time == arTime
 
-_HeliArW=[];
-if ((HeliArW param [0, []]) isEqualType [])
-then{{_HeliArW pushBackUnique (_x param [0, '']);} forEach HeliArW;}
-else{_HeliArW=HeliArW;};
-[SupCasHW,["bis_supp_vehicles", _HeliArW]] remoteExec ["setVariable",0,false];
+_HeliArW = [HeliArW] call _fnc_extractClasses;
+[SupCasHW,["bis_supp_vehicles", _HeliArW]] remoteExec ["setVariable",0,true];
 
-_PlaneW=[];
-if ((PlaneW param [0, []]) isEqualType [])
-then{{_PlaneW pushBackUnique (_x param [0, '']);} forEach PlaneW;}
-else{_PlaneW=PlaneW;};
-[SupCasBW,["bis_supp_vehicles", _PlaneW]] remoteExec ["setVariable",0,false];
+_PlaneW = [PlaneW] call _fnc_extractClasses;
+[SupCasBW,["bis_supp_vehicles", _PlaneW]] remoteExec ["setVariable",0,true];
 
-_HeliArE=[];
-if ((HeliArE param [0, []]) isEqualType [])
-then{{_HeliArE pushBackUnique (_x param [0, '']);} forEach HeliArE;}
-else{_HeliArE=HeliArE;};
-[SupCasHE,["bis_supp_vehicles", _HeliArE]] remoteExec ["setVariable",0,false];
+_HeliArE = [HeliArE] call _fnc_extractClasses;
+[SupCasHE,["bis_supp_vehicles", _HeliArE]] remoteExec ["setVariable",0,true];
 
-_PlaneE=[];
-if ((PlaneE param [0, []]) isEqualType [])
-then{{_PlaneE pushBackUnique (_x param [0, '']);} forEach PlaneE;}
-else{_PlaneE=PlaneE;};
-[SupCasBE,["bis_supp_vehicles", _PlaneE]] remoteExec ["setVariable",0,false];
+_PlaneE = [PlaneE] call _fnc_extractClasses;
+[SupCasBE,["bis_supp_vehicles", _PlaneE]] remoteExec ["setVariable",0,true];
 
 if(modA=="IFA3")then
 {
-	{[_x,["bis_supp_vehicleinit",{_this setVelocityModelSpace [0, 100, 100];}]] remoteExec ["setVariable",0,false];} forEach [SupCasBW,SupCasBE]; //prevent the plane to fall down
+	{[_x,["bis_supp_vehicleinit",{_this setVelocityModelSpace [0, 100, 100];}]] remoteExec ["setVariable",0,true];} forEach [SupCasBW,SupCasBE]; //prevent the plane to fall down
 };
 
 //PLANES, GUNSHIPS
 if(missType==3)then
 {
 	//respawn
-	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-	_plHWDefined = !isNil "plHW";
-	_plHEDefined = !isNil "plHE";
-	_plH1Defined = !isNil "plH1";
-	_plH2Defined = !isNil "plH2";
-	_planesCheck = false;
-	
-	// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
-	if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
-		_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
-	};
-	
 	if(
 		(count HeliArW!=0) ||
 		((count PlaneW!=0)&&(planes==1)) ||
-		((count PlaneW!=0)&&_planesCheck)	
+		((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2)))	
 	)
-	then{
-		if(_plHWDefined) then {
-			[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base",factionW])] call BIS_fnc_addRespawnPosition;
-		};
-	};
+	then{[sideW, (plHW getRelPos [25, 270]), (format ["%1 Air base",factionW])] call BIS_fnc_addRespawnPosition;};
 	if(
 		(count HeliArE!=0) ||
 		((count PlaneE!=0)&&(planes==1)) ||
-		((count PlaneE!=0)&&_planesCheck)	
+		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2)))	
 	)
-	then{
-		if(_plHEDefined) then {
-			[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base",factionE])] call BIS_fnc_addRespawnPosition;
-		};
-	};
+	then{[sideE, (plHE getRelPos [25, 270]), (format ["%1 Air base",factionE])] call BIS_fnc_addRespawnPosition;};
 	
-	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-	if ((planes==1) || _planesCheck) then
+	if ((planes==1) || ((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2)))) then
 	{ 
 		//plane west
 		if(count PlaneW!=0)then
 		{
-			if(!isNil "plHW") then {
-				[parseText format ["Creating vehicles<br/>%1 Plane",factionW]] remoteExec ["hint", 0, false];
-				_pSelW = selectRandom PlaneW;
-				_pPosW = getPos plHW;
-				_pVehW = _pSelW createVehicle _pPosW;
-				_pVehW setDir getDir plHW;
-				_nme = format ["%1%2",_pSelW,(_pPosW select 0)];
-				[_nme,"plane",_pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
-				z1 addCuratorEditableObjects [[_pVehW],true];	
-				[_pVehW,arTime,0,-1,{params ["_pVehW"]; removeFromRemainsCollector [_pVehW];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-				removeFromRemainsCollector [_pVehW];
-				_pVehW allowDammage false;
-				_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
-			};
+			[parseText format ["Creating vehicles<br/>%1 Plane",factionW]] remoteExec ["hint", 0, false];
+			_pSelW = selectRandom PlaneW;
+			_pPosW = getPos plHW;
+			_pVehW = _pSelW createVehicle _pPosW;
+			_pVehW setDir getDir plHW;
+			_nme = format ["%1%2",_pSelW,(_pPosW select 0)];
+			[_nme,"plane",_pPosW] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+			z1 addCuratorEditableObjects [[_pVehW],true];	
+			[_pVehW,arTime,0,-1,{params ["_pVehW"]; removeFromRemainsCollector [_pVehW];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+			removeFromRemainsCollector [_pVehW];
+			_pVehW allowDammage false;
+			_pVehW addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseW1] spawn wrm_fnc_safeZoneVeh;}];
 		};
 
 		//plane east
 		if(count PlaneE!=0)then
 		{
-			if(!isNil "plHE") then {
-				[parseText format ["Creating vehicles<br/>%1 Plane",factionE]] remoteExec ["hint", 0, false];
-				_pSelE = selectRandom PlaneE;
-				_pPosE = getPos plHE;
-				_pVehE = _pSelE createVehicle _pPosE;
-				_pVehE setDir getDir plHE;
-				_nme = format ["%1%2",_pSelE,(_pPosE select 0)];
-				[_nme,"plane",_pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
-				z1 addCuratorEditableObjects [[_pVehE],true];
-				[_pVehE,arTime,0,-1,{params ["_pVehE"]; removeFromRemainsCollector [_pVehE];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-				removeFromRemainsCollector [_pVehE];
-				_pVehE allowDammage false;
-				_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
-			};
+			[parseText format ["Creating vehicles<br/>%1 Plane",factionE]] remoteExec ["hint", 0, false];
+			_pSelE = selectRandom PlaneE;
+			_pPosE = getPos plHE;
+			_pVehE = _pSelE createVehicle _pPosE;
+			_pVehE setDir getDir plHE;
+			_nme = format ["%1%2",_pSelE,(_pPosE select 0)];
+			[_nme,"plane",_pPosE] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+			z1 addCuratorEditableObjects [[_pVehE],true];
+			[_pVehE,arTime,0,-1,{params ["_pVehE"]; removeFromRemainsCollector [_pVehE];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+			removeFromRemainsCollector [_pVehE];
+			_pVehE allowDammage false;
+			_pVehE addEventHandler ["GetIn", {params ["_veh"]; [_veh,posBaseE1] spawn wrm_fnc_safeZoneVeh;}];
 		};
 		
 	};
@@ -648,53 +579,49 @@ if(missType==3)then
 	//gunship west
 	if(count HeliArW!=0)then
 	{
-		if(_plHWDefined) then {
-			_res = plHW getRelPos [25, 90];
-			if((count PlaneW==0)||(!((planes==1)||_planesCheck)))then{_res = getPos plHW;};
-			//helipad
-			_h = "Land_HelipadCircle_F" createVehicle _res;
-			_h setDir getDir plHW;
-			//vehicle
-			_vSel = selectRandom HeliArW;
-			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-			_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
-			[_veh,_res,300] call wrm_fnc_V2clearArea;
-			[_veh,[_tex,1]] call bis_fnc_initVehicle;
-			_veh setDir getDir plHW;
-			_veh setVectorUp surfaceNormal _res;			
-			_nme = format ["%1%2",_typ,(_res select 0)];
-			[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
-			z1 addCuratorEditableObjects [[_veh],true];
-			[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-			removeFromRemainsCollector [_veh];
-		};
+		_res = plHW getRelPos [25, 90];
+		if((count PlaneW==0)||(!((planes==1)||((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2))))))then{_res = getPos plHW;};
+		//helipad
+		_h = "Land_HelipadCircle_F" createVehicle _res;
+		_h setDir getDir plHW;
+		//vehicle
+		_vSel = selectRandom HeliArW;
+		_typ="";_tex="";
+		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+		_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
+		[_veh,_res,300] call wrm_fnc_V2clearArea;
+		[_veh,[_tex,1]] call bis_fnc_initVehicle;
+		_veh setDir getDir plHW;
+		_veh setVectorUp surfaceNormal _res;			
+		_nme = format ["%1%2",_typ,(_res select 0)];
+		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
+		z1 addCuratorEditableObjects [[_veh],true];
+		[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+		removeFromRemainsCollector [_veh];
 	};
 	
 	//gunship east
 	if(count HeliArE!=0)then
 	{
-		if(_plHEDefined) then {
-			_res = plHE getRelPos [25, 90];
-			if((count PlaneE==0)||(!((planes==1)||_planesCheck)))then{_res = getPos plHE;};
-			//helipad
-			_h = "Land_HelipadCircle_F" createVehicle _res;
-			_h setDir getDir plHE;
-			//vehicle
-			_vSel = selectRandom HeliArE;
-			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
-			_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
-			[_veh,_res,300] call wrm_fnc_V2clearArea;
-			[_veh,[_tex,1]] call bis_fnc_initVehicle;
-			_veh setDir getDir plHE;
-			_veh setVectorUp surfaceNormal _res;			
-			_nme = format ["%1%2",_typ,(_res select 0)];
-			[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
-			z1 addCuratorEditableObjects [[_veh],true];
-			[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
-			removeFromRemainsCollector [_veh];
-		};
+		_res = plHE getRelPos [25, 90];
+		if((count PlaneE==0)||(!((planes==1)||((planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2))))))then{_res = getPos plHE;};
+		//helipad
+		_h = "Land_HelipadCircle_F" createVehicle _res;
+		_h setDir getDir plHE;
+		//vehicle
+		_vSel = selectRandom HeliArE;
+		_typ="";_tex="";
+		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};	
+		_veh = createVehicle [_typ,[_res select 0,_res select 1,50], [], 0, "NONE"];
+		[_veh,_res,300] call wrm_fnc_V2clearArea;
+		[_veh,[_tex,1]] call bis_fnc_initVehicle;
+		_veh setDir getDir plHE;
+		_veh setVectorUp surfaceNormal _res;			
+		_nme = format ["%1%2",_typ,(_res select 0)];
+		[_nme,"air",_res] remoteExec ["wrm_fnc_V2vehMrkE", 0, true];
+		z1 addCuratorEditableObjects [[_veh],true];
+		[_veh,arTime,0,-1,{params ["_veh"];removeFromRemainsCollector [_veh];},0,1,1,true,false,500,false] call BIS_fnc_moduleRespawnVehicle;
+		removeFromRemainsCollector [_veh];
 	};
 };
 
@@ -783,6 +710,7 @@ if (count _hW>0) then
 	} forEach _hW;
 };
 [format ["%1 vehicles created ",factionW]] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //VEHICLES EAST
 [parseText format ["Creating vehicles<br/>%1 vehicles",factionE]] remoteExec ["hint", 0, false];
@@ -842,6 +770,7 @@ if (count _hE>0) then
 	} forEach _hE;
 };
 [format ["%1 vehicles created ",factionE]] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //BASE Structures part 2/2
 [parseText format ["Creating structures"]] remoteExec ["hint", 0, false];
@@ -898,6 +827,7 @@ if(modA=="GM")then
 	} forEach [objBaseW2,_obj2];
 };
 [format ["%1 created",nameBW2]] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //2nd building BASE 1 EAST (UAV Transport)
 _posR = objBaseE1 getRelPos [30, random 360];
@@ -925,6 +855,7 @@ if(modA=="GM")then
 	} forEach [objBaseE1,_obj2];
 };
 [format ["%1 created",nameBE1]] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //2nd building BASE 2 EAST (Armors)
 _posR = objBaseE2 getRelPos [30, random 360];
@@ -952,6 +883,7 @@ if(modA=="GM")then
 	} forEach [objBaseE2,_obj2];
 };
 [format ["%1 created",nameBE2]] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //RESPAWN markers (for respawn menu)
 {
@@ -996,14 +928,10 @@ call //fog
 {
 	//Random
 	if (fogLevel == 0) exitWith {0 setFog selectRandom fogs;};
-	//Light
+	//Yes
 	if (fogLevel == 1) exitWith {0 setFog (fogs select 1);};
-	//Medium
-	if (fogLevel == 2) exitWith {0 setFog (fogs select 2);};
-	//Heavy
-	if (fogLevel == 3) exitWith {0 setFog (fogs select 3);};
 	//No
-	if (fogLevel == 4) exitWith {0 setFog (fogs select 4);};
+	if (fogLevel == 2) exitWith {0 setFog (fogs select 0);};
 };
 
 _rain = [0, 0.5, 1, 0];
@@ -1045,39 +973,22 @@ flgBE2 = flgE createVehicle _fpos;
 flgJetW = ""; flgJetE = "";
 if (missType == 3) then 
 {
-	// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-	// Kintamieji turi būti apibrėžti prieš palyginimus
-	_plHWDefined = !isNil "plHW";
-	_plHEDefined = !isNil "plHE";
-	_plH1Defined = !isNil "plH1";
-	_plH2Defined = !isNil "plH2";
-	_planesCheck = false;
-	
-	// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
-	if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
-		_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
-	};
-	
 	if(
 		(count HeliArW!=0) ||
 		((count PlaneW!=0)&&(planes==1)) ||
-		((count PlaneW!=0)&&_planesCheck)	
+		((count PlaneW!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2)))	
 	)then 
 	{
-		if(_plHWDefined) then {
-			flgJetW = flgW createVehicle (plHW getRelPos [30, 270]);
-		};
+		flgJetW = flgW createVehicle (plHW getRelPos [30, 270]);
 	};
 
 	if(
 		(count HeliArE!=0) ||
 		((count PlaneE!=0)&&(planes==1)) ||
-		((count PlaneE!=0)&&_planesCheck)	
+		((count PlaneE!=0)&&(planes==2)&&((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2)))	
 	)then 
 	{
-		if(_plHEDefined) then {
-			flgJetE = flgE createVehicle (plHE getRelPos [30, 270]);
-		};
+		flgJetE = flgE createVehicle (plHE getRelPos [30, 270]);
 	};
 };
 
@@ -1166,105 +1077,114 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','A: Anti Air'];
 	this setVariable ['Designation','A'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange', '
-		call {
-			if ((_this select 1) == sideW) exitWith {
-				if(getMarkerColor resAW != '''') exitWith {};
+	this setVariable ['OnOwnerChange','
+		call
+		{
+			 if ((_this select 1) == sideW) exitWith 
+			 {
+				if(getMarkerColor resAW!='''')exitWith{};
 				_mrkRbW = createMarker [resAW, posAA];
 				_mrkRbW setMarkerShape ''ICON'';
 				_mrkRbW setMarkerType ''empty'';
 				_mrkRbW setMarkerText ''Anti Air'';
 				deleteMarker resAE;
-				if(!isNull objAAE) then {
+				if(!isNull objAAE)then
+				{
 					{objAAE deleteVehicleCrew _x} forEach crew objAAE;
 					deleteVehicle objAAE;
 				};
-				objAAW = objNull;
-				if(count aaW != 0) then {
+				if(count aaW!=0)then
+				{
 					_vSel = selectRandom aaW;
-					_typ = ''''; _tex = '''';
-					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
-				} else {
+				}else
+				{
 					_vSel = selectRandom aaE;
-					_typ = ''''; _tex = '''';
-					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objAAW = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				if(!isNull objAAW) then {
-					[objAAW] call wrm_fnc_parachute;
-					objAAW lockDriver true;
-					_grpAAW = createGroup [sideW, true];
-					for ''_i'' from 1 to (objAAW emptyPositions ''Gunner'') step 1 do {
-						_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-						_unit moveInGunner objAAW;
-					};
-					for ''_i'' from 1 to (objAAW emptyPositions ''Commander'') step 1 do {
-						_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
-						_unit moveInCommander objAAW;
-					};
-					objAAW allowCrewInImmobile true;
-					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideW] spawn wrm_fnc_killedEH; }];
-					} forEach (crew objAAW);
-					publicVariable ''objAAW'';
-					sleep 1;
-					z1 addCuratorEditableObjects [[objAAW], true];
-					defW pushBackUnique _grpAAW;
-					[posAA, sideW] call wrm_fnc_V2secDefense;
+				[objAAW] call wrm_fnc_parachute;
+				objAAW lockDriver true;
+				_grpAAW=createGroup [sideW, true];			
+				for ''_i'' from 1 to (objAAW emptyPositions ''Gunner'') step 1 do
+				{
+					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
+					_unit moveInGunner objAAW;
 				};
-			};
+				for ''_i'' from 1 to (objAAW emptyPositions ''Commander'') step 1 do
+				{
+					_unit = _grpAAW createUnit [crewW, posAA, [], 0, ''NONE''];
+					_unit moveInCommander objAAW;
+				};
+				objAAW allowCrewInImmobile true;
+				{ _x addMPEventHandler
+					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
+				} forEach (crew objAAW);				
+				publicvariable ''objAAW'';
+				sleep 1;
+				z1 addCuratorEditableObjects [[objAAW],true];
+				defW pushBackUnique _grpAAW;
+				[posAA,sideW] call wrm_fnc_V2secDefense;
+			 };
 
-			if ((_this select 1) == sideE) exitWith {
-				if(getMarkerColor resAE != '''') exitWith {};
+			 if ((_this select 1) == sideE) exitWith  
+			 {
+				if(getMarkerColor resAE!='''')exitWith{};
 				_mrkRbE = createMarker [resAE, posAA];
 				_mrkRbE setMarkerShape ''ICON'';
 				_mrkRbE setMarkerType ''empty'';
 				_mrkRbE setMarkerText ''Anti Air'';
 				deleteMarker resAW;
-				if(!isNull objAAW) then {
+				if(!isNull objAAW)then
+				{
 					{objAAW deleteVehicleCrew _x} forEach crew objAAW;
 					deleteVehicle objAAW;
 				};
-				objAAE = objNull;
-				if(count aaE != 0) then {
+				if(count aaE!=0)then
+				{
 					_vSel = selectRandom aaE;
-					_typ = ''''; _tex = '''';
-					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
-				} else {
+				}else
+				{
 					_vSel = selectRandom aaW;
-					_typ = ''''; _tex = '''';
-					if (_vSel isEqualType []) then {_typ = _vSel param [0, '''']; _tex = _vSel param [1, ''''];} else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objAAE = createVehicle [_typ, [posAA select 0, posAA select 1, 50], [], 0, ''NONE''];
 					[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				if(!isNull objAAE) then {
-					[objAAE] call wrm_fnc_parachute;
-					objAAE lockDriver true;
-					_grpAAE = createGroup [sideE, true];
-					for ''_i'' from 1 to (objAAE emptyPositions ''Gunner'') step 1 do {
-						_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-						_unit moveInGunner objAAE;
-					};
-					for ''_i'' from 1 to (objAAE emptyPositions ''Commander'') step 1 do {
-						_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
-						_unit moveInCommander objAAE;
-					};
-					objAAE allowCrewInImmobile true;
-					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideE] spawn wrm_fnc_killedEH; }];
-					} forEach (crew objAAE);
-					publicVariable ''objAAE'';
-					sleep 1;
-					z1 addCuratorEditableObjects [[objAAE], true];
-					defE pushBackUnique _grpAAE;
-					[posAA, sideE] call wrm_fnc_V2secDefense;
+				[objAAE] call wrm_fnc_parachute;
+				objAAE lockDriver true;
+				_grpAAE=createGroup [sideE, true];			
+				for ''_i'' from 1 to (objAAE emptyPositions ''Gunner'') step 1 do
+				{
+					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
+					_unit moveInGunner objAAE;
 				};
-			};
+				for ''_i'' from 1 to (objAAE emptyPositions ''Commander'') step 1 do
+				{
+					_unit = _grpAAE createUnit [crewE, posAA, [], 0, ''NONE''];
+					_unit moveInCommander objAAE;
+				};
+				objAAE allowCrewInImmobile true;
+				{ _x addMPEventHandler
+					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
+				} forEach (crew objAAE);				
+				publicvariable ''objAAE'';
+				sleep 1;
+				z1 addCuratorEditableObjects [[objAAE],true];
+				defE pushBackUnique _grpAAE;
+				[posAA,sideE] call wrm_fnc_V2secDefense;
+			 };
 		};
-		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
+		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
@@ -1291,10 +1211,12 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','B: Artillery'];
 	this setVariable ['Designation','B'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange', '
-		call {
-			if ((_this select 1) == sideW) exitWith {
-				if(getMarkerColor resBW != '''') exitWith {};
+	this setVariable ['OnOwnerChange','
+		call
+		{
+			 if ((_this select 1) == sideW) exitWith 
+			 {
+				if(getMarkerColor resBW!='''')exitWith{};
 				_mrkRaW = createMarker [resBW, posArti];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -1303,57 +1225,55 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-				if(!isNull objArtiE) then {
+				if(!isNull objArtiE)then
+				{
 					{objArtiE deleteVehicleCrew _x} forEach crew objArtiE;
 					deleteVehicle objArtiE;
 				};
-				objArtiW = objNull;
-				if(count artiW != 0) then {
+				if(count artiW!=0)then
+				{
 					_vSel = selectRandom artiW;
-					_typ = '''';
-					_tex = '''';
-					if (_vSel isEqualType []) then {
-						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
-					else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
-				} else {
+				}else
+				{
 					_vSel = selectRandom artiE;
-					_typ = '''';
-					_tex = '''';
-					if (_vSel isEqualType []) then {
-						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
-					else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				if(!isNull objArtiW) then {
-					[objArtiW] call wrm_fnc_parachute;
-					objArtiW lockDriver true;					
-					_grpArtiW = createGroup [sideW, true];
-					for ''_i'' from 1 to (objArtiW emptyPositions ''Gunner'') step 1 do {
-						_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
-						_unit moveInGunner objArtiW;
-					};
-					for ''_i'' from 1 to (objArtiW emptyPositions ''Commander'') step 1 do {
-						_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
-						_unit moveInCommander objArtiW;
-					};
-					objArtiW allowCrewInImmobile true;
-					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideW] spawn wrm_fnc_killedEH; }];
-					} forEach (crew objArtiW);
-					[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-					publicVariable ''objArtiW'';
-					sleep 1;
-					z1 addCuratorEditableObjects [[objArtiW], true];
-					defW pushBackUnique _grpArtiW;
-					[] spawn wrm_fnc_V2mortarW;
-					[posArti, sideW] call wrm_fnc_V2secDefense;
+				[objArtiW] call wrm_fnc_parachute;
+				objArtiW lockDriver true;
+				_grpArtiW=createGroup [sideW, true];			
+				for ''_i'' from 1 to (objArtiW emptyPositions ''Gunner'') step 1 do
+				{
+					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
+					_unit moveInGunner objArtiW;
 				};
-			};
-
-			if ((_this select 1) == sideE) exitWith {
-				if(getMarkerColor resBE != '''') exitWith {};
+				for ''_i'' from 1 to (objArtiW emptyPositions ''Commander'') step 1 do
+				{
+					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, ''NONE''];
+					_unit moveInCommander objArtiW;
+				};
+				objArtiW allowCrewInImmobile true;
+				{ _x addMPEventHandler
+					[''MPKilled'',{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
+				} forEach (crew objArtiW);
+				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
+				publicvariable ''objArtiW'';
+				sleep 1;
+				z1 addCuratorEditableObjects [[objArtiW],true];
+				defW pushBackUnique _grpArtiW;
+				[] spawn wrm_fnc_V2mortarW;
+				[posArti,sideW] call wrm_fnc_V2secDefense;
+			 };
+			 
+			 if ((_this select 1) == sideE) exitWith  
+			 {
+				if(getMarkerColor resBE!='''')exitWith{};
 				_mrkRaE = createMarker [resBE, posArti];
 				_mrkRaE setMarkerShape ''ICON'';
 				_mrkRaE setMarkerType ''empty'';
@@ -1362,56 +1282,53 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				[objArtiW, supArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqW, SupArtiV2] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 				[SupReqE, SupArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-				if(!isNull objArtiW) then {
+				if(!isNull objArtiW)then
+				{
 					{objArtiW deleteVehicleCrew _x} forEach crew objArtiW;
 					deleteVehicle objArtiW;
 				};
-				objArtiE = objNull;
-				if(count artiE != 0) then {
+				if(count artiE!=0)then
+				{
 					_vSel = selectRandom artiE;
-					_typ = '''';
-					_tex = '''';
-					if (_vSel isEqualType []) then {
-						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
-					else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
-				} else {
+				}else
+				{
 					_vSel = selectRandom artiW;
-					_typ = '''';
-					_tex = '''';
-					if (_vSel isEqualType []) then {
-						_typ = _vSel param [0, '''']; _tex = _vSel param [1, '''']; }
-					else {_typ = _vSel;};
+					_typ='''';_tex='''';
+					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
 				};
-				if(!isNull objArtiE) then {
-					[objArtiE] call wrm_fnc_parachute;
-					objArtiE lockDriver true;					
-					_grpArtiE = createGroup [sideE, true];
-					for ''_i'' from 1 to (objArtiE emptyPositions ''Gunner'') step 1 do {
-						_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
-						_unit moveInGunner objArtiE;
-					};
-					for ''_i'' from 1 to (objArtiE emptyPositions ''Commander'') step 1 do {
-						_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
-						_unit moveInCommander objArtiE;
-					};
-					objArtiE allowCrewInImmobile true;
-					{ _x addMPEventHandler [''MPKilled'', { [(_this select 0), sideE] spawn wrm_fnc_killedEH; }];
-					} forEach (crew objArtiE);
-					[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
-					publicVariable ''objArtiE'';
-					sleep 1;
-					z1 addCuratorEditableObjects [[objArtiE], true];
-					defE pushBackUnique _grpArtiE;
-					[] spawn wrm_fnc_V2mortarE;
-					[posArti, sideE] call wrm_fnc_V2secDefense;
+				[objArtiE] call wrm_fnc_parachute;
+				objArtiE lockDriver true;
+				_grpArtiE=createGroup [sideE, true];			
+				for ''_i'' from 1 to (objArtiE emptyPositions ''Gunner'') step 1 do
+				{
+					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
+					_unit moveInGunner objArtiE;
 				};
+				for ''_i'' from 1 to (objArtiE emptyPositions ''Commander'') step 1 do
+				{
+					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, ''NONE''];
+					_unit moveInCommander objArtiE;
+				};
+				objArtiE allowCrewInImmobile true;
+				{ _x addMPEventHandler
+					[''MPKilled'',{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
+				} forEach (crew objArtiE);
+				[objArtiE, supArtiV2] remoteExec [''BIS_fnc_addSupportLink'', 0, true];				
+				publicvariable ''objArtiE'';
+				sleep 1;
+				z1 addCuratorEditableObjects [[objArtiE],true];
+				defE pushBackUnique _grpArtiE;
+				[] spawn wrm_fnc_V2mortarE;
+				[posArti,sideE] call wrm_fnc_V2secDefense;
 			};
 		};
-		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
+		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
@@ -1439,52 +1356,65 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 	this setVariable ['name','C: CAS Tower'];
 	this setVariable ['Designation','C'];
 	this setVariable ['OwnerLimit','1'];
-	this setVariable ['OnOwnerChange', '
-		call {
-			if ((_this select 1) == sideW) exitWith {
-				if(getMarkerColor resCW != '''') exitWith {};
-				if(missType > 1 || count PlaneW == 0) then {
-					if(count HeliArW != 0) then {
-						_v = HeliArW param [0, []]; _typ = '''';
-						if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
-						if(_typ isKindOf ''helicopter'') then {
+	this setVariable ['OnOwnerChange','
+		call
+		{
+			 if ((_this select 1) == sideW) exitWith 
+			 {
+				if(getMarkerColor resCW!='''')exitWith{};
+				if(missType>1||count PlaneW==0)then
+				{
+					if(count HeliArW!=0)then
+					{
+						_v = HeliArW select 0; _typ='''';
+						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
+						if(_typ iskindof ''helicopter'')then
+						{
 							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 						};
 					};
 				};
-				if(count PlaneW != 0) then {
-					_v = PlaneW param [0, []]; _typ = '''';
-					if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
-					if(_typ isKindOf ''plane'') then {
+				if(count PlaneW!=0)then
+				{
+					_v = PlaneW select 0; _typ='''';
+					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
+					if(_typ iskindof ''plane'')then
+					{
 						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 					};
-				};
+				};				
 				_mrkRcW = createMarker [resCW, posCas];
 				_mrkRcW setMarkerShape ''ICON'';
 				_mrkRcW setMarkerType ''empty'';
-				_mrkRcW setMarkerText ''CAS Tower'';
+				_mrkRcW setMarkerText ''CAS Tower''; 
 				deleteMarker resCE;
-				[posCas, sideW] call wrm_fnc_V2secDefense;
-			};
-
-			if ((_this select 1) == sideE) exitWith {
-				if(getMarkerColor resCE != '''') exitWith {};
-				if(missType > 1 || count PlaneE == 0) then {
-					if(count HeliArE != 0) then {
-						_v = HeliArE param [0, []]; _typ = '''';
-						if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
-						if(_typ isKindOf ''helicopter'') then {
+				[posCas,sideW] call wrm_fnc_V2secDefense;
+			 };
+			 
+			 if ((_this select 1) == sideE) exitWith  
+			 {
+				if(getMarkerColor resCE!='''')exitWith{};
+				if(missType>1||count PlaneE==0)then
+				{
+					if(count HeliArE!=0)then
+					{
+						_v = HeliArE select 0; _typ='''';
+						if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
+						if(_typ iskindof ''helicopter'')then
+						{
 							[SupReqE, SupCasHE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 							[SupReqW, SupCasHW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 						};
 					};
 				};
-				if(count PlaneE != 0) then {
-					_v = PlaneE param [0, []]; _typ = '''';
-					if (_v isEqualType []) then {_typ = _v param [0, ''''];} else {_typ = _v;};
-					if(_typ isKindOf ''plane'') then {
+				if(count PlaneE!=0)then
+				{
+					_v = PlaneE select 0; _typ='''';
+					if (_v isEqualType [])then{_typ=_v select 0;}else{_typ=_v;};
+					if(_typ iskindof ''plane'')then
+					{
 						[SupReqE, SupCasBE] remoteExec [''BIS_fnc_addSupportLink'', 0, true];
 						[SupReqW, SupCasBW] remoteExec [''BIS_fnc_removeSupportLink'', 0, true];
 					};
@@ -1494,10 +1424,10 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 				_mrkRcE setMarkerType ''empty'';
 				_mrkRcE setMarkerText ''CAS Tower'';
 				deleteMarker resCW;
-				[posCas, sideE] call wrm_fnc_V2secDefense;
-			};
+				[posCas,sideE] call wrm_fnc_V2secDefense;
+			 };
 		};
-		if (AIon > 0) then { [] spawn wrm_fnc_V2aiMove; };
+		if (AIon>0) then {[] call wrm_fnc_V2aiMove;};
 	'];
 	this setVariable ['CaptureCoef','0.05']; 	
 	this setVariable ['CostInfantry','0.2'];
@@ -1539,6 +1469,7 @@ if(modA=="CSLA")then{_mrkArtiRng setMarkerAlpha 0};
 if(modA=="SPE")then{_mrkArtiRng setMarkerAlpha 0};
 
 ["Sectors created"] remoteExec ["systemChat", 0, false];
+sleep 1;
 
 //RESPAWN TICKETS
 [parseText format ["Setting respawn tickets"]] remoteExec ["hint", 0, false];
@@ -1599,12 +1530,9 @@ if (AIon>0) then {[] spawn wrm_fnc_V2aiUpdate;};
 [] spawn wrm_fnc_V2endGame;
 [] spawn wrm_fnc_V2unhideVeh;
 
-//progress = 2; publicVariable "progress";
+progress = 2; publicVariable "progress";
 
 //CLIENTS START SCRIPT
-// Wait for mission objects (airports) to be initialized
-waitUntil {sleep 1; !isNull plH1};
-
 [[
 	//mission parameters
 	aoType, missType, day, resTickets, weather, ticBleed, fogLevel, timeLim, AIon, resType, revOn, resTime, viewType, vehTime, 
@@ -1650,4 +1578,4 @@ _i=1;
 [parseText format ["MISSION CREATED SUCCESFULY"]] remoteExec ["hint", 0, false];
 ["Server is ready"] remoteExec ["systemChat", 0, false];
 sleep 1;
-progress = 2; publicVariable "progress";
+

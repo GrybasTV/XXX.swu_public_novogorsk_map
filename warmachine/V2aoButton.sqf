@@ -47,14 +47,24 @@ if (aoType == 0) exitWith
 closeDialog 0;
 //open map
 openMap [true, false];
-waitUntil {dSel == 1;};
+// TIMEOUT #1
+private _startTime1 = time;
+waitUntil {
+    sleep 0.1;
+    (dSel == 1) || (time - _startTime1 > 60)
+};
 
 hint parseText format ["SELECT AREA OF OPERATION<br/><br/>By left mouse button click<br/>LMB<br/><br/>To select any sector and change its location<br/>Press Shift+LMB"];
 
 ["AOselect", "onMapSingleClick", {[_pos,_shift,_alt] execVM "warmachine\V2aoSelect.sqf";}] call BIS_fnc_addStackedEventHandler;
 
 //remove eventhandler
-waitUntil {!visibleMap};
+// TIMEOUT #2
+private _startTime2 = time;
+waitUntil {
+    sleep 0.1;
+    (!visibleMap) || (time - _startTime2 > 300) // 5 minučių timeout žemėlapio uždarymui
+};
 ["AOselect", "onMapSingleClick"] call BIS_fnc_removeStackedEventHandler;
 if (AOcreated == 1) then {hint "AO CREATED SUCCESFULY";} else {hint "AO WAS NOT CREATED";};
 dialogOpen = createDialog "V2missionsGenerator";

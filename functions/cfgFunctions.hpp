@@ -18,6 +18,8 @@ class wrm
 		class V2aiUpdate {};
 		class V2aiVehicle {};
 		class V2aiVehUpdate {};
+		class V2dynamicAIon {}; //Dinamiškai keičia AIon pagal užimtų sektorių skaičių
+		class V2dynamicSquads {}; //Dinamiškai spawnina/pašalina papildomas AI grupes pagal AIon reikšmę
 		class V2baseSideCheck {};
 		class V2clearArea {};
 		class V2coolDown {};
@@ -41,6 +43,11 @@ class wrm
 		class V2uavGroupCooldown {}; //Grupės-based UAV cooldown Ukraine/Russia frakcijoms
 		class V2uavGroupAdd {}; //Pridėti grupės UAV į masyvą
 		class V2uavGroupRemove {}; //Pašalinti grupės UAV ir pradėti cooldown
+		class JIPSync {}; //JIP (Join In Progress) sinchronizavimas - sinchronizuoja misijos būseną naujiems žaidėjams
+		
+		// Performance monitoring and debugging
+		class performanceMonitor {}; //Server performance monitoring - logs FPS, scripts, etc.
+		class scriptMarker {}; //Debug markers for critical script locations
 	};
 	class client
 	{
@@ -65,6 +72,8 @@ class wrm
 		class V2hints {};
 		class V2suppMrk {};
 		class V2uavRequest {};
+		class V2uavCooldownHint {}; //UAV cooldown pranešimas grupės nariams
+		class V2uavCooldownEnded {}; //UAV cooldown baigėsi pranešimas
 		class V2vehMrkE {};
 		class V2vehMrkW {};
 		class V2entityKilled {};

@@ -29,7 +29,7 @@ while {!secBW2} do
 		{
 			if (_unit distance posBaseW2 < 200) then {secBW2=true;};
 		};
-	}  forEach allUnits;
+	}  forEach (allUnits + allPlayers); // Include both AI and players
 };
 publicvariable "secBW2";
 
@@ -41,7 +41,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 ["
 	sectorBW2=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-	this setVariable ['name',_nme];
+	this setVariable ['name','%1'];
 	this setVariable ['Designation','G'];
 	this setVariable ['OwnerLimit','1'];
 	this setVariable ['OnOwnerChange','
@@ -49,11 +49,11 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resBaseW!='' '')exitWith{};
-				_mrkRaW = createMarker [resBaseW, posBaseW2];
-				_mrkRaW setMarkerShape ''ICON'';
-				_mrkRaW setMarkerType ''empty'';
-				_mrkRaW setMarkerText nameBW2;
+				if(getMarkerColor resBaseW!='''')exitWith{};
+				_mrkRaW2 = createMarker [resBaseW, posBaseW2];
+				_mrkRaW2 setMarkerShape ''ICON'';
+				_mrkRaW2 setMarkerType ''empty'';
+				_mrkRaW2 setMarkerText nameBW2;
 				deleteMarker resBaseWE;
 
 				_eBW2=true;
@@ -63,8 +63,8 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 					{
 						if (_unit distance posBaseW2 < 250) then {_eBW2=false;};
 					};
-				}  forEach allUnits;
-				if((getMarkerColor resBaseW!='' '')&&(_eBW2))
+				}  forEach (allUnits + allPlayers); // Include both AI and players
+				if((getMarkerColor resBaseW!='''')&&(_eBW2))
 				then{
 					{_x hideObjectGlobal false,} forEach hideVehBW2;
 					hideVehBW2=[];
@@ -73,7 +73,7 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 			 };
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resBaseWE!='' '')exitWith{};
+				if(getMarkerColor resBaseWE!='''')exitWith{};
 				_mrkRaW = createMarker [resBaseWE, posBaseW2];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -94,11 +94,11 @@ _des=format ['Capture/Defend %1 base',nameBW2];
 	this setVariable ['DefaultOwner','-1'];
 	this setVariable ['TaskOwner','3'];
 	this setVariable ['TaskTitle',nameBW2];
-	this setVariable ['taskDescription',_des];
+	this setVariable ['taskDescription','%2'];
 	this setVariable ['ScoreReward','0'];
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
-"]];	
+",_nme,_des]];	
 [sectorBW2, sideW] call BIS_fnc_moduleSector; //initialize sector
 [2] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;

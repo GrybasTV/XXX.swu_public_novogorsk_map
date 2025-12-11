@@ -71,54 +71,48 @@ if(count aoObjs!=0)then{{deleteVehicle _x;} forEach aoObjs;}; aoObjs = [];
 
 titleFadeOut 3;
 
-waitUntil {!isNull player}; //JIP
-waitUntil {!alive player};
-waitUntil {progress > 1}; //mission is created and started
-waitUntil {alive player}; //player respawned and is side west/east/guer 
-
-//REVIVE
-if(revOn==0)then{[player] call bis_fnc_disableRevive;};
-if(revOn==2)then{player addEventHandler ["Dammaged",{_this spawn wrm_fnc_plRevive;}];};
-if(isClass(configfile >> "CfgMods" >> "SPE"))then
-{
-	if(revOn==3)then{[player] call bis_fnc_disableRevive;};
+// TIMEOUT #1: Laukti kol player != null (JIP)
+private _startTime1 = time;
+waitUntil {
+    sleep 0.5;
+    (!isNull player) || (time - _startTime1 > 30)
 };
 
-//3rd person view
-if(difficultyOption "thirdPersonView"!=0)then
+// TIMEOUT #4: Laukti kol player alive
+private _startTime4 = time;
+waitUntil {
+    sleep 0.5;
+    (alive player) || (time - _startTime4 > 30)
+};
+
+if((viewType==1)&&(difficultyOption "thirdPersonView"==1))then
 {
-	call
+	addMissionEventHandler ["EachFrame",
 	{
-		if((viewType==1)&&(difficultyOption "thirdPersonView"==1))then
+		if(lifeState player=="HEALTHY"||lifeState player=="INJURED")then
 		{
-			addMissionEventHandler ["EachFrame",
+			if(vehicle player==player)then
 			{
-				if(lifeState player=="HEALTHY"||lifeState player=="INJURED")then
-				{
-					if(vehicle player==player)then
-					{
-						if(cameraView == "External"||cameraView == "Group")
-						then{vehicle player switchCamera "Internal";};
-					}else
-					{
-						if(cameraView == "Group")
-						then{vehicle player switchCamera "External";};
-					};
-				};
-			}];
+				if(cameraView == "External"||cameraView == "Group")
+				then{vehicle player switchCamera "Internal";};
+			}else
+			{
+				if(cameraView == "Group")
+				then{vehicle player switchCamera "External";};
+			};
 		};
-		if(viewType==0)then
+	}];
+};
+if(viewType==0)then
+{
+	addMissionEventHandler ["EachFrame",
+	{
+		if(lifeState player=="HEALTHY"||lifeState player=="INJURED")then
 		{
-			addMissionEventHandler ["EachFrame",
-			{
-				if(lifeState player=="HEALTHY"||lifeState player=="INJURED")then
-				{
-					if(cameraView == "External"||cameraView == "Group")
-					then{vehicle player switchCamera "Internal";};
-				};
-			}];
+			if(cameraView == "External"||cameraView == "Group")
+			then{vehicle player switchCamera "Internal";};
 		};
-	};
+	}];
 };
 
 //create local markers for players BASES

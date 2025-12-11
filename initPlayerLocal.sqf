@@ -1,6 +1,13 @@
 //Author: IvosH
 waitUntil {!isNull player}; //JIP
 
+// JIP (Join In Progress) patikrinimas
+// didJIP yra built-in kintamasis, naudojame kitą kintamojo pavadinimą, kad išvengtume konflikto
+playerDidJIP = false;
+if (!isNil "didJIP") then {
+	playerDidJIP = didJIP;
+};
+
 //variables setup
 lUpdate = 0;
 suppUsed=0;
@@ -51,3 +58,54 @@ if ("param2" call BIS_fnc_getParamValue > 0) then
 
 null = [] execVM "admin\radio.sqf"; //admin menu
 systemChat "Admin menu loaded";
+
+// Enable self-marker on map
+null = [] execVM "warmachine\V2playerMarker.sqf";
+
+// Admin Zeus rights check - periodic check for admins
+[] spawn {
+    while {true} do {
+        if (serverCommandAvailable "#kick" && !isNull player && !isNil "z1" && {!isNull z1}) then {
+            // Admin has access to Zeus - ensure they have curator editable objects
+            [z1, [[player], true]] remoteExec ["addCuratorEditableObjects", 2, false];
+        };
+        sleep 10; // Check every 10 seconds
+    };
+};
+
+// JIP (Join In Progress) sinchronizavimas
+// Jei žaidėjas prisijungė prie vykstančios misijos, sinchronizuojame misijos būseną
+// JIP (Join In Progress) sinchronizavimas
+// Jei žaidėjas prisijungė prie vykstančios misijos, sinchronizuojame misijos būseną
+if(playerDidJIP) then {
+	// Laukime kol misija bus sukurta (jei dar nėra sukurta)
+	// Timeout 10 minučių, nes misijos kūrimas gali užtrukti ilgai
+	_timeout = time + 600; // 10 minučių timeout
+	
+	// Sukuriame atskirą giją laukimui, kad neužblokuotume kitų skriptų
+	[_timeout] spawn {
+		params ["_timeout"];
+		
+		waitUntil {
+			sleep 1;
+			progress > 1 || time >= _timeout
+		};
+		
+		if(time >= _timeout && progress <= 1) then {
+			["WARNING: JIP synchronization timeout. Mission may be stuck or initializing."] remoteExec ["systemChat", player, false];
+			hint parseText "WARNING<br/>Mission synchronization timed out.<br/>Please wait or reconnect.";
+			
+			// Vis tiek bandome laukti toliau fone
+			waitUntil {sleep 5; progress > 1};
+			[player] remoteExec ["wrm_fnc_JIPSync", 2, false];
+			systemChat "Mission initialized. Requesting synchronization...";
+		} else {
+			// Jei misija jau pradėta, sinchronizuojame misijos būseną
+			if(progress > 1) then {
+				// Sinchronizuojame misijos parametrus su serveriu
+				[player] remoteExec ["wrm_fnc_JIPSync", 2, false];
+				systemChat "JIP synchronization requested";
+			};
+		};
+	};
+};

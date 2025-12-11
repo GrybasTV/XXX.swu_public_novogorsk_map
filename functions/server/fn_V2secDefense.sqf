@@ -26,6 +26,8 @@ if(AIon==0)exitWith{};
 _sec = _this select 0;
 _side =  _this select 1;
 
+["V2secDefense", format["Start - Side: %1, Pos: %2", _side, _sec]] call wrm_fnc_scriptMarker;
+
 //WEST
 if (_side == sideW) then
 {
@@ -37,9 +39,15 @@ if (_side == sideW) then
 		_unitsW=["B_Soldier_SL_F","B_soldier_LAT_F","B_soldier_AR_F","B_medic_F","B_Soldier_TL_F","B_Soldier_F","B_engineer_F","B_soldier_M_F","B_soldier_AT_F","B_Soldier_GL_F","B_soldier_AA_F","B_recon_TL_F","B_recon_LAT_F","B_recon_M_F","B_recon_medic_F","B_recon_JTAC_F","B_recon_F","B_recon_exp_F","B_sniper_F"];
 
 		_toSpawn=[];
-		while{(count _toSpawn<8)}do
+		_attempts = 0;
+		while{(count _toSpawn<8) && (_attempts < 100)}do
 		{
 			_toSpawn pushBackUnique (selectRandom _unitsW);
+			_attempts = _attempts + 1;
+		};
+		// Fallback if unique selection fails
+		while {(count _toSpawn < 8)} do {
+			_toSpawn pushBack (selectRandom _unitsW);
 		};
 		_grp = [_sec, sideW, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
@@ -56,9 +64,23 @@ if (_side == sideW) then
 	}else
 	{
 		_toSpawn=[];
-		while{(count _toSpawn<8)}do
+		_sourceUnits = [];
+		if (!isNil "unitsW" && {count unitsW > 0}) then {
+			_sourceUnits = unitsW select {_x != ""};
+		};
+		if (count _sourceUnits == 0) then {
+			_sourceUnits = ["B_Soldier_F","B_Soldier_TL_F","B_medic_F","B_soldier_AR_F","B_Soldier_GL_F","B_soldier_LAT_F","B_soldier_M_F","B_soldier_AA_F"];
+		};
+		
+		_attempts = 0;
+		while{(count _toSpawn<8) && (_attempts < 100)}do
 		{
-			_toSpawn pushBackUnique (selectRandom unitsW);
+			_toSpawn pushBackUnique (selectRandom _sourceUnits);
+			_attempts = _attempts + 1;
+		};
+		// Fallback if unique selection fails
+		while {(count _toSpawn < 8)} do {
+			_toSpawn pushBack (selectRandom _sourceUnits);
 		};
 		_grp = [_sec, sideW, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
@@ -82,9 +104,15 @@ if (_side == sideE) then
 		_unitsE=["O_Soldier_SL_F","O_soldier_LAT_F","O_soldier_AR_F","O_medic_F","O_Soldier_TL_F","O_Soldier_F","O_engineer_F","O_soldier_M_F","O_soldier_AT_F","O_Soldier_GL_F","O_soldier_AA_F","O_recon_TL_F","O_recon_LAT_F","O_recon_M_F","O_recon_medic_F","O_recon_JTAC_F","O_recon_F","O_recon_exp_F","O_sniper_F"];
 
 		_toSpawn=[];
-		while{(count _toSpawn<8)}do
+		_attempts = 0;
+		while{(count _toSpawn<8) && (_attempts < 100)}do
 		{
 			_toSpawn pushBackUnique (selectRandom _unitsE);
+			_attempts = _attempts + 1;
+		};
+		// Fallback if unique selection fails
+		while {(count _toSpawn < 8)} do {
+			_toSpawn pushBack (selectRandom _unitsE);
 		};
 		_grp = [_sec, sideE, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
@@ -101,9 +129,23 @@ if (_side == sideE) then
 	}else
 	{
 		_toSpawn=[];
-		while{(count _toSpawn<8)}do
+		_sourceUnits = [];
+		if (!isNil "unitsE" && {count unitsE > 0}) then {
+			_sourceUnits = unitsE select {_x != ""};
+		};
+		if (count _sourceUnits == 0) then {
+			_sourceUnits = ["O_Soldier_F","O_Soldier_TL_F","O_medic_F","O_soldier_AR_F","O_Soldier_GL_F","O_soldier_LAT_F","O_soldier_M_F","O_soldier_AA_F"];
+		};
+
+		_attempts = 0;
+		while{(count _toSpawn<8) && (_attempts < 100)}do
 		{
-			_toSpawn pushBackUnique (selectRandom unitsE);
+			_toSpawn pushBackUnique (selectRandom _sourceUnits);
+			_attempts = _attempts + 1;
+		};
+		// Fallback if unique selection fails
+		while {(count _toSpawn < 8)} do {
+			_toSpawn pushBack (selectRandom _sourceUnits);
 		};
 		_grp = [_sec, sideE, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
@@ -117,3 +159,4 @@ if (_side == sideE) then
 };
 
 if(DBG)then{["Objective defense spawned"] remoteExec ["systemChat", 0, false];};
+["V2secDefense", "Complete - Defense spawned successfully"] call wrm_fnc_scriptMarker;

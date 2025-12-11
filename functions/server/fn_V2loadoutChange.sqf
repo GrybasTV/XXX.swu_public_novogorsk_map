@@ -22,7 +22,17 @@ _un=_this select 0;
 
 if (isPlayer _un) exitWith {}; //unit is player script stops here
 _exit=false;
-waitUntil{side _un!=civilian};
+
+// CRITICAL FIX: Added timeout to prevent scheduler deadlock
+private _startTime = time;
+waitUntil {
+	sleep 0.5;
+	(side _un != civilian) || (time - _startTime > 60)
+};
+
+if ((time - _startTime > 60) && (side _un == civilian)) exitWith {
+	// Timeout reached, unit stayed civilian. Exiting silently to avoid chat spam.
+};
 
 if(modA=="A3")then
 {

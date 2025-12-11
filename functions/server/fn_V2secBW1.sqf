@@ -29,7 +29,7 @@ while {!secBW1} do
 		{
 			if (_unit distance posBaseW1 < 200) then {secBW1=true;};
 		};
-	}  forEach allUnits;
+	}  forEach (allUnits + allPlayers); // Include both AI and players
 };
 publicvariable "secBW1";
 
@@ -41,7 +41,7 @@ _des=format ['Capture/Defend %1 base',nameBW1];
 ["
 	sectorBW1=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-	this setVariable ['name',_nme];
+	this setVariable ['name','%1'];
 	this setVariable ['Designation','F'];
 	this setVariable ['OwnerLimit','1'];
 	this setVariable ['OnOwnerChange','
@@ -49,7 +49,7 @@ _des=format ['Capture/Defend %1 base',nameBW1];
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resFobW!='' '')exitWith{};
+				if(getMarkerColor resFobW!='''')exitWith{};
 				_mrkRaW = createMarker [resFobW, posBaseW1];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -63,7 +63,7 @@ _des=format ['Capture/Defend %1 base',nameBW1];
 					{
 						if (_unit distance posBaseW1 < 250) then {_eBW1=false;};
 					};
-				}  forEach allUnits;
+				}  forEach (allUnits + allPlayers); // Include both AI and players
 				if((getMarkerColor resFobW!='''')&&(_eBW1))
 				then{
 					{_x hideObjectGlobal false,} forEach hideVehBW1;
@@ -73,7 +73,7 @@ _des=format ['Capture/Defend %1 base',nameBW1];
 			 };
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resFobWE!='' '')exitWith{};
+				if(getMarkerColor resFobWE!='''')exitWith{};
 				_mrkRaW = createMarker [resFobWE, posBaseW1];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -94,11 +94,11 @@ _des=format ['Capture/Defend %1 base',nameBW1];
 	this setVariable ['DefaultOwner','-1'];
 	this setVariable ['TaskOwner','3'];
 	this setVariable ['TaskTitle',nameBW1];
-	this setVariable ['taskDescription',_des];
+	this setVariable ['taskDescription','%2'];
 	this setVariable ['ScoreReward','0'];
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
-"]];	
+",_nme,_des]];	
 [sectorBW1, sideW] call BIS_fnc_moduleSector; //initialize sector
 [1] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;

@@ -22,6 +22,8 @@ call
 AOcreated = 1;
 
 //respawn positions
+// Patikriname, ar dbgVehs yra apibrėžtas
+if (isNil "dbgVehs") then { dbgVehs = []; };
 if(DBG && (count dbgVehs!=0))then
 {
 	{deleteVehicle _x;} forEach (dbgVehs-[vehArti,vehCas,vehAA]);

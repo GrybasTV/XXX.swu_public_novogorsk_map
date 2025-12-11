@@ -35,9 +35,16 @@ if(_uavIndex != -1)then
 		uavGroupObjects deleteAt _uavIndex;
 		publicVariable "uavGroupObjects";
 
-		//Pradėti cooldown - informuoti apie cooldown pradžią ir nustatyti nedelsiant
-		["UAV destroyed - starting cooldown"] remoteExec ["systemChat", 0, false];
+		//Pradėti cooldown - fn_V2uavGroupCooldown informuos grupės narius apie cooldown su formatuotu laiku
 		[_grpId] call wrm_fnc_V2uavGroupCooldown;
+	};
+}else
+{
+	//UAV nerastas masyve - tai gali nutikti, jei UAV sunaikintas greitai arba dėl race condition
+	//Tačiau dabar MPKilled event handler pridėtas serverio pusėje PO to, kai UAV pridėtas į masyvą,
+	//todėl šis atvejis neturėtų vykti normaliomis sąlygomis
+	if(DBG) then {
+		["DEBUG: UAV not found in uavGroupObjects - this should not happen"] remoteExec ["systemChat", 0, false];
 	};
 };
 

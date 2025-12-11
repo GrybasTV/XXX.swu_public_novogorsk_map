@@ -136,7 +136,8 @@ call
 							{
 								if(!surfaceIsWater _pos)then
 								{
-									_box = createVehicle [selectRandom supply, [_pos select 0, _pos select 1, 60], [], 0, "NONE"];
+									// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+									_box = createVehicle [selectRandom supply, [_pos param [0, 0], _pos param [1, 0], 60], [], 0, "NONE"];
 									[_box] call wrm_fnc_parachute;
 									[z1,[[_box],true]] remoteExec ["addCuratorEditableObjects", 2, false];
 									[_box,(str profileName),(side player)] remoteExec ["wrm_fnc_V2suppMrk", 0, true];
@@ -177,7 +178,8 @@ call
 							{
 								if(!surfaceIsWater _pos)then
 								{
-									_car = createVehicle [selectRandom car, [_pos select 0, _pos select 1, 60], [], 0, "NONE"];
+									// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+									_car = createVehicle [selectRandom car, [_pos param [0, 0], _pos param [1, 0], 60], [], 0, "NONE"];
 									[_car] call wrm_fnc_parachute;
 									_car setDir (getPos player getDir _pos);
 									[z1,[[_car],true]] remoteExec ["addCuratorEditableObjects", 2, false];
@@ -217,7 +219,8 @@ call
 							{
 								if(surfaceIsWater _pos)then
 								{
-									_boat = createVehicle [selectRandom boatTr, [_pos select 0, _pos select 1, 60], [], 0, "NONE"]; //create boat
+									// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+									_boat = createVehicle [selectRandom boatTr, [_pos param [0, 0], _pos param [1, 0], 60], [], 0, "NONE"]; //create boat
 									[_boat] call wrm_fnc_parachute;
 									_boat setDir (getPos player getDir _pos);
 									[z1,[[_boat],true]] remoteExec ["addCuratorEditableObjects", 2, false]; //add unit to zeus

@@ -74,6 +74,6 @@ unitsW=
 	"UA_MV_sniper" //18 - Sniper (Marksman) - MODIFIED: Replaced UA_Azov_reconsniper with UA_MV_sniper
 ];
 
-faceW='NATO'; //faces (config) - FIXED: Turėjo būti faceW, ne faceE (WEST frakcija)
+faceW='White'; //faces (config) - FIXED: Turėjo būti faceW, ne faceE (WEST frakcija)
 voiceW='RUS_'; //voices - FIXED: Turėjo būti voiceW, ne voiceE
 nameW="LIB_RussianMen"; //names - FIXED: Turėjo būti nameW, ne nameE

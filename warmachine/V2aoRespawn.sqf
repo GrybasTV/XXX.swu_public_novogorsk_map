@@ -6,6 +6,10 @@
 if (isNil "factionW") then { factionW = "NATO"; };
 if (isNil "factionE") then { factionE = "CSAT"; };
 
+// Initialize missType if not already set
+// missType: 1 = Infantry mission, 2 = Combined ground forces, 3 = Full spectrum warfare
+if (isNil "missType") then { missType = 1; };
+
 // Initialize base name variables if not already set
 if (isNil "nameBW1") then { nameBW1 = format ["%1 Transport base", factionW]; };
 if (isNil "nameBW2") then { nameBW2 = format ["%1 Armor base", factionW]; };
@@ -15,6 +19,8 @@ if (isNil "nameBE2") then { nameBE2 = format ["%1 Armor base", factionE]; };
 //INFANTRY RESPAWN
 hint "Searching for infantry respawn positions";
 
+// Patikriname, ar resMarkers yra apibrėžtas (klientas inicializuoja, bet serveryje gali būti neapibrėžtas)
+if (isNil "resMarkers") then { resMarkers = []; };
 {deleteMarkerLocal _x;} forEach resMarkers; resMarkers = [];
 resArtiW=[];resArtiE=[];resCasW=[];resCasE=[];resAAW=[];resAAE=[];resBaseW1W=[];resBaseW1E=[];resBaseW2W=[];resBaseW2E=[];resBaseE1W=[];resBaseE1E=[];resBaseE2W=[];resBaseE2E=[];
 
@@ -117,12 +123,10 @@ systemchat "Infantry respawn positions found";
 
 //VEHICLES RESPAWN
 //WEST BASE 1
-rBikeW = []; rTruckW = []; rHeliTrW = []; rCarArW = []; rCarW = []; rArmorW1 = []; rHeliArW = []; rArmorW2 = [];
+rBikeW = []; rTruckW = []; rCarArW = []; rCarW = []; rArmorW1 = []; rHeliArW = [];
 
-_objDir = "Land_HelipadEmpty_F" createVehicle posBaseW1;
-aoObjs pushBackUnique _objDir;
-_objDir setDir ((selectRandom [(posBaseE1 getDir posBaseW1),(posBaseE2 getDir posBaseW2)])-60);
-dirBW = ((getDir _objDir)-120);
+_baseDirW1 = (selectRandom [(posBaseE1 getDir posBaseW1),(posBaseE2 getDir posBaseW2)])-60;
+dirBW = (_baseDirW1-120);
 _i=0;
 _markers = [];
 {
@@ -133,29 +137,27 @@ _markers = [];
 		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 		
 		_res = [];
-		while {(count _res < 2)&&(_i<12)} do
+		while {(count _res < 2)&&(_i<24)} do
 		{	
-			_posT = _objDir getRelPos [50,(0+30*_i)];	
+			_posT = posBaseW1 getPos [50,(_baseDirW1 + (30*_i))];	
 			_res = _posT findEmptyPosition [0, 25, _typ];
 			_i=_i+1;
-			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/12",nameBW1,_i];
+			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/24",nameBW1,_i];
 			//control
 			if(count _res != 0)then{if ((_res isFlatEmpty  [-1, -1, 0.45, 5, -1, false] isEqualTo [])||(!(_res isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))) then {_res = [];};};
+			sleep 0.1;
 		};
-		if(count _res < 2)then
+		if(isNil "_res" || {count _res < 2})then
 		{
-			_posT = _objDir getRelPos [35,(0+10*_i)];
+			_posT = posBaseW1 getPos [35,(_baseDirW1 + (10*_i))];
 			_res = [posBaseW1, 25, 200, 0, 0, 0.5, 0, _markers, [_posT, _posT]] call BIS_fnc_findSafePos;
 		};
 		
+	// BASE 1: BikeW, CarW, CarArW, TruckW (be ArmorW1/ArmorW2 ir HeliTrW)
 		_Bike=""; _veh=BikeW select 0;  if (_veh isEqualType [])then{_Bike=_veh select 0;}else{_Bike=_veh;};
 		_Car=""; _veh=CarW select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
 		_CarAr=""; _veh=CarArW select 0;  if (_veh isEqualType [])then{_CarAr=_veh select 0;}else{_CarAr=_veh;};
 		_Truck=""; _veh=TruckW select 0;  if (_veh isEqualType [])then{_Truck=_veh select 0;}else{_Truck=_veh;};
-		_Armor1=""; _veh=ArmorW1 select 0;  if (_veh isEqualType [])then{_Armor1=_veh select 0;}else{_Armor1=_veh;};
-		_Armor2=""; _veh=ArmorW2 select 0;  if (_veh isEqualType [])then{_Armor2=_veh select 0;}else{_Armor2=_veh;};
-		_HeliTr=""; if (count HeliTrW>0) then {_veh=HeliTrW select 0;  if (_veh isEqualType [])then{_HeliTr=_veh select 0;}else{_HeliTr=_veh;};};
-		_HeliAr=""; if (count HeliArW>0) then {_veh=HeliArW select 0;  if (_veh isEqualType [])then{_HeliAr=_veh select 0;}else{_HeliAr=_veh;};};
 		
 		call
 		{
@@ -163,10 +165,6 @@ _markers = [];
 			if(_typ==_Car)exitWith{rCarW pushBackUnique _res;};
 			if(_typ==_CarAr)exitWith{rCarArW pushBackUnique _res;};
 			if(_typ==_Truck)exitWith{rTruckW pushBackUnique _res;};
-			if(_typ==_Armor1)exitWith{rArmorW1 pushBackUnique _res;};
-			if(_typ==_Armor2)exitWith{rArmorW2 pushBackUnique _res;};
-			if(_typ==_HeliTr)exitWith{rHeliTrW pushBackUnique _res;};
-			if(_typ==_HeliAr)exitWith{rHeliArW pushBackUnique _res;};
 		};
 		
 		//blacklist marker(s) for findSafePos
@@ -182,7 +180,7 @@ _markers = [];
 		{
 			_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
 			[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
-			_vehicle setDir ((getDir _objDir)-120);
+			_vehicle setDir (_baseDirW1 - 120);
 			dbgVehs pushBackUnique _vehicle;
 		};
 	};	
@@ -198,9 +196,15 @@ if (AOcreated == 0) exitWith {hint parseText format ["ERROR<br/>No suitable vehi
 
 systemchat format ["Vehicle respawn position for %1 found",nameBW1];
 //WEST BASE 2
-_objDir setPos posBaseW2;
+rArmorW2 = [];
+
+// _objDir removed
+_baseDirW2 = (selectRandom [(posBaseE1 getDir posBaseW1),(posBaseE2 getDir posBaseW2)])-60;
 _i=0;
 _markers = [];
+	// BASE 2: ArmorW1, CarW (tik 1 tankas, ne 2)
+	_base2Vehicles = [ArmorW1, CarW];
+
 {
 	if (count _x>0) then
 	{
@@ -209,60 +213,51 @@ _markers = [];
 		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 		
 		_res = [];
-		while {(count _res < 2)&&(_i<12)} do
+		while {(count _res < 2)&&(_i<24)} do
 		{	
-			_posT = _objDir getRelPos [50,(0+30*_i)];	
+			_posT = posBaseW2 getPos [50,(_baseDirW2 + (30*_i))];	
 			_res = _posT findEmptyPosition [0, 25, _typ];
 			_i=_i+1;
-			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/12",nameBW2,_i];
+			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/24",nameBW2,_i];
 			//control
 			if(count _res != 0)then{if ((_res isFlatEmpty  [-1, -1, 0.45, 5, -1, false] isEqualTo [])||(!(_res isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))) then {_res = [];};};
+			sleep 0.1;
 		};
-		if(count _res < 2)then
+		if(isNil "_res" || {count _res < 2})then
 		{
-			_posT = _objDir getRelPos [35,(0+10*_i)];
+			_posT = posBaseW2 getPos [35,(_baseDirW2 + (10*_i))];
 			_res = [posBaseW2, 25, 200, 0, 0, 0.5, 0, _markers, [_posT, _posT]] call BIS_fnc_findSafePos;
 		};
 		
-		_Bike=""; _veh=BikeW select 0;  if (_veh isEqualType [])then{_Bike=_veh select 0;}else{_Bike=_veh;};
-		_Car=""; _veh=CarW select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
-		_CarAr=""; _veh=CarArW select 0;  if (_veh isEqualType [])then{_CarAr=_veh select 0;}else{_CarAr=_veh;};
-		_Truck=""; _veh=TruckW select 0;  if (_veh isEqualType [])then{_Truck=_veh select 0;}else{_Truck=_veh;};
 		_Armor1=""; _veh=ArmorW1 select 0;  if (_veh isEqualType [])then{_Armor1=_veh select 0;}else{_Armor1=_veh;};
-		_Armor2=""; _veh=ArmorW2 select 0;  if (_veh isEqualType [])then{_Armor2=_veh select 0;}else{_Armor2=_veh;};
-		_HeliTr=""; if (count HeliTrW>0) then {_veh=HeliTrW select 0;  if (_veh isEqualType [])then{_HeliTr=_veh select 0;}else{_HeliTr=_veh;};};
-		_HeliAr=""; if (count HeliArW>0) then {_veh=HeliArW select 0;  if (_veh isEqualType [])then{_HeliAr=_veh select 0;}else{_HeliAr=_veh;};};
+		_Car=""; _veh=CarW select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
 		
 		call
 		{
-			if(_typ==_Bike)exitWith{rBikeW pushBackUnique _res;};
-			if(_typ==_Car)exitWith{rCarW pushBackUnique _res;};
-			if(_typ==_CarAr)exitWith{rCarArW pushBackUnique _res;};
-			if(_typ==_Truck)exitWith{rTruckW pushBackUnique _res;};
 			if(_typ==_Armor1)exitWith{rArmorW1 pushBackUnique _res;};
-			if(_typ==_Armor2)exitWith{rArmorW2 pushBackUnique _res;};
-			if(_typ==_HeliTr)exitWith{rHeliTrW pushBackUnique _res;};
-			if(_typ==_HeliAr)exitWith{rHeliArW pushBackUnique _res;};
+			if(_typ==_Car)exitWith{rCarW pushBackUnique _res;};
 		};
 		
 		//blacklist marker(s) for findSafePos
-		_n = format ["bw2%1%2",_typ,(round (_res select 0))];
-		_mrk = createMarkerLocal [_n, _res];
-		_mrk setMarkerShapeLocal "ELLIPSE";
-		_mrk setMarkerSizeLocal [16,16];
-		_mrk setMarkerColorLocal colorW;
-		_markers pushBackUnique _mrk;
-		resMarkers pushBackUnique _mrk;
-		
-		if(DBG)then
-		{
-			_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
-			[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
-			_vehicle setDir ((getDir _objDir)-120);
-			dbgVehs pushBackUnique _vehicle;
+		if (!isNil "_res" && {count _res > 1}) then {
+			_n = format ["bw2%1%2",_typ,(round (_res select 0))];
+			_mrk = createMarkerLocal [_n, _res];
+			_mrk setMarkerShapeLocal "ELLIPSE";
+			_mrk setMarkerSizeLocal [16,16];
+			_mrk setMarkerColorLocal colorW;
+			_markers pushBackUnique _mrk;
+			resMarkers pushBackUnique _mrk;
+			
+			if(DBG)then
+			{
+				_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
+				[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
+				_vehicle setDir (_baseDirW2 - 120);
+				dbgVehs pushBackUnique _vehicle;
+			};
 		};
 	};
-} forEach [HeliTrW,ArmorW1,ArmorW2,CarW];
+} forEach _base2Vehicles;
 
 //control
 {
@@ -275,11 +270,10 @@ if (AOcreated == 0) exitWith {hint parseText format ["ERROR<br/>No suitable vehi
 systemchat format ["Vehicle respawn position for %1 found",nameBW2];
 
 //EAST BASE 1
-rBikeE = []; rTruckE = []; rHeliTrE = []; rCarArE = []; rCarE = []; rArmorE1 = []; rHeliArE = []; rArmorE2 = [];
+rBikeE = []; rTruckE = []; rCarArE = []; rCarE = []; rArmorE1 = []; rHeliArE = [];
 
-_objDir setPos posBaseE1;
-_objDir setDir ((selectRandom [(posBaseW1 getDir posBaseE1),(posBaseW2 getDir posBaseE2)])-60);
-dirBE = ((getDir _objDir)-120);
+_baseDirE1 = ((selectRandom [(posBaseW1 getDir posBaseE1),(posBaseW2 getDir posBaseE2)])-60);
+dirBE = (_baseDirE1-120);
 _i=0;
 _markers = [];
 {
@@ -290,29 +284,27 @@ _markers = [];
 		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 		
 		_res = [];
-		while {(count _res < 2)&&(_i<12)} do
+		while {(count _res < 2)&&(_i<24)} do
 		{	
-			_posT = _objDir getRelPos [50,(0+30*_i)];	
+			_posT = posBaseE1 getPos [50,(_baseDirE1 + (30*_i))];	
 			_res = _posT findEmptyPosition [0, 25, _typ];
 			_i=_i+1;
-			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/12",nameBE1,_i];
+			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/24",nameBE1,_i];
 			//control
 			if(count _res != 0)then{if ((_res isFlatEmpty  [-1, -1, 0.45, 5, -1, false] isEqualTo [])||(!(_res isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))) then {_res = [];};};
+			sleep 0.1;
 		};
-		if(count _res < 2)then
+		if(isNil "_res" || {count _res < 2})then
 		{
-			_posT = _objDir getRelPos [35,(0+10*_i)];
+			_posT = posBaseE1 getPos [35,(_baseDirE1 + (10*_i))];
 			_res = [posBaseE1, 25, 200, 0, 0, 0.5, 0, _markers, [_posT, _posT]] call BIS_fnc_findSafePos;
 		};
 		
+		// BASE 1: BikeE, CarE, CarArE, TruckE (be ArmorE1/ArmorE2 ir HeliTrE)
 		_Bike=""; _veh=BikeE select 0;  if (_veh isEqualType [])then{_Bike=_veh select 0;}else{_Bike=_veh;};
 		_Car=""; _veh=CarE select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
 		_CarAr=""; _veh=CarArE select 0;  if (_veh isEqualType [])then{_CarAr=_veh select 0;}else{_CarAr=_veh;};
 		_Truck=""; _veh=TruckE select 0;  if (_veh isEqualType [])then{_Truck=_veh select 0;}else{_Truck=_veh;};
-		_Armor1=""; _veh=ArmorE1 select 0;  if (_veh isEqualType [])then{_Armor1=_veh select 0;}else{_Armor1=_veh;};
-		_Armor2=""; _veh=ArmorE2 select 0;  if (_veh isEqualType [])then{_Armor2=_veh select 0;}else{_Armor2=_veh;};
-		_HeliTr=""; if (count HeliTrE>0) then {_HeliTr=""; _veh=HeliTrE select 0;  if (_veh isEqualType [])then{_HeliTr=_veh select 0;}else{_HeliTr=_veh;};};
-		_HeliAr=""; if (count HeliArE>0) then {_veh=HeliArE select 0;  if (_veh isEqualType [])then{_HeliAr=_veh select 0;}else{_HeliAr=_veh;};};
 
 		call
 		{
@@ -320,10 +312,6 @@ _markers = [];
 			if(_typ==_Car)exitWith{rCarE pushBackUnique _res;};
 			if(_typ==_CarAr)exitWith{rCarArE pushBackUnique _res;};
 			if(_typ==_Truck)exitWith{rTruckE pushBackUnique _res;};
-			if(_typ==_Armor1)exitWith{rArmorE1 pushBackUnique _res;};
-			if(_typ==_Armor2)exitWith{rArmorE2 pushBackUnique _res;};
-			if(_typ==_HeliTr)exitWith{rHeliTrE pushBackUnique _res;};
-			if(_typ==_HeliAr)exitWith{rHeliArE pushBackUnique _res;};	
 		};
 		
 		//blacklist marker(s) for findSafePos
@@ -339,10 +327,10 @@ _markers = [];
 		{
 			_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
 			[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
-			_vehicle setDir ((getDir _objDir)-120);
+			_vehicle setDir dirBE;
 			dbgVehs pushBackUnique _vehicle;
 		};
-	};
+	};	
 } forEach [BikeE,CarE,CarArE,TruckE];
 
 //control
@@ -356,9 +344,14 @@ if (AOcreated == 0) exitWith {hint parseText format ["ERROR<br/>No suitable vehi
 systemchat format ["Vehicle respawn position for %1 found",nameBE1];
 
 //EAST BASE 2
-_objDir setPos posBaseE2;
+rArmorE2 = [];
+
+_baseDirE2 = ((selectRandom [(posBaseW1 getDir posBaseE1),(posBaseW2 getDir posBaseE2)])-60);
 _i=0;
 _markers = [];
+	// BASE 2: ArmorE1, CarE (tik 1 tankas, ne 2)
+	_base2VehiclesE = [ArmorE1, CarE];
+
 {
 	if (count _x>0) then
 	{
@@ -367,60 +360,51 @@ _markers = [];
 		if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 		
 		_res = [];
-		while {(count _res < 2)&&(_i<12)} do
+		while {(count _res < 2)&&(_i<24)} do
 		{	
-			_posT = _objDir getRelPos [50,(0+30*_i)];	
+			_posT = posBaseE2 getPos [50,(_baseDirE2 + (30*_i))];	
 			_res = _posT findEmptyPosition [0, 25, _typ];
 			_i=_i+1;
-			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/12",nameBE2,_i];
+			hint parseText format ["Searching for vehicle respawn position at<br/>%1<br/>Round %2/24",nameBE2,_i];
 			//control
 			if(count _res != 0)then{if ((_res isFlatEmpty  [-1, -1, 0.45, 5, -1, false] isEqualTo [])||(!(_res isFlatEmpty  [-1, -1, -1, -1, 2, false] isEqualTo []))) then {_res = [];};};
+			sleep 0.1;
 		};
-		if(count _res < 2)then
+		if(isNil "_res" || {count _res < 2})then
 		{
-			_posT = _objDir getRelPos [35,(0+10*_i)];
+			_posT = posBaseE2 getPos [35,(_baseDirE2 + (10*_i))];
 			_res = [posBaseE2, 25, 200, 0, 0, 0.5, 0, _markers, [_posT, _posT]] call BIS_fnc_findSafePos;
 		};
 
-		_Bike=""; _veh=BikeE select 0;  if (_veh isEqualType [])then{_Bike=_veh select 0;}else{_Bike=_veh;};
-		_Car=""; _veh=CarE select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
-		_CarAr=""; _veh=CarArE select 0;  if (_veh isEqualType [])then{_CarAr=_veh select 0;}else{_CarAr=_veh;};
-		_Truck=""; _veh=TruckE select 0;  if (_veh isEqualType [])then{_Truck=_veh select 0;}else{_Truck=_veh;};
 		_Armor1=""; _veh=ArmorE1 select 0;  if (_veh isEqualType [])then{_Armor1=_veh select 0;}else{_Armor1=_veh;};
-		_Armor2=""; _veh=ArmorE2 select 0;  if (_veh isEqualType [])then{_Armor2=_veh select 0;}else{_Armor2=_veh;};
-		_HeliTr=""; if (count HeliTrE>0) then {_HeliTr=""; _veh=HeliTrE select 0;  if (_veh isEqualType [])then{_HeliTr=_veh select 0;}else{_HeliTr=_veh;};};
-		_HeliAr=""; if (count HeliArE>0) then {_veh=HeliArE select 0;  if (_veh isEqualType [])then{_HeliAr=_veh select 0;}else{_HeliAr=_veh;};};
+		_Car=""; _veh=CarE select 0;  if (_veh isEqualType [])then{_Car=_veh select 0;}else{_Car=_veh;};
 
 		call
 		{
-			if(_typ==_Bike)exitWith{rBikeE pushBackUnique _res;};
-			if(_typ==_Car)exitWith{rCarE pushBackUnique _res;};
-			if(_typ==_CarAr)exitWith{rCarArE pushBackUnique _res;};
-			if(_typ==_Truck)exitWith{rTruckE pushBackUnique _res;};
 			if(_typ==_Armor1)exitWith{rArmorE1 pushBackUnique _res;};
-			if(_typ==_Armor2)exitWith{rArmorE2 pushBackUnique _res;};
-			if(_typ==_HeliTr)exitWith{rHeliTrE pushBackUnique _res;};
-			if(_typ==_HeliAr)exitWith{rHeliArE pushBackUnique _res;};	
+			if(_typ==_Car)exitWith{rCarE pushBackUnique _res;};
 		};
 		
 		//blacklist marker(s) for findSafePos
-		_n = format ["be2%1%2",_typ,(round (_res select 0))];
-		_mrk = createMarkerLocal [_n, _res];
-		_mrk setMarkerShapeLocal "ELLIPSE";
-		_mrk setMarkerSizeLocal [16,16];
-		_mrk setMarkerColorLocal colorE;
-		_markers pushBackUnique _mrk;
-		resMarkers pushBackUnique _mrk;
-		
-		if(DBG)then
-		{
-			_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
-			[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
-			_vehicle setDir ((getDir _objDir)-120);
-			dbgVehs pushBackUnique _vehicle;
+		if (!isNil "_res" && {count _res > 1}) then {
+			_n = format ["be2%1%2",_typ,(round (_res select 0))];
+			_mrk = createMarkerLocal [_n, _res];
+			_mrk setMarkerShapeLocal "ELLIPSE";
+			_mrk setMarkerSizeLocal [16,16];
+			_mrk setMarkerColorLocal colorE;
+			_markers pushBackUnique _mrk;
+			resMarkers pushBackUnique _mrk;
+			
+			if(DBG)then
+			{
+				_vehicle = createVehicle [_typ,[_res select 0, _res select 1, 1], [], 0, "NONE"];
+				[_vehicle,[_tex,1]] call bis_fnc_initVehicle;
+				_vehicle setDir (_baseDirE2 - 120);
+				dbgVehs pushBackUnique _vehicle;
+			};
 		};
 	};
-} forEach [HeliTrE,ArmorE1,ArmorE2,CarE];
+} forEach _base2VehiclesE;
 
 
 //control

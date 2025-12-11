@@ -22,14 +22,14 @@ for "_i" from 0 to 1 step 0 do
 	//random timer
 	sleep (random[(arTime/2),arTime,(arTime*2)]);
 	//sleep 40;
+	// Patikriname, ar yra žaidėjų su tinkama šalimi
+	// Pašalintas timeout, nes jei nėra žaidėjų su tinkama šalimi, tai yra normalus scenarijus
+	// (pvz., visi žaidėjai yra independent arba misija dar neprasidėjusi)
 	if(count allPlayers>0)then
 	{
 		_t=true;
-		while {_t} do
-		{
-			{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
-			sleep 1;
-		};
+		// Tikriname tik vieną kartą, o ne cikle su timeout
+		{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;
 	};
 	_plw={side _x==sideW} count allplayers;
 	_ple={side _x==sideE} count allplayers;
@@ -46,11 +46,20 @@ for "_i" from 0 to 1 step 0 do
 			{
 				_tar=[];
 				
+				// Optimizuota: gauname allUnits vieną kartą ir filtruojame pagal šalis
+				_allUnits = allUnits;
+				_friendlyUnitsW = [];
+				{
+					if (side _x == sideW) then {
+						_friendlyUnitsW pushBack _x;
+					};
+				} forEach _allUnits;
+
 				//Artillery
 				if(alive objArtiE)then
 				{
 					_fr=[];
-					{if((side _x==sideW)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+					{if((_x distance posArti)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsW;
 					if(count _fr==0)then{_tar pushBackUnique (getPos objArtiE);};
 				};
 				
@@ -58,7 +67,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBE1)&&(getMarkerColor resFobE!=""))then
 				{
 					_fr=[];
-					{if((side _x==sideW)&&((_x distance posBaseE1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+					{if((_x distance posBaseE1)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsW;
 					if(count _fr==0)then{_tar pushBackUnique posBaseE1;};
 				};
 
@@ -66,7 +75,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBE2)&&(getMarkerColor resBaseE!=""))then
 				{
 					_fr=[];
-					{if((side _x==sideW)&&((_x distance posBaseE2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+					{if((_x distance posBaseE2)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsW;
 					if(count _fr==0)then{_tar pushBackUnique posBaseE2;};
 				};
 				
@@ -75,7 +84,8 @@ for "_i" from 0 to 1 step 0 do
 				
 				_vSel = selectRandom PlaneW;
 				_typ="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;}else{_typ=_vSel;};
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];}else{_typ=_vSel;};
 				
 				_logic = "logic" createVehicleLocal _t;
 				// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
@@ -95,11 +105,20 @@ for "_i" from 0 to 1 step 0 do
 			if(getMarkerColor resCE!="")then
 			{
 				_tar=[];
+				// Optimizuota: gauname allUnits vieną kartą ir filtruojame pagal šalis
+				_allUnits = allUnits;
+				_friendlyUnitsE = [];
+				{
+					if (side _x == sideE) then {
+						_friendlyUnitsE pushBack _x;
+					};
+				} forEach _allUnits;
+
 				//Artillery
 				if(alive objArtiW)then
 				{
 					_fr=[];
-					{if((side _x==sideE)&&((_x distance posArti)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+					{if((_x distance posArti)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsE;
 					if(count _fr==0)then{_tar pushBackUnique (getPos objArtiW);};
 				};
 				
@@ -107,7 +126,7 @@ for "_i" from 0 to 1 step 0 do
 				if((secBW1)&&(getMarkerColor resFobW!=""))then
 				{
 					_fr=[];
-					{if((side _x==sideE)&&((_x distance posBaseW1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+					{if((_x distance posBaseW1)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsE;
 					if(count _fr==0)then{_tar pushBackUnique posBaseW1;};
 				};
 
@@ -117,7 +136,7 @@ for "_i" from 0 to 1 step 0 do
 					if((secBW2)&&(getMarkerColor resBaseW!=""))then
 					{
 						_fr=[];
-						{if((side _x==sideE)&&((_x distance posBaseW2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
+						{if((_x distance posBaseW2)<75)then{_fr pushBackUnique _x;};} forEach _friendlyUnitsE;
 						if(count _fr==0)then{_tar pushBackUnique posBaseW2;};
 					};
 				};
@@ -127,7 +146,8 @@ for "_i" from 0 to 1 step 0 do
 				
 				_vSel = selectRandom PlaneE;
 				_typ="";
-				if (_vSel isEqualType [])then{_typ=_vSel select 0;}else{_typ=_vSel;};	
+				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];}else{_typ=_vSel;};	
 				
 				_logic = "logic" createVehicleLocal _t;
 				// Patikriname, ar plHE yra apibrėžtas prieš jį naudojant

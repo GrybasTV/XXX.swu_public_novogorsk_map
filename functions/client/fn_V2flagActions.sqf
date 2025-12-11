@@ -1,181 +1,141 @@
 /*
-	Author: IvosH
+	Author: IvosH, fixed by GrybasTV
 	
 	Description:
-		Add actions to the flags. Teleports between flags
+		Add actions to the flags. Teleports between flags.
+		Rewritten to directly assign actions to flags instead of complex array subtraction.
 	
 	Parameter(s):
-		0: OBJECT, flgBW1
-		1: OBJECT, flgBW2
-		2: OBJECT, flgJetW
-		3: OBJECT, flgBE1
-		4: OBJECT, flgBE2
-		5: OBJECT, flgJetE
-		5: VARIABLE, missType
-	
-	Returns:
-		nothing
-		
-	Dependencies:
-		WarMachine scripts
-		
-	Execution:
-		[flgBW1,flgBW2,flgJetW,flgBE1,flgBE2,flgJetE,missType] remoteExec ["wrm_fnc_flagActions", 0, true];
-		[flgBW1,flgBW2,flgJetW,flgBE1,flgBE2,flgJetE,missType] call wrm_fnc_flagActions;
+		0: OBJECT, flgBW1 (West Transport)
+		1: OBJECT, flgBW2 (West Armor)
+		2: OBJECT, flgJetW (West Air - optional)
+		3: OBJECT, flgBE1 (East Transport)
+		4: OBJECT, flgBE2 (East Armor)
+		5: OBJECT, flgJetE (East Air - optional)
+		6: VARIABLE, missType
 */
 
 if (!hasInterface) exitWith {}; //run on the players only
-waitUntil {((side player == sideW)||(side player == sideE))};
-flgBW1 = _this select 0;
-flgBW2 = _this select 1;
-flgJetW = _this select 2;
-flgBE1 = _this select 3;
-flgBE2 = _this select 4;
-flgJetE = _this select 5;
-missType = _this select 6;
-_flgs = [];
-_act = [];
 
-_nme1=format ["Teleport to the Transport base"];
-_nme2="Teleport to the Armors base";
-if(missType<2)then
-{
-	_nme2="Teleport to the Helicopter base";
-	if(((side player == sideW)&&(count HeliTrW==0)) || ((side player == sideE)&&(count HeliTrE==0)))then{_nme2="Teleport to the Infantry base";};
+// TIMEOUT: Laukti kol player side == sideW arba sideE
+private _startTime = time;
+waitUntil {
+    sleep 0.5;
+    ((side player == sideW)||(side player == sideE)) || (time - _startTime > 30)
 };
 
-call
-{
-	if (side player == sideW) exitWith 
-	{
-		_flgs = [flgBW2,flgBW1];
-		_act = //[title, script, priority, condition],
-		[
-			[_nme2,
-			{
-				if(player==leader player)then
-				{
-					_grp=[player];
-					{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};}forEach units group player;
-					{_x setPos (flgBW2 getRelPos [random [3,6,9],random [135,180,225]]);}forEach _grp;
-				}
-				else{player setPos (flgBW2 getRelPos [3,180]);};
-			},6,""],
-			[_nme1,
-			{
-				if(player==leader player)then
-				{
-					_grp=[player];
-					{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};}forEach units group player;
-					{_x setPos (flgBW1 getRelPos [random [3,6,9],random [135,180,225]]);}forEach _grp;
-				}
-				else{player setPos (flgBW1 getRelPos [3,180]);};
-			},5.5,"(flgDel==0||sideA == sideW)"]
-		];
+if (time - _startTime > 30 && (side player != sideW) && (side player != sideE)) exitWith {
+    ["WARNING: Player side timeout in flagActions - exiting"] remoteExec ["systemChat", player, false];
+};
 
-	if (missType == 3) then 
-	{
-		// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-		// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
-		_plHWDefined = !isNil "plHW";
-		_plHEDefined = !isNil "plHE";
-		_plH1Defined = !isNil "plH1";
-		_plH2Defined = !isNil "plH2";
-		_planesCheck = false;
-		
-		// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
-		if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
-			_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
+private _flgBW1 = _this param [0, objNull];
+private _flgBW2 = _this param [1, objNull];
+private _flgJetW = _this param [2, objNull];
+private _flgBE1 = _this param [3, objNull];
+private _flgBE2 = _this param [4, objNull];
+private _flgJetE = _this param [5, objNull];
+private _missType = _this param [6, 1];
+
+// Titles
+private _nameTr = "Teleport to the Transport base";
+private _nameAr = "Teleport to the Armors base";
+private _nameAir = "Teleport to the Air base";
+
+// Adapt names for Infantry mode
+if(_missType < 2) then {
+	_nameAr = "Teleport to the Helicopter base";
+	// Infantry check logic from original
+	if(((side player == sideW)&&(count HeliTrW==0)) || ((side player == sideE)&&(count HeliTrE==0))) then {
+		_nameAr = "Teleport to the Infantry base";
+	};
+};
+
+// Teleport function (Squad Leader moves group, regular moves self)
+private _fnc_teleport = {
+	params ["_targetFlag"];
+	if(player == leader player) then {
+		private _grp = [player];
+		{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};} forEach units group player;
+		{_x setPos (_targetFlag getRelPos [random [3,6,9], random [135,180,225]]);} forEach _grp;
+	} else {
+		player setPos (_targetFlag getRelPos [3,180]);
+	};
+};
+
+// --- WEST ---
+if (side player == sideW) then {
+	// 1. Transport Base Flag (flgBW1) -> Can go to Armor & Air
+	if (!isNull _flgBW1) then {
+		// To Armor
+		if (!isNull _flgBW2) then {
+			_flgBW1 addAction [_nameAr, _fnc_teleport, _flgBW2, 6, true, true, "", "", 5];
 		};
-		
-		if(
-			(count HeliArW!=0) ||
-			((count PlaneW!=0)&&(planes==1)) ||
-			((count PlaneW!=0)&&_planesCheck)
-		)then
-		{
-			// Patikriname, ar flag objektas buvo sukurtas prieš jį pridedant
-			if (flgJetW isNotEqualTo "" && {!isNull flgJetW}) then {
-				_flgs pushBack flgJetW;
-				_act pushBack ["Teleport to the Air base",{player setPos (flgJetW getRelPos [3,180]);},5,""];
-			};
+		// To Air
+		if (!isNull _flgJetW) then {
+			_flgBW1 addAction [_nameAir, _fnc_teleport, _flgJetW, 5, true, true, "", "", 5];
 		};
 	};
-	};
-	
-	if (side player == sideE) exitWith 
-	{
-		_flgs = [flgBE2,flgBE1];
-		_act = //[title, script, priority, condition],
-		[
-			[_nme2,
-			{
-				if(player==leader player)then
-				{
-					_grp=[player];
-					{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};}forEach units group player;
-					{_x setPos (flgBE2 getRelPos [random [3,6,9],random [135,180,225]]);}forEach _grp;
-				}
-				else{player setPos (flgBE2 getRelPos [3,180]);};
-			},6,""],
-			[_nme1,
-			{
-				if(player==leader player)then
-				{
-					_grp=[player];
-					{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};}forEach units group player;
-					{_x setPos (flgBE1 getRelPos [random [3,6,9],random [135,180,225]]);}forEach _grp;
-				}
-				else{player setPos (flgBE1 getRelPos [3,180]);};
-			},5.5,"(flgDel==0||sideA == sideE)"]
-		];
 
-		if (missType == 3) then 
-		{
-			// Patikriname, ar kintamieji yra apibrėžti prieš juos naudojant
-			// Naudojame lokalius kintamuosius, kad išvengtume kelių isNil patikrinimų
-			_plHWDefined = !isNil "plHW";
-			_plHEDefined = !isNil "plHE";
-			_plH1Defined = !isNil "plH1";
-			_plH2Defined = !isNil "plH2";
-			_planesCheck = false;
-			
-			// Tikriname planes==2 sąlygą tik jei visi kintamieji yra apibrėžti
-			if((planes==2) && _plHWDefined && _plHEDefined && _plH1Defined && _plH2Defined) then {
-				_planesCheck = ((plHW==plH1)||(plHW==plH2))&&((plHE==plH1)||(plHE==plH2));
-			};
-			
-			if(
-				(count HeliArE!=0) ||
-				((count PlaneE!=0)&&(planes==1)) ||
-				((count PlaneE!=0)&&_planesCheck)
-			)then
-			{
-				// Patikriname, ar flag objektas buvo sukurtas prieš jį pridedant
-				if (flgJetE isNotEqualTo "" && {!isNull flgJetE}) then {
-					_flgs pushBack flgJetE;
-					_act pushBack ["Teleport to the Air base",{player setPos (flgJetE getRelPos [3,180]);},5,""];
-				};
-			};
+	// 2. Armor Base Flag (flgBW2) -> Can go to Transport & Air
+	if (!isNull _flgBW2) then {
+		// To Transport
+		if (!isNull _flgBW1) then {
+			_flgBW2 addAction [_nameTr, _fnc_teleport, _flgBW1, 6, true, true, "", "", 5];
+		};
+		// To Air
+		if (!isNull _flgJetW) then {
+			_flgBW2 addAction [_nameAir, _fnc_teleport, _flgJetW, 5, true, true, "", "", 5];
+		};
+	};
+
+	// 3. Air Base Flag (flgJetW) -> Can go to Transport & Armor
+	if (!isNull _flgJetW) then {
+		// To Transport
+		if (!isNull _flgBW1) then {
+			_flgJetW addAction [_nameTr, _fnc_teleport, _flgBW1, 6, true, true, "", "", 5];
+		};
+		// To Armor
+		if (!isNull _flgBW2) then {
+			_flgJetW addAction [_nameAr, _fnc_teleport, _flgBW2, 5.5, true, true, "", "", 5];
 		};
 	};
 };
 
-{
-	_flg = _x;
-	_indx = _forEachIndex; 
-	{
-		_flg addAction [
-		_x select 0, //title
-		_x select 1, //script
-		nil, //arguments (Optional)
-		_x select 2, //priority (Optional)
-		true, //showWindow (Optional)
-		true, //hideOnUse (Optional)
-		"", //shortcut, (Optional) 
-		_x select 3, //condition,  (Optional)
-		5, //radius, (Optional)
-		false, //unconscious, (Optional)
-		""]; //selection]; (Optional)
-	} forEach _act - [_act select _indx];
-} forEach _flgs;
+// --- EAST ---
+if (side player == sideE) then {
+	// 1. Transport Base Flag (flgBE1) -> Can go to Armor & Air
+	if (!isNull _flgBE1) then {
+		// To Armor
+		if (!isNull _flgBE2) then {
+			_flgBE1 addAction [_nameAr, _fnc_teleport, _flgBE2, 6, true, true, "", "", 5];
+		};
+		// To Air
+		if (!isNull _flgJetE) then {
+			_flgBE1 addAction [_nameAir, _fnc_teleport, _flgJetE, 5, true, true, "", "", 5];
+		};
+	};
+
+	// 2. Armor Base Flag (flgBE2) -> Can go to Transport & Air
+	if (!isNull _flgBE2) then {
+		// To Transport
+		if (!isNull _flgBE1) then {
+			_flgBE2 addAction [_nameTr, _fnc_teleport, _flgBE1, 6, true, true, "", "", 5];
+		};
+		// To Air
+		if (!isNull _flgJetE) then {
+			_flgBE2 addAction [_nameAir, _fnc_teleport, _flgJetE, 5, true, true, "", "", 5];
+		};
+	};
+
+	// 3. Air Base Flag (flgJetE) -> Can go to Transport & Armor
+	if (!isNull _flgJetE) then {
+		// To Transport
+		if (!isNull _flgBE1) then {
+			_flgJetE addAction [_nameTr, _fnc_teleport, _flgBE1, 6, true, true, "", "", 5];
+		};
+		// To Armor
+		if (!isNull _flgBE2) then {
+			_flgJetE addAction [_nameAr, _fnc_teleport, _flgBE2, 5.5, true, true, "", "", 5];
+		};
+	};
+};

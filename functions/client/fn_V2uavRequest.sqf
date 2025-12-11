@@ -45,6 +45,14 @@ call
 				{
 					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
 					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					
+					//CLEANUP: Jei UAV negyvas arba null, pašalinti iš masyvo ir leisti sukurti naują
+					if(isNull _groupUav || !alive _groupUav)then
+					{
+						[_groupUav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+						//Laukti trumpai, kad serveris galėtų apdoroti pašalinimą
+						sleep 0.5;
+					};
 				};
 
 				//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
@@ -54,9 +62,18 @@ call
 					_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
 					if(_groupCooldown > 0)exitWith
 					{
-						_t = _groupCooldown; _s = "sec";
-						if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
-						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+						//Formatuoti laiką į min:sek formatą
+						_cooldownMinutes = floor (_groupCooldown / 60);
+						_cooldownSeconds = _groupCooldown mod 60;
+						
+						_cooldownText = "";
+						if(_cooldownMinutes > 0) then {
+							_cooldownText = format ["%1 min %2 sec", _cooldownMinutes, _cooldownSeconds];
+						} else {
+							_cooldownText = format ["%1 sec", _cooldownSeconds];
+						};
+						
+						hint parseText format ["UAV service is unavailable<br/>Cooldown: %1<br/><br/>Wait for cooldown to end before requesting new UAV", _cooldownText];
 					};
 				};
 
@@ -81,14 +98,9 @@ call
 
 				//Išsaugoti grupės UAV masyve serverio pusėje
 				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+				//MPKilled event handler bus pridėtas serverio pusėje per fn_V2uavGroupAdd
+				//Tai užtikrina, kad cooldown prasidės tinkamu metu, net jei UAV sunaikintas greitai
 				[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
-
-				//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
-				_groupUav addMPEventHandler ["MPKilled", {
-					params ["_uav"];
-					//Pašalinti UAV ir pradėti cooldown serverio pusėje
-					[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
-				}];
 
 				//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
 				// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this
@@ -115,6 +127,14 @@ call
 				{
 					_groupUav = uavGroupObjects param [_groupUavIndex, []] param [1, objNull];
 					if(!isNull _groupUav && alive _groupUav)exitWith{hint "Your squad already has an active UAV";};
+					
+					//CLEANUP: Jei UAV negyvas arba null, pašalinti iš masyvo ir leisti sukurti naują
+					if(isNull _groupUav || !alive _groupUav)then
+					{
+						[_groupUav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
+						//Laukti trumpai, kad serveris galėtų apdoroti pašalinimą
+						sleep 0.5;
+					};
 				};
 
 				//Patikrinti cooldown - naudojame param saugesniam masyvo elementų pasiekimui
@@ -124,9 +144,18 @@ call
 					_groupCooldown = uavGroupCooldowns param [_groupCooldownIndex, []] param [1, 0];
 					if(_groupCooldown > 0)exitWith
 					{
-						_t = _groupCooldown; _s = "sec";
-						if(_groupCooldown >= 60)then{_t = floor (_groupCooldown / 60); _s = "min";};
-						hint parseText format ["UAV service is unavailable<br/>UAV will be ready in %1 %2",_t,_s];
+						//Formatuoti laiką į min:sek formatą
+						_cooldownMinutes = floor (_groupCooldown / 60);
+						_cooldownSeconds = _groupCooldown mod 60;
+						
+						_cooldownText = "";
+						if(_cooldownMinutes > 0) then {
+							_cooldownText = format ["%1 min %2 sec", _cooldownMinutes, _cooldownSeconds];
+						} else {
+							_cooldownText = format ["%1 sec", _cooldownSeconds];
+						};
+						
+						hint parseText format ["UAV service is unavailable<br/>Cooldown: %1<br/><br/>Wait for cooldown to end before requesting new UAV", _cooldownText];
 					};
 				};
 
@@ -151,14 +180,9 @@ call
 
 				//Išsaugoti grupės UAV masyve serverio pusėje
 				//Serverio pusėje bus papildomas tikrinimas, ar grupė jau turi aktyvų UAV
+				//MPKilled event handler bus pridėtas serverio pusėje per fn_V2uavGroupAdd
+				//Tai užtikrina, kad cooldown prasidės tinkamu metu, net jei UAV sunaikintas greitai
 				[_grpId, _groupUav] remoteExec ["wrm_fnc_V2uavGroupAdd", 2, false];
-
-				//Pridėti event handler, kad sunaikinus UAV pradėtų cooldown
-				_groupUav addMPEventHandler ["MPKilled", {
-					params ["_uav"];
-					//Pašalinti UAV ir pradėti cooldown serverio pusėje
-					[_uav] remoteExec ["wrm_fnc_V2uavGroupRemove", 2, false];
-				}];
 
 				//Pridėti Zeus redagavimui - sleep reikalingas, nes funkcija vykdoma per spawn
 				// Pagal SQF geriausias praktikas: spawn sukuria izoliuotą apimtį, todėl reikia perduoti parametrus per _this

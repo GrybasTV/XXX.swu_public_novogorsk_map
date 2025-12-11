@@ -75,10 +75,12 @@ f1=[
 	{
 		detach bar;
 		_previewPos = getPosAtl bar;
+		_dir = getDir player;
 
 		// Ištrinti laikina žymę ir sukurti tikrają tranšėją
 		deleteVehicle bar;
 		bar = createVehicle ["rnt_graben_t", _previewPos, [], 0, "CAN_COLLIDE"];
+		bar setDir _dir;
 
 		call
 		{
@@ -150,10 +152,12 @@ f2=[
 	{
 		detach bar;
 		_previewPos = getPosAtl bar;
+		_dir = getDir player;
 
 		// Ištrinti laikina žymę ir sukurti tikrają tranšėjos bunkerį
 		deleteVehicle bar;
 		bar = createVehicle ["rnt_graben_bunker", _previewPos, [], 0, "CAN_COLLIDE"];
+		bar setDir _dir;
 
 		call
 		{
@@ -224,10 +228,12 @@ f3=[
 	{
 		detach bar;
 		_previewPos = getPosAtl bar;
+		_dir = getDir player;
 
 		// Ištrinti laikina žymę ir sukurti tikrają tranšėjos šaudymo poziciją
 		deleteVehicle bar;
 		bar = createVehicle ["rnt_graben_stellung", _previewPos, [], 0, "CAN_COLLIDE"];
+		bar setDir _dir;
 
 		call
 		{

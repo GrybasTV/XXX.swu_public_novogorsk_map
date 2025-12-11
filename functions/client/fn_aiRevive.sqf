@@ -44,7 +44,19 @@ call
 	if(_case==2)exitWith
 	{
 		_healer doMove (getPos _unit);
-		waitUntil {_healer distance _unit<=2.5};
+		// TIMEOUT: Laukti kol healer pasiekia unit
+		private _startTime = time;
+		waitUntil {
+		    sleep 0.5;
+		    (_healer distance _unit <= 2.5) || (time - _startTime > 30) || (!alive _healer) || (!alive _unit)
+		};
+
+		if (time - _startTime > 30 || !alive _healer || !alive _unit) exitWith {
+		    // Timeout arba healer/unit mirę - nutraukiame revive procesą
+		    doStop _healer;
+		    {_healer enableAI _x;} forEach ["TARGET","AUTOTARGET","FSM","SUPPRESSION","COVER","AUTOCOMBAT"];
+		};
+
 		doStop _healer;
 		_healer doWatch (getPos _unit);
 		sleep 1;

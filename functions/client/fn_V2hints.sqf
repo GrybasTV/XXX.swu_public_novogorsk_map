@@ -7,8 +7,28 @@
 4 east armors
 */
 if (!hasInterface) exitWith {};
-waitUntil {!isNull player}; //JIP
-waitUntil {alive player}; //player has respawned
+
+// TIMEOUT #1: Laukti kol player != null
+private _startTime1 = time;
+waitUntil {
+    sleep 0.5;
+    (!isNull player) || (time - _startTime1 > 10)
+};
+
+if (time - _startTime1 > 10 && isNull player) exitWith {
+    // Timeout - išeiname, nes negalime rodyti hint be player
+};
+
+// TIMEOUT #2: Laukti kol player alive
+private _startTime2 = time;
+waitUntil {
+    sleep 0.5;
+    (alive player) || (time - _startTime2 > 30)
+};
+
+if (time - _startTime2 > 30 && !alive player) exitWith {
+    // Timeout - išeiname, nes negalime rodyti hint be alive player
+};
 
 _i=_this select 0;
 

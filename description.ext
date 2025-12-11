@@ -57,7 +57,7 @@ wreckRemovalMaxTime = 600; //600
 
 saving = 0;
 taskManagement_propagate = 1;
-joinUnassigned = 0;
+joinUnassigned = 1;
 enableDebugConsole = 1; //debug console for admin
 
 //LOBBY PARAMETERS--------------------------------------------------EDITABLE//
@@ -88,7 +88,7 @@ textsParam1[] =
 
 titleParam2 = "VIRTUAL ARSENAL";
 valuesParam2[] = {0,1,2};
-defValueParam2 = 2;
+defValueParam2 = 1;
 textsParam2[] = 
 {
 	"Disabled",
@@ -146,19 +146,6 @@ class Params
 		values[]={0,0};
 		texts[]={"",""};
 		default = 0;
-	};	
-	class asp14 //AO size
-	{
-		title = "   - AO SIZE - Size of the area of operation"; 
-		texts[] = 
-		{
-			"Random - Size is selected randomly",
-			"Small - Default",
-			"Medium - 1,5x larger",
-			"Large - 2x larger"
-		};
-		values[] = {0,1,2,3};
-		default = 1;
 	};	
 	class asp1 //Mission type
 	{
@@ -338,6 +325,19 @@ class Params
 		};
 		values[] = {0,1,2,3,4};
 		default = 2;
+	};	
+	class asp14 //AO size
+	{
+		title = "   - AO SIZE - Size of the area of operation"; 
+		texts[] = 
+		{
+			"Random - Size is selected randomly",
+			"Small - Default",
+			"Medium - 1,5x larger",
+			"Large - 2x larger"
+		};
+		values[] = {0,1,2,3};
+		default = 1;
 	};	
 
 	class EmtpyLine4

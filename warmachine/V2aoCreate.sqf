@@ -19,29 +19,15 @@ if (isNil "missType") then { missType = 1; };
 // Tai reikalinga, nes V2startServer.sqf apibrėžia šiuos kintamuosius tik vėliau
 if (isNil "nameBW1") then 
 {
-	if(missType==1)then
-	{
-		nameBW1 = format ["%1 Infantry base",factionW];
-		nameBE1 = format ["%1 Infantry base",factionE];
-	} else
-	{
-		nameBW1 = format ["%1 Armor base",factionW];
-		nameBE1 = format ["%1 Armor base",factionE];
-	};
+	nameBW1 = format ["%1 Transport base",factionW];
+	nameBE1 = format ["%1 Transport base",factionE];
 };
 
 // Apibrėžiame nameBW2 ir nameBE2 tik jei jie dar neapibrėžti
 if (isNil "nameBW2") then 
 {
-	if(missType==1)then
-	{
-		nameBW2 = format ["%1 Infantry base",factionW];
-		nameBE2 = format ["%1 Infantry base",factionE];
-	} else
-	{
-		nameBW2 = format ["%1 Armor base",factionW];
-		nameBE2 = format ["%1 Armor base",factionE];
-	};
+	nameBW2 = format ["%1 Armor base",factionW];
+	nameBE2 = format ["%1 Armor base",factionE];
 };
 
 _aoSize = 1;
@@ -56,8 +42,12 @@ systemchat format ["AO size %1",_aoSize];
 _posLMB = _this select 0;
 AOcreated = 2;
 //delete old markers
+// Patikriname, ar kintamieji yra apibrėžti (klientas inicializuoja, bet serveryje gali būti neapibrėžti)
+if (isNil "aoMarkers") then { aoMarkers = []; };
 {deleteMarkerLocal _x;} forEach aoMarkers; aoMarkers = [];
+if (isNil "aoObjs") then { aoObjs = []; };
 if(count aoObjs!=0)then{{deleteVehicle _x;} forEach aoObjs;}; aoObjs = [];
+if (isNil "dbgVehs") then { dbgVehs = []; };
 if(DBG && (count dbgVehs!=0))then
 {
 	{
@@ -133,6 +123,8 @@ aoObjs pushBackUnique _objDir1;
 _objDir1 setDir random 360;
 
 _i=0;
+// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
+// BIS_fnc_findSafePos gali užtrukti ilgai, todėl reikia leisti kitoms operacijoms vykti
 while {(count posCas < 2)&&(_i<36)} do
 {	
 	_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)+175), (0+10*_i)];
@@ -143,6 +135,7 @@ while {(count posCas < 2)&&(_i<36)} do
 	if((posCas select 0==_posT select 0)&&(posCas select 1==_posT select 1))then{posCas=[];};
 	_i=_i+1;
 	hint parseText format ["Searching for CAS Tower position<br/>Round %1/36",_i];
+	sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 };
 
 //control
@@ -177,6 +170,8 @@ _typ="";_tex="";
 if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 
 _i=0;
+// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
+// BIS_fnc_findSafePos gali užtrukti ilgai, todėl reikia leisti kitoms operacijoms vykti
 while {(count posAA < 2)&&(_i<72)} do
 {	
 	_posT = _objDir1 getRelPos [(((artiRange select 1)*_aoSize)+175), (0+5*_i)];
@@ -188,6 +183,7 @@ while {(count posAA < 2)&&(_i<72)} do
 	if((posAA select 0==_posT select 0)&&(posAA select 1==_posT select 1))then{posAA=[];};
 	_i=_i+1;
 	hint parseText format ["Searching for Anti Air position<br/>Round %1/72",_i];
+	sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 };
 
 //control
@@ -244,6 +240,7 @@ if(_round == 1) then
 	//BASE 1 WEST
 	posBaseW1=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseW1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (105-10*_i)];
@@ -255,11 +252,13 @@ if(_round == 1) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBW1,_i];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 
 	//BASE 2 WEST
 	posBaseW2=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseW2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (255+10*_i)];
@@ -271,6 +270,7 @@ if(_round == 1) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBW2,_i];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 
 	//control
@@ -295,6 +295,7 @@ if (_round == 2) then
 	//BASE 1 WEST
 	posBaseW1=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseW1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (105-10*_i)];
@@ -306,11 +307,13 @@ if (_round == 2) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBW1,(_i+3)];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 
 	//BASE 2 WEST
 	posBaseW2=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseW2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir1 getRelPos [500, (255+10*_i)];
@@ -322,6 +325,7 @@ if (_round == 2) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBW2,(_i+3)];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 	
 	//control
@@ -365,6 +369,7 @@ if (_round == 1) then
 	//BASE 1 EAST
 	posBaseE1=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseE1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (105-10*_i)];
@@ -376,11 +381,13 @@ if (_round == 1) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBE1,_i];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 
 	//BASE 2 EAST
 	posBaseE2=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseE2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (255+10*_i)];
@@ -392,6 +399,7 @@ if (_round == 1) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBE2,_i];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 	
 	//control
@@ -415,6 +423,7 @@ if (_round == 2) then
 	//BASE 1 EAST
 	posBaseE1=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseE1 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (105-10*_i)];
@@ -426,11 +435,13 @@ if (_round == 2) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBE1,(_i+3)];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 
 	//BASE 2 EAST
 	posBaseE2=[];
 	_i=0;
+	// Pridėtas sleep į ciklą, kad sumažintume serverio apkrovą ir išvengtume užstringimo
 	while {(count posBaseE2 < 2)&&(_i<20)} do
 	{	
 		//_posT = _objDir2 getRelPos [500, (255+10*_i)];
@@ -442,6 +453,7 @@ if (_round == 2) then
 		};
 		_i=_i+1;
 		hint parseText format ["Searching for %1 position<br/>Round %2/3",nameBE2,(_i+3)];
+		sleep 0.1; // Pridėtas sleep, kad sumažintume serverio apkrovą
 	};
 	
 	//control

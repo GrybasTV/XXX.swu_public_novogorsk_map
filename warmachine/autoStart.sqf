@@ -7,13 +7,27 @@ if !(isServer) exitWith {}; //runs on the server/host
 
 aStart=1; publicVariable "aStart";
 // Wait until there is at least one human player who is fully initialized and alive.
+// Pridėtas timeout apsauga nuo amžino užstringimo
+// Jei žaidėjas atsijungia prieš inicializuojantis, timeout po 300 sekundžių praleidžia toliau
+_timeout = time + 300; // 5 minučių timeout
 waitUntil {
     sleep 1;
-    !((allPlayers - entities "HeadlessClient_F") isEqualTo []) &&
+    (!((allPlayers - entities "HeadlessClient_F") isEqualTo []) &&
     {
         private _player = (allPlayers - entities "HeadlessClient_F") select 0;
         !isNull _player && alive _player
-    }
+    }) || time >= _timeout
+};
+// Patikriname, ar timeout nepasiektas
+if(time >= _timeout) then {
+    // Jei timeout pasiektas, patikriname ar yra bent vienas žaidėjas (net jei ne alive)
+    if((allPlayers - entities "HeadlessClient_F") isEqualTo []) then {
+        ["WARNING: No players found after timeout, autoStart will not proceed"] remoteExec ["systemChat", 0, false];
+        aStart = 0;
+        publicVariable "aStart";
+    } else {
+        ["WARNING: Player initialization timeout, but players exist, continuing"] remoteExec ["systemChat", 0, false];
+    };
 };
 sleep 5;
 _tx1="";

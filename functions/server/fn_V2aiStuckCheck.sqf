@@ -69,17 +69,23 @@ if (_distance < _threshold) then {
 				_unit doMove (_unit getPos [50, _newDir]);
 			};
 
-			["AI Stuck: Transporto priemonė pakeitė kryptį", "systemChat", 0, false] remoteExec ["call", 0];
+			if (DBG) then {
+				["AI Stuck: Transporto priemonė pakeitė kryptį", "systemChat", 0, false] remoteExec ["call", 0];
+			};
 		} else {
 			// 2. Pėstininkams - perkeliame į saugią vietą
 			private _safePos = _unit findEmptyPosition [0, 50, typeOf _unit];
 			if (count _safePos > 0) then {
 				_unit setPosATL _safePos;
-				["AI Stuck: Pėstininkas perkeltas į saugią vietą", "systemChat", 0, false] remoteExec ["call", 0];
+				if (DBG) then {
+					["AI Stuck: Pėstininkas perkeltas į saugią vietą", "systemChat", 0, false] remoteExec ["call", 0];
+				};
 			} else {
 				// 3. Jei negalime perkelti - sunaikiname (fail-safe pagal dokumentaciją)
 				_unit setDamage 1;
-				["AI Stuck: Vienetas sunaikintas (fail-safe)", "systemChat", 0, false] remoteExec ["call", 0];
+				if (DBG) then {
+					["AI Stuck: Vienetas sunaikintas (fail-safe)", "systemChat", 0, false] remoteExec ["call", 0];
+				};
 			};
 		};
 

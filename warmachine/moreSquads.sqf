@@ -42,9 +42,15 @@ if(coop==0 || coop==2) then
 
 		{
 			_toSpawn=[];
-			while{(count _toSpawn<6)}do
+			_attempts = 0;
+			while{(count _toSpawn<6) && (_attempts < 100)}do
 			{
+				_attempts = _attempts + 1;
 				_toSpawn pushBackUnique (selectRandom _unitsW);
+			};
+			// Fallback: užpildyti likusius slotus, jei unique selection nepavyksta
+			while {(count _toSpawn < 6)} do {
+				_toSpawn pushBack (selectRandom _unitsW);
 			};
 			_grp = [_x, sideW, _toSpawn,[],[],[],[],[-1,1]] call BIS_fnc_spawnGroup;
 			_grp deleteGroupWhenEmpty true;
@@ -63,9 +69,15 @@ if(coop==0 || coop==2) then
 	{
 		{
 			_toSpawn=[];
-			while{(count _toSpawn<6)}do
+			_attempts = 0;
+			while{(count _toSpawn<6) && (_attempts < 100)}do
 			{
+				_attempts = _attempts + 1;
 				_toSpawn pushBackUnique (selectRandom unitsW);
+			};
+			// Fallback: užpildyti likusius slotus, jei unique selection nepavyksta
+			while {(count _toSpawn < 6)} do {
+				_toSpawn pushBack (selectRandom unitsW);
 			};
 			_grp = [_x, sideW, _toSpawn,[],[],[],[],[-1,1]] call BIS_fnc_spawnGroup;
 			_grp deleteGroupWhenEmpty true;
@@ -91,9 +103,15 @@ if(coop==0 || coop==1) then
 
 		{
 			_toSpawn=[];
-			while{(count _toSpawn<6)}do
+			_attempts = 0;
+			while{(count _toSpawn<6) && (_attempts < 100)}do
 			{
+				_attempts = _attempts + 1;
 				_toSpawn pushBackUnique (selectRandom _unitsE);
+			};
+			// Fallback: užpildyti likusius slotus, jei unique selection nepavyksta
+			while {(count _toSpawn < 6)} do {
+				_toSpawn pushBack (selectRandom _unitsE);
 			};
 			_grp = [_x, sideE, _toSpawn,[],[],[],[],[-1,1]] call BIS_fnc_spawnGroup;
 			_grp deleteGroupWhenEmpty true;
@@ -112,9 +130,15 @@ if(coop==0 || coop==1) then
 	{
 		{
 			_toSpawn=[];
-			while{(count _toSpawn<6)}do
+			_attempts = 0;
+			while{(count _toSpawn<6) && (_attempts < 100)}do
 			{
+				_attempts = _attempts + 1;
 				_toSpawn pushBackUnique (selectRandom unitsE);
+			};
+			// Fallback: užpildyti likusius slotus, jei unique selection nepavyksta
+			while {(count _toSpawn < 6)} do {
+				_toSpawn pushBack (selectRandom unitsE);
 			};
 			_grp = [_x, sideE, _toSpawn,[],[],[],[],[-1,1]] call BIS_fnc_spawnGroup;
 			_grp deleteGroupWhenEmpty true;

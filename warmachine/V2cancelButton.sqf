@@ -37,6 +37,16 @@ vehTime = lbCurSel 382; //Vehicles respawn time
 //enable loading of dialog selections
 dSel = 1;
 
-waitUntil {dSel == 1;};
+private _startTime = time;
+waitUntil {
+    sleep 0.1;
+    (dSel == 1) || (time - _startTime > 60)
+};
+
+if (time - _startTime > 60 && dSel != 1) exitWith {
+    // Timeout - uždarome dialogą bet kokiu atveju
+    closeDialog 0;
+};
+
 //close dialog window
 closeDialog 0;

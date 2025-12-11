@@ -1,3 +1,5 @@
+// Patikriname, ar dbgVehs yra apibrėžtas
+if (isNil "dbgVehs") then { dbgVehs = []; };
 if(count dbgVehs!=0)then
 {
 	{

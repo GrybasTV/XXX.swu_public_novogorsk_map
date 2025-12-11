@@ -22,10 +22,19 @@ if(AIon==0)exitWith{}; //autonomous AI disabled
 if(progress<2)exitWith{};
 
 //sort groups
+// Optimizuota: gauname allGroups vieną kartą, o ne du kartus
+_allGroups = allGroups;
 _grpsW=[]; _grpsE=[];
 
-{if ((side _x==sideW)&&(!isPlayer leader _x)&&({alive _x}count units _x>0)&&(str _x != "B HQ")&&(str _x != "R HQ"))then{_grpsW pushBackUnique _x};} forEach allGroups; //side, leader is AI, not empty group, not HQ
-{if ((side _x==sideE)&&(!isPlayer leader _x)&&({alive _x}count units _x>0)&&(str _x != "O HQ")&&(str _x != "R HQ"))then{_grpsE pushBackUnique _x};} forEach allGroups;
+{
+	_grp = _x;
+	if ((side _grp==sideW)&&(!isPlayer leader _grp)&&({alive _x}count units _grp>0)&&(str _grp != "B HQ")&&(str _grp != "R HQ"))then{
+		_grpsW pushBackUnique _grp;
+	};
+	if ((side _grp==sideE)&&(!isPlayer leader _grp)&&({alive _x}count units _grp>0)&&(str _grp != "O HQ")&&(str _grp != "R HQ"))then{
+		_grpsE pushBackUnique _grp;
+	};
+} forEach _allGroups;
 /*
 //remove vehicles at objectives (AA, artillery)
 if(alive objAAW) then {_grpsW=_grpsW-[(group driver objAAW)];};
@@ -73,9 +82,11 @@ call
 };
 
 //BASES WEST
+// Optimizuota: gauname allUnits vieną kartą ir filtruojame pagal šalis
+_allUnits = allUnits;
 //enemy
 _en=[];
-{if(side _x==sideE)then{_en pushBackUnique _x;};} forEach allUnits;
+{if(side _x==sideE)then{_en pushBackUnique _x;};} forEach _allUnits;
 
 //base vest 2 (armors)
 _eBW2=false;
@@ -98,9 +109,10 @@ call
 };
 
 //BASES EAST
+// Optimizuota: naudojame jau gautą _allUnits masyvą
 //enemy
 _en=[];
-{if(side _x==sideW)then{_en pushBackUnique _x;};} forEach allUnits;
+{if(side _x==sideW)then{_en pushBackUnique _x;};} forEach _allUnits;
 
 //base east 2 (armors)
 _eBE2=false;
@@ -209,9 +221,14 @@ _secS=[];
 	} forEach units _x;
 
 	if(count _secS<1)then{_secS=_sec0+_secDW+_secE+_posPE+_posGE+_secAW+_secW;}; //refill sectors array
-	_sec=_secS select 0;
-	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
-	if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+	// Param grąžina [0, 0] jei masyvas tuščias, todėl patikriname ar pozicija nėra [0, 0]
+	_sec=_secS param [0, [0, 0]];
+	// Naudojame isEqualTo vietoj individualių koordinačių patikrinimo (geresnė praktika pagal dokumentaciją)
+	if(!(_sec isEqualTo [0, 0])) then {
+		[_x,[((_sec param [0, 0])+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec param [1, 0])+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
+		if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	};
 } forEach _grpsW;
 
 //move groups east
@@ -226,9 +243,14 @@ _secS=[];
 	} forEach units _x;
 
 	if(count _secS<1)then{_secS=_sec0+_secDE+_secW+_posPW+_posGW+_secAE+_secE;}; //refill sectors array
-	_sec=_secS select 0;
-	[_x,[((_sec select 0)+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec select 1)+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
-	if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+	// Param grąžina [0, 0] jei masyvas tuščias, todėl patikriname ar pozicija nėra [0, 0]
+	_sec=_secS param [0, [0, 0]];
+	// Naudojame isEqualTo vietoj individualių koordinačių patikrinimo (geresnė praktika pagal dokumentaciją)
+	if(!(_sec isEqualTo [0, 0])) then {
+		[_x,[((_sec param [0, 0])+(round(20+(random 20))*(selectRandom[-1,1]))),((_sec param [1, 0])+(round(20+(random 20))*(selectRandom[-1,1])))]] remoteExec ["move", (groupOwner _x), false];
+		if(count _secS>0)then{_secS=_secS-[_sec];}; //remove used sector from array
+	};
 } forEach _grpsE;
 
 if(DBG)then

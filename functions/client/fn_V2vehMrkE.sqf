@@ -18,7 +18,9 @@
 		[_nme,_mrk,_res] remoteExec ["wrm_fnc_V2vehMrkW", 0, true];
 */
 if (!hasInterface) exitWith {}; //run on the players only
-if (side player != sideE) exitWith {}; //run on the players of sideW
+// Patikriname, ar sideE yra apibrėžtas
+if (isNil "sideE") exitWith {};
+if (side player != sideE) exitWith {}; //run on the players of sideE
 
 _nme = _this select 0;
 _mrk = _this select 1;

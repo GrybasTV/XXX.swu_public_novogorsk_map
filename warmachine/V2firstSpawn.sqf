@@ -18,9 +18,27 @@
 */
 
 if(!hasInterface)exitWith{}; //run on the players only
-waitUntil {!isNull player}; //JIP
-waitUntil {!alive player}; //player has respawned
-waitUntil {alive player}; //player has respawned
+// TIMEOUT #1: Laukti kol player != null
+private _startTime1 = time;
+waitUntil {
+    sleep 0.5;
+    (!isNull player) || (time - _startTime1 > 30)
+};
+
+// TIMEOUT #2: Laukti kol player !alive
+private _startTime2 = time;
+waitUntil {
+    sleep 0.5;
+    (!alive player) || (time - _startTime2 > 30)
+};
+
+// TIMEOUT #3: Laukti kol player alive
+private _startTime3 = time;
+waitUntil {
+    sleep 0.5;
+    (alive player) || (time - _startTime3 > 30)
+};
+
 sleep 0.5;
 fs=1;
 if(player != leader player)exitWith{}; //player is not leader > exit

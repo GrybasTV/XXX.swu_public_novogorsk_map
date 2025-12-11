@@ -122,6 +122,8 @@ dBW1=false;
 dBW2=false;
 dBE1=false;
 dBE2=false;
+//dynamic squads - saugo dinamiškai spawnintų grupių ID
+dynamicSquadsGroups=[]; publicVariable "dynamicSquadsGroups";
 
 ["Server variables loaded"] remoteExec ["systemChat", 0, false];
 //ZEUS 
@@ -130,3 +132,8 @@ z1 addCuratorEditableObjects [allplayers+playableUnits]; //all players and playa
 ["Zeus loaded"] remoteExec ["systemChat", 0, false];
 
 if ("autoStart" call BIS_fnc_getParamValue != 0)then{[("autoStart" call BIS_fnc_getParamValue)] execVM "warmachine\autoStart.sqf"};
+
+// Start performance monitoring system
+[] spawn wrm_fnc_performanceMonitor;
+diag_log "[INIT] Performance monitor started";
+

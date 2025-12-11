@@ -24,5 +24,6 @@ _unit = _this select 0; //_this = killed unit
 _side = _this select 1;
 if(!local _unit)exitWith{};
 if (isPlayer _unit) exitWith {}; //unit is player script stops here
+if (unitIsUAV _unit) exitWith {}; // Do not reduce tickets for UAVs
 [(_side), -1] remoteExec ["BIS_fnc_respawnTickets", 2, false]; // reduce side respawn tickets by 1
 if(vehicle _unit!=_unit)then{sleep 1; moveOut _unit;};

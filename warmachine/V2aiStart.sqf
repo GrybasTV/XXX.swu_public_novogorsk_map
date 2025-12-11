@@ -222,3 +222,10 @@ if(AIon>0)then
 
 //ticket bleed
 if(ticBleed>0)then{[] spawn wrm_fnc_V2ticketBleed;};
+
+//Dinaminis AIon - keičia AIon pagal užimtų neutralių sektorių skaičių
+//Veikia tik jei AIon > 0 (ne Disabled)
+if(AIon>0)then
+{
+	[] spawn wrm_fnc_V2dynamicAIon;
+};

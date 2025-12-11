@@ -73,6 +73,6 @@ unitsE=
 	"RUS_spn_reconsniper" //18 - Sniper (Marksman)
 ];
 
-faceE='NATO'; //faces (config)
+faceE='White'; //faces (config)
 voiceE='RUS_'; //voices
 nameE="LIB_RussianMen"; //names

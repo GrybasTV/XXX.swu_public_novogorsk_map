@@ -61,12 +61,40 @@ if(_groupCooldownIndex != -1)then
 		//Atnaujinti esamą UAV, jei senasis jau negyvas
 		uavGroupObjects set [_groupUavIndex, [_grpId, _uav]];
 		publicVariable "uavGroupObjects";
+		
+		//Pridėti MPKilled event handler serverio pusėje - tai užtikrina, kad cooldown prasidės tinkamu metu
+		//Event handler pridėtas serverio pusėje, nes čia saugomas UAV masyve
+		//MPKilled yra globalus eventas, todėl handler veiks nepriklausomai nuo objekto lokalumo
+		//Pagal SQF geriausias praktikas: event handler turėtų būti ten, kur yra duomenys, kuriuos reikia modifikuoti
+		if(!isNull _uav) then {
+			_uav addMPEventHandler ["MPKilled", {
+				params ["_uav"];
+				//Pašalinti UAV ir pradėti cooldown serverio pusėje
+				//SVARBU: Nereikia tikrinti isNull, nes MPKilled vykdomas kai objektas jau dead
+				//Naudojame call, nes fn_V2uavGroupRemove neblokuojanti ir veikia nesuplanuotoje aplinkoje
+				[_uav] call wrm_fnc_V2uavGroupRemove;
+			}];
+		};
 	};
 }else
 {
 	//Pridėti naują UAV
 	uavGroupObjects pushBack [_grpId, _uav];
 	publicVariable "uavGroupObjects";
+	
+	//Pridėti MPKilled event handler serverio pusėje - tai užtikrina, kad cooldown prasidės tinkamu metu
+	//Event handler pridėtas serverio pusėje, nes čia saugomas UAV masyve
+	//MPKilled yra globalus eventas, todėl handler veiks nepriklausomai nuo objekto lokalumo
+	//Pagal SQF geriausias praktikas: event handler turėtų būti ten, kur yra duomenys, kuriuos reikia modifikuoti
+	if(!isNull _uav) then {
+		_uav addMPEventHandler ["MPKilled", {
+			params ["_uav"];
+			//Pašalinti UAV ir pradėti cooldown serverio pusėje
+			//SVARBU: Nereikia tikrinti isNull, nes MPKilled vykdomas kai objektas jau dead
+			//Naudojame call, nes fn_V2uavGroupRemove neblokuojanti ir veikia nesuplanuotoje aplinkoje
+			[_uav] call wrm_fnc_V2uavGroupRemove;
+		}];
+	};
 	};
 };
 

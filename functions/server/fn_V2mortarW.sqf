@@ -29,15 +29,17 @@ if(count mortW!=0)then
 {
 	_vSel = selectRandom mortW;
 	_typ="";_tex="";
-	if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-	objMortW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+	// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+	if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
+	objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 	[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 }else
 {
 	_vSel = selectRandom mortE;
 	_typ="";_tex="";
-	if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
-	objMortW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
+	// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+	if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
+	objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 	[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 };
 [objMortW] call wrm_fnc_parachute;

@@ -29,7 +29,7 @@ while {!secBE2} do
 		{
 			if (_unit distance posBaseE2 < 200) then {secBE2=true;};
 		};
-	}  forEach allUnits;
+	}  forEach (allUnits + allPlayers); // Include both AI and players
 };
 publicvariable "secBE2";
 
@@ -41,7 +41,7 @@ _des=format ['Capture/Defend %1 base',nameBE2];
 ["
 	sectorBE2=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
-	this setVariable ['name',_nme];
+	this setVariable ['name','%1'];
 	this setVariable ['Designation','E'];
 	this setVariable ['OwnerLimit','1'];
 	this setVariable ['OnOwnerChange','
@@ -49,21 +49,21 @@ _des=format ['Capture/Defend %1 base',nameBE2];
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resBaseEW!='' '')exitWith{};
-				_mrkRaW = createMarker [resBaseEW, posBaseE2];
-				_mrkRaW setMarkerShape ''ICON'';
-				_mrkRaW setMarkerType ''empty'';
-				_mrkRaW setMarkerText nameBE2;
+				if(getMarkerColor resBaseEW!='''')exitWith{};
+				_mrkRaE2 = createMarker [resBaseEW, posBaseE2];
+				_mrkRaE2 setMarkerShape ''ICON'';
+				_mrkRaE2 setMarkerType ''empty'';
+				_mrkRaE2 setMarkerText nameBE2;
 				deleteMarker resBaseE;
 				if(dBE2)then{[posBaseE2,sideW] call wrm_fnc_V2secDefense;};
 			 };
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resBaseE!='' '')exitWith{};
-				_mrkRaW = createMarker [resBaseE, posBaseE2];
-				_mrkRaW setMarkerShape ''ICON'';
-				_mrkRaW setMarkerType ''empty'';
-				_mrkRaW setMarkerText nameBE2;
+				if(getMarkerColor resBaseE!='''')exitWith{};
+				_mrkRaE2 = createMarker [resBaseE, posBaseE2];
+				_mrkRaE2 setMarkerShape ''ICON'';
+				_mrkRaE2 setMarkerType ''empty'';
+				_mrkRaE2 setMarkerText nameBE2;
 				deleteMarker resBaseEW;
 
 				_eBE2=true;
@@ -73,8 +73,8 @@ _des=format ['Capture/Defend %1 base',nameBE2];
 					{
 						if (_unit distance posBaseE2 < 250) then {_eBE2=false;};
 					};
-				}  forEach allUnits;	
-				if((getMarkerColor resBaseE!='' '')&&(_eBE2))
+				}  forEach (allUnits + allPlayers); // Include both AI and players	
+				if((getMarkerColor resBaseE!='''')&&(_eBE2))
 				then{
 					{_x hideObjectGlobal false,} forEach hideVehBE2;
 					hideVehBE2=[];
@@ -94,11 +94,11 @@ _des=format ['Capture/Defend %1 base',nameBE2];
 	this setVariable ['DefaultOwner','-1'];
 	this setVariable ['TaskOwner','3'];
 	this setVariable ['TaskTitle',nameBE2];
-	this setVariable ['taskDescription',_des];
+	this setVariable ['taskDescription','%2'];
 	this setVariable ['ScoreReward','0'];
 	this setVariable ['Sides',[sideE,sideW]];
 	this setVariable ['objectArea',[75,75,0,false]];
-"]];	
+",_nme,_des]];	
 [sectorBE2, sideE] call BIS_fnc_moduleSector; //initialize sector
 [4] remoteExec ["wrm_fnc_V2hints", 0, false]; //hint
 sleep 7;

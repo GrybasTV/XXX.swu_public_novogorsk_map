@@ -1,8 +1,11 @@
 /*
 	Author: IvosH
-
+	Modified: GrybasTV & Antigravity
+	
 	Description:
-		AI use artillery
+		AI Artillery Logic - "Artillery Hell"
+		Independent firing for Mortars and Howitzers.
+		Frequent fire missions, expanded target list.
 
 	Parameter(s):
 		none
@@ -16,184 +19,127 @@
 	Execution:
 		[] spawn wrm_fnc_V2aiArtillery;
 */
-//loop
-for "_i" from 0 to 1 step 0 do 
-{
-	//random timer
-	sleep (random[(arTime/2),arTime,(arTime*2)]);
-	//sleep 40;
-	if(count allPlayers>0)then
+
+// Helper function to fire artillery
+_fnc_fireArti = {
+	params ["_arti", "_targets", "_minDist", "_friendlyUnits", "_debugName", "_roundCount"];
+	
+	if (isNull _arti || !alive _arti) exitWith {};
+	
+	// Filter targets based on distance to friendly units (Safety) and distance to artillery itself (Min Range)
+	_validTargets = [];
 	{
-		_t=true;
-		while {_t} do
-		{
-			{if((side _x==sideW)||(side _x==sideE)) exitWith {_t=false;};} forEach allPlayers;	
-			sleep 1;
+		_tPos = _x;
+		if (_tPos distance _arti > _minDist) then { // Min range check
+			_safe = true;
+			{
+				if (_x distance _tPos < 75) exitWith {_safe = false;}; // Danger Close 75m
+			} forEach _friendlyUnits;
+			
+			if (_safe) then {
+				_validTargets pushBack _tPos;
+			};
+		};
+	} forEach _targets;
+	
+	if (count _validTargets > 0) then {
+		_targetPos = selectRandom _validTargets;
+		_ammoType = (getArtilleryAmmo [_arti]) param [0, ""];
+		
+		if (_ammoType != "") then {
+			_rounds = _roundCount select 0;
+			if (count _roundCount > 1) then {
+				_rounds = (_roundCount select 0) + floor(random ((_roundCount select 1) - (_roundCount select 0) + 1));
+			};
+			
+			_arti doArtilleryFire [_targetPos, _ammoType, _rounds];
+			if (DBG) then {
+				[format ["%1 firing %2 rounds at grid %3", _debugName, _rounds, mapGridPosition _targetPos]] remoteExec ["systemChat", 0, false];
+			};
 		};
 	};
-	//AI veikia visada, nepriklausomai nuo žaidėjų buvimo (žaidėjai gali naudoti artileriją per support sistemą)
-	//AI artilerijos logika veikia nepriklausomai nuo žaidėjų - žaidėjai naudoja artileriją per BIS_fnc_addSupportLink
-	//West pusės AI artilerija
-	call
-	{
-			_objs=[];
-			if(alive objArtiW)then{_objs pushBackUnique objArtiW};
-			if(alive objMortW)then{_objs pushBackUnique objMortW};
-			
-			if(count _objs > 0) then
-			{
-				_arti=selectRandom _objs;
-				_tar=[];
+};
 
-				//AA
-				if(alive objAAE)then
-				{
-					_fr=[];
-					{if((side _x==sideW)&&((_x distance posAA)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique (getPos objAAE);};
-				};
-				
-				//CAS
-				if(getMarkerColor resCE!="")then
-				{
-					_fr=[];
-					{if((side _x==sideW)&&((_x distance posCas)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posCas;};
-				};
-				
-				//Base 1
-				if((secBE1)&&(getMarkerColor resFobE!=""))then
-				{
-					_fr=[];
-					{if((side _x==sideW)&&((_x distance posBaseE1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posBaseE1;};
-				};
-				
-				//Base 2
-				if((secBE2)&&(getMarkerColor resBaseE!=""))then
-				{
-					_fr=[];
-					{if((side _x==sideW)&&((_x distance posBaseE2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posBaseE2;};
-				};
-				
-				//Priešo transporto priemonės ir didelės grupės (Ukrainos karas - realistiškas artilerijos naudojimas)
-				_enemyVehicles=[];
-				_enemyGroups=[];
-				{
-					if((side _x==sideE)&&alive _x)then
-					{
-						//Tikriname, ar tai transporto priemonė (tankai, BTR, BMP, sunkioji technika)
-						_isVehicle=(_x isKindOf "Tank"||_x isKindOf "Wheeled_APC_F"||_x isKindOf "Tracked_APC"||_x isKindOf "Car"||_x isKindOf "Armored");
-						//Tikriname, ar tai didelė grupė (4 ar daugiau vienetų)
-						_isLargeGroup=((count units group _x)>=4);
-						
-						if(_isVehicle||_isLargeGroup)then
-						{
-							//Tikriname, ar netoli nėra savų vienetų (saugumo spindulys - 100m)
-							_fr=[];
-							_unit=_x;
-							{if((side _x==sideW)&&((_x distance _unit)<100))then{_fr pushBackUnique _x;};} forEach allUnits;
-							if(count _fr==0)then
-							{
-								if(_isVehicle)then{_enemyVehicles pushBackUnique (getPos _unit);};
-								if(_isLargeGroup)then{_enemyGroups pushBackUnique (getPos leader group _unit);};
-							};
-						};
-					};
-				} forEach allUnits;
-				
-				//Pridedame priešo transporto priemones su prioritetu (pirmiau nei grupės)
-				_tar=_tar+_enemyVehicles+_enemyGroups;
-				
-				if(count _tar > 0) then
-				{
-					_t = selectRandom _tar;
-					_arti doArtilleryFire [_t, (getArtilleryAmmo [_arti] select 0), 8];
-					if(DBG)then{["West AI call Artillery"] remoteExec ["systemChat", 0, false];};
-				};
-			};
-	};
+// Main Loop
+while {true} do 
+{
+	// Short interval for intense artillery war (45-75 seconds)
+	sleep (45 + random 30);
+
+	if (count allPlayers > 0) then {
+		// Optimize: Get units once
+		_allUnits = allUnits;
+		_unitsW = [];
+		_unitsE = [];
 		
-	//East pusės AI artilerija
-	call
-	{
-			_objs=[];
-			if(alive objArtiE)then{_objs pushBackUnique objArtiE};
-			if(alive objMortE)then{_objs pushBackUnique objMortE};
-			
-			if(count _objs > 0) then
-			{
-				_arti=selectRandom _objs;
-				_tar=[];
-
-				//AA
-				if(alive objAAW)then
-				{
-					_fr=[];
-					{if((side _x==sideE)&&((_x distance posAA)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique (getPos objAAW);};
-				};
-
-				//CAS
-				if(getMarkerColor resCW!="")then
-				{
-					_fr=[];
-					{if((side _x==sideE)&&((_x distance posCas)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posCas;};
-				};
-
-				//Base 1
-				if((secBW1)&&(getMarkerColor resFobW!=""))then
-				{
-					_fr=[];
-					{if((side _x==sideE)&&((_x distance posBaseW1)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posBaseW1;};
-				};
-				
-				//Base 2
-				if((secBW2)&&(getMarkerColor resBaseW!=""))then
-				{
-					_fr=[];
-					{if((side _x==sideE)&&((_x distance posBaseW2)<75))then{_fr pushBackUnique _x;};} forEach allUnits;
-					if(count _fr==0)then{_tar pushBackUnique posBaseW2;};
-				};
-				
-				//Priešo transporto priemonės ir didelės grupės (Ukrainos karas - realistiškas artilerijos naudojimas)
-				_enemyVehicles=[];
-				_enemyGroups=[];
-				{
-					if((side _x==sideW)&&alive _x)then
-					{
-						//Tikriname, ar tai transporto priemonė (tankai, BTR, BMP, sunkioji technika)
-						_isVehicle=(_x isKindOf "Tank"||_x isKindOf "Wheeled_APC_F"||_x isKindOf "Tracked_APC"||_x isKindOf "Car"||_x isKindOf "Armored");
-						//Tikriname, ar tai didelė grupė (4 ar daugiau vienetų)
-						_isLargeGroup=((count units group _x)>=4);
-						
-						if(_isVehicle||_isLargeGroup)then
-						{
-							//Tikriname, ar netoli nėra savų vienetų (saugumo spindulys - 100m)
-							_fr=[];
-							_unit=_x;
-							{if((side _x==sideE)&&((_x distance _unit)<100))then{_fr pushBackUnique _x;};} forEach allUnits;
-							if(count _fr==0)then
-							{
-								if(_isVehicle)then{_enemyVehicles pushBackUnique (getPos _unit);};
-								if(_isLargeGroup)then{_enemyGroups pushBackUnique (getPos leader group _unit);};
-							};
-						};
-					};
-				} forEach allUnits;
-				
-				//Pridedame priešo transporto priemones su prioritetu (pirmiau nei grupės)
-				_tar=_tar+_enemyVehicles+_enemyGroups;
-				
-				if(count _tar > 0) then
-				{
-					_t = selectRandom _tar;
-					_arti doArtilleryFire [_t, (getArtilleryAmmo [_arti] select 0), 8];
-					if(DBG)then{["East AI call Artillery"] remoteExec ["systemChat", 0, false];};
-				};
+		{
+			if (alive _x) then {
+				if (side _x == sideW) then {_unitsW pushBack _x;};
+				if (side _x == sideE) then {_unitsE pushBack _x;};
 			};
+		} forEach _allUnits;
+
+		// --- WEST ARTILLERY ---
+		if (alive objArtiW || alive objMortW) then {
+			// Potential Targets for West (East Units/Objs)
+			_targetsE = [];
+			
+			// 1. Static Objectives
+			if (alive objAAE) then {_targetsE pushBack (getPos objAAE);};
+			if (getMarkerColor resCE != "") then {_targetsE pushBack posCas;};
+			if (secBE1 && getMarkerColor resFobE != "") then {_targetsE pushBack posBaseE1;};
+			if (secBE2 && getMarkerColor resBaseE != "") then {_targetsE pushBack posBaseE2;};
+			
+			// 2. Dynamic Targets (Vehicles & Groups)
+			{
+				_unit = _x;
+				_isVeh = (_unit isKindOf "Tank" || _unit isKindOf "Wheeled_APC_F" || _unit isKindOf "Tracked_APC" || _unit isKindOf "Car");
+				_isGroup = ((count units group _unit) >= 3); // Target groups of 3+
+				
+				if (_isVeh || _isGroup) then {
+					_targetsE pushBack (getPos _unit);
+				};
+			} forEach _unitsE;
+			
+			// 3. Harassment (Random spots near active sector if no other targets)
+			if (count _targetsE == 0) then {
+				// Logic to find active sector center could be added here, for now fallback to known enemy positions
+			};
+
+			// Fire Howitzer (Long Range > 1000m, 1-2 rounds)
+			[objArtiW, _targetsE, 1000, _unitsW, "West Howitzer", [1, 2]] call _fnc_fireArti;
+			
+			// Fire Mortar (Short Range > 100m, 2-4 rounds)
+			[objMortW, _targetsE, 100, _unitsW, "West Mortar", [2, 4]] call _fnc_fireArti;
+		};
+
+		// --- EAST ARTILLERY ---
+		if (alive objArtiE || alive objMortE) then {
+			// Potential Targets for East (West Units/Objs)
+			_targetsW = [];
+			
+			// 1. Static Objectives
+			if (alive objAAW) then {_targetsW pushBack (getPos objAAW);};
+			if (getMarkerColor resCW != "") then {_targetsW pushBack posCas;};
+			if (secBW1 && getMarkerColor resFobW != "") then {_targetsW pushBack posBaseW1;};
+			if (secBW2 && getMarkerColor resBaseW != "") then {_targetsW pushBack posBaseW2;};
+			
+			// 2. Dynamic Targets
+			{
+				_unit = _x;
+				_isVeh = (_unit isKindOf "Tank" || _unit isKindOf "Wheeled_APC_F" || _unit isKindOf "Tracked_APC" || _unit isKindOf "Car");
+				_isGroup = ((count units group _unit) >= 3);
+				
+				if (_isVeh || _isGroup) then {
+					_targetsW pushBack (getPos _unit);
+				};
+			} forEach _unitsW;
+
+			// Fire Howitzer (Long Range > 1000m, 1-2 rounds)
+			[objArtiE, _targetsW, 1000, _unitsE, "East Howitzer", [1, 2]] call _fnc_fireArti;
+			
+			// Fire Mortar (Short Range > 100m, 2-4 rounds)
+			[objMortE, _targetsW, 100, _unitsE, "East Mortar", [2, 4]] call _fnc_fireArti;
+		};
 	};
 };

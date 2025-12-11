@@ -107,7 +107,7 @@ if (progress>1) then
 
 sleep 1;
 [] spawn wrm_fnc_leaderActions;
-[] call wrm_fnc_fortification;
+//[] call wrm_fnc_fortification;
 
 flipAction = player addAction 
 [

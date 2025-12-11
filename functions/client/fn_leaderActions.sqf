@@ -108,6 +108,9 @@ if (progress < 1 && lUpdate < 1) then
 //player IS leader
 if (leader player == player) then 
 {
+	// Ensure group persists
+	group player deleteGroupWhenEmpty false;
+
 	if (lUpdate != 1) then 
 	{
 		if (lUpdate == 2) then //remove "Become leader"
@@ -130,6 +133,10 @@ if (leader player == player) then
 			};
 		};
 	
+		//Pašalinti esamą action jei jis egzistuoja
+		if (!isNil "LDRdown") then {
+			player removeAction LDRdown;
+		};
 		LDRdown = player addAction
 		[
 			"Leave Leader position", //title
@@ -246,7 +253,7 @@ if (leader player == player) then
 			[
 				"Fortification", //title
 				{
-					//[] call wrm_fnc_fortification;
+					[] call wrm_fnc_fortification;
 					player removeAction fortAction;
 					fort=1;
 				}, //script
@@ -312,15 +319,19 @@ if (leader player == player) then
 		{
 			[player, SupReq] call BIS_fnc_removeSupportLink; //remove support module - kviečiame kliento pusėje su call
 		};
-		LDRaction = player addAction 
+		//Pašalinti esamą action jei jis egzistuoja
+		if (!isNil "LDRaction") then {
+			player removeAction LDRaction;
+		};
+		LDRaction = player addAction
 		[
 			"Become Squad leader", //title
 			{
 				//condition: if squad leader is controled by any player
-				if (isPlayer leader player) then
+				if (leader player == player) then
 				{
 					//leader is not changed, hint is displayed
-					hint "Command is available only if squad leader is controled by an AI";
+					hint "You are already the squad leader";
 				} else
 				//if squad leader is controled by an AI code is executed
 				{
