@@ -32,7 +32,7 @@ if(missType>1&&AIon>0)then
 }; //AI vehicles
 
 //infinite loop - pagal SQF geriausias praktikas naudojame aiškią while sintaksę
-while {true} do 
+while {true} do
 {
 	sleep 45; //Padidintas intervalas nuo 30 iki 45 sek. pagal našumo optimizavimo rekomendacijas
 	

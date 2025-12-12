@@ -17,15 +17,29 @@
 
 if (!hasInterface) exitWith {}; //run on the players only
 
-// TIMEOUT: Laukti kol player side == sideW arba sideE
-private _startTime = time;
-waitUntil {
-    sleep 0.5;
-    ((side player == sideW)||(side player == sideE)) || (time - _startTime > 30)
+// Laukti kol player side == sideW arba sideE su retry logika
+private _retryCount = 0;
+private _maxRetries = 120; // 60 sekundžių (120 * 0.5s)
+private _sideInitialized = false;
+
+while {!_sideInitialized && _retryCount < _maxRetries} do {
+    if ((side player == sideW) || (side player == sideE)) then {
+        _sideInitialized = true;
+    } else {
+        sleep 0.5;
+        _retryCount = _retryCount + 1;
+
+        // Loginti kas 10 sekundžių
+        if (_retryCount % 20 == 0) then {
+            private _elapsedTime = _retryCount * 0.5;
+            systemChat format ["Waiting for player side initialization... (%1s elapsed)", _elapsedTime];
+        };
+    };
 };
 
-if (time - _startTime > 30 && (side player != sideW) && (side player != sideE)) exitWith {
-    ["WARNING: Player side timeout in flagActions - exiting"] remoteExec ["systemChat", player, false];
+if (!_sideInitialized) exitWith {
+    ["ERROR: Player side initialization failed after 60 seconds in flagActions - mission may be broken"] remoteExec ["systemChat", player, false];
+    hint parseText "ERROR<br/>Player side initialization failed.<br/>Please reconnect or contact admin.";
 };
 
 private _flgBW1 = _this param [0, objNull];
@@ -53,12 +67,89 @@ if(_missType < 2) then {
 // Teleport function (Squad Leader moves group, regular moves self)
 private _fnc_teleport = {
 	params ["_targetFlag"];
+
+	// #region agent log - Flag Teleport Bug Investigation
+	private _currentPos = getPos player;
+	private _targetPos = getPos _targetFlag;
+	private _logData = [
+		sessionId: "debug-session",
+		runId: "flag-teleport-bug",
+		hypothesisId: "FLAG_BUG",
+		location: "fn_V2flagActions.sqf:68",
+		message: "Flag teleport initiated",
+		data: [
+			playerPos: _currentPos,
+			targetPos: _targetPos,
+			targetFlag: _targetFlag,
+			playerSide: side player,
+			isLeader: player == leader player,
+			distance: _currentPos distance _targetPos
+		],
+		timestamp: time
+	];
+	diag_log (str _logData);
+	// #endregion
+
+	// DEBUG: Identify target base type by checking global flag variables
+	private _flagName = "UNKNOWN FLAG";
+
+	// Check West flags
+	if (!isNil "flgBW1" && {_targetFlag == flgBW1}) then {_flagName = "WEST Transport Base";};
+	if (!isNil "flgBW2" && {_targetFlag == flgBW2}) then {_flagName = "WEST Armor Base";};
+	if (!isNil "flgJetW" && {_targetFlag == flgJetW}) then {_flagName = "WEST Air Base";};
+
+	// Check East flags
+	if (!isNil "flgBE1" && {_targetFlag == flgBE1}) then {_flagName = "EAST Transport Base";};
+	if (!isNil "flgBE2" && {_targetFlag == flgBE2}) then {_flagName = "EAST Armor Base";};
+	if (!isNil "flgJetE" && {_targetFlag == flgJetE}) then {_flagName = "EAST Air Base";};
+
+	// DEBUG: Log teleport attempt with clear messaging
+	systemChat format ["[TELEPORT] Attempting to teleport to: %1", _flagName];
+	systemChat format ["[TELEPORT] Current position: %1", mapGridPosition _currentPos];
+	systemChat format ["[TELEPORT] Target position: %1 (distance: %2m)",
+		mapGridPosition _targetPos,
+		round (_currentPos distance _targetPos)
+	];
+
 	if(player == leader player) then {
 		private _grp = [player];
 		{if(((_x distance player)<75)&&(!isPlayer _x))then{_grp pushBackUnique _x;};} forEach units group player;
+
+		systemChat format ["[TELEPORT] Moving squad leader + %1 AI units to %2", count _grp - 1, _flagName];
+
 		{_x setPos (_targetFlag getRelPos [random [3,6,9], random [135,180,225]]);} forEach _grp;
 	} else {
 		player setPos (_targetFlag getRelPos [3,180]);
+		systemChat format ["[TELEPORT] Single player teleported to %1", _flagName];
+	};
+
+	// DEBUG: Verify final position after short delay
+	[] spawn {
+		sleep 0.5;
+		private _finalPos = getPos player;
+
+		// #region agent log - Flag Teleport Result
+		private _resultLogData = [
+			sessionId: "debug-session",
+			runId: "flag-teleport-bug",
+			hypothesisId: "FLAG_BUG",
+			location: "fn_V2flagActions.sqf:107",
+			message: "Flag teleport completed",
+			data: [
+				finalPos: _finalPos,
+				distanceFromTarget: _finalPos distance _targetPos,
+				expectedTarget: _flagName,
+				actuallyAtSameBase: (_finalPos distance _currentPos) < 50
+			],
+			timestamp: time
+		];
+		diag_log (str _resultLogData);
+		// #endregion
+
+		systemChat format ["[TELEPORT] ✓ Arrived at: %1", mapGridPosition _finalPos];
+		if ((_finalPos distance _currentPos) < 50) then {
+			systemChat format ["[TELEPORT] ⚠️ WARNING: Still at same location! Distance moved: %1m", round (_finalPos distance _currentPos)];
+		};
 	};
 };
 
@@ -78,9 +169,9 @@ if (side player == sideW) then {
 
 	// 2. Armor Base Flag (flgBW2) -> Can go to Transport & Air
 	if (!isNull _flgBW2) then {
-		// To Transport
+		// To Transport (original had condition on this action)
 		if (!isNull _flgBW1) then {
-			_flgBW2 addAction [_nameTr, _fnc_teleport, _flgBW1, 6, true, true, "", "", 5];
+			_flgBW2 addAction [_nameTr, _fnc_teleport, _flgBW1, 5.5, true, true, "", "(flgDel==0||sideA == sideW)", 5];
 		};
 		// To Air
 		if (!isNull _flgJetW) then {
@@ -117,9 +208,9 @@ if (side player == sideE) then {
 
 	// 2. Armor Base Flag (flgBE2) -> Can go to Transport & Air
 	if (!isNull _flgBE2) then {
-		// To Transport
+		// To Transport (original had condition on this action)
 		if (!isNull _flgBE1) then {
-			_flgBE2 addAction [_nameTr, _fnc_teleport, _flgBE1, 6, true, true, "", "", 5];
+			_flgBE2 addAction [_nameTr, _fnc_teleport, _flgBE1, 5.5, true, true, "", "(flgDel==0||sideA == sideE)", 5];
 		};
 		// To Air
 		if (!isNull _flgJetE) then {

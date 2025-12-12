@@ -1,55 +1,58 @@
+// FILE MARKER: V2aiVehicle FOLDER VERSION v5.7 - FIXED CREW CREATION
+diag_log "FILE_MARKER: Loading fn_V2aiVehicle from FOLDER version v5.7 with CREW FIX";
+
 /*
 	Author: IvosH
-	
+
 	Description:
 		Continuously spawn AI vehicles
 		aiVehW, aiArmW, aiCasW, aiVehE, aiArmE, aiCasE
 		posW1, posW2, posE1, posE2
-		
+
 		objAAW, objAAE, objArtiW, objArtiE
 		posAA, posArti
-		
+
 	Parameter(s):
-		0: parameter number 
-		
+		0: parameter number
+
 	Returns:
 		nothing
-		
+
 	Dependencies:
 		fn_V2aiVehUpdate.sqf
 		V2aiStart.sqf
-		
+
 	Execution:
 		[0] call wrm_fnc_aiVehicle;
 */
-_par = _this select 0; //what vehicle to spawn
+_par = _this select 0; // what vehicle to spawn
 
 call
 {
-	//WEST
-	//aiVehW
-	if(_par==1)exitWith
+	// WEST
+	// aiVehW
+	if (_par == 1) exitWith
 	{
-		//check condition again
-		sleep trTime; //3 min default
-		if(getMarkerColor resFobWE!="")exitWith{aiVehWr=false;};
+		// check condition again
+		sleep trTime; // 3 min default
+		if (getMarkerColor resFobWE != "") exitWith { aiVehWr = false; };
 		
-		_liv=true;
+		_liv = true;
 		call
 		{
-			if(!alive aiVehW)exitWith{_liv=false;};
-			if(!canMove aiVehW)exitWith{_liv=false;};
-			if(aiVehW getHitPointDamage "hitGun"==1)exitWith{_liv=false;};
-			if(aiVehW getHitPointDamage "hitTurret"==1)exitWith{_liv=false;};
-			if(({alive _x} count (crew aiVehW))==0)exitWith{_liv=false;};
+			if (!alive aiVehW) exitWith { _liv = false; };
+			if (!canMove aiVehW) exitWith { _liv = false; };
+			if (aiVehW getHitPointDamage "hitGun" == 1) exitWith { _liv = false; };
+			if (aiVehW getHitPointDamage "hitTurret" == 1) exitWith { _liv = false; };
+			if (({alive _x} count (crew aiVehW)) == 0) exitWith { _liv = false; };
 		};
-		if(_liv)exitWith{aiVehWr=false;};
+		if (_liv) exitWith { aiVehWr = false; };
 
-		//destroy
+		// destroy
 		aiVehW setDamage 1;
 
-		//count players
-		if(count allPlayers>0)then
+		// count players
+		if (count allPlayers > 0) then
 		{
 			_t=true;
 			while {_t} do
@@ -59,11 +62,11 @@ call
 			};
 		};
 		
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
-		if(coop==0 || coop==2) then
+		if (coop == 0 || coop == 2) then
 		{
 			//is base under attack?
 			_eBW1=true;
@@ -88,8 +91,8 @@ call
 			};
 			
 			_vSel = selectRandom CarArW;
-			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			_typ = ""; _tex = "";
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			// Naudojame findEmptyPosition
 			_spawnPos = posW1 findEmptyPosition [0, 10, _typ];
@@ -170,7 +173,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehW);
-			publicvariable "aiVehW";
+			publicVariable "aiVehW";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiVehW],true];
@@ -210,11 +213,11 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
-		if(coop==0 || coop==2) then
+		if (coop == 0 || coop == 2) then
 		{
 			//is base under attack?
 			_eBW2=true;
@@ -234,7 +237,7 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorW1+ArmorW2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			aiArmW = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW,[_tex,1]] call bis_fnc_initVehicle;
@@ -309,7 +312,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW);
-			publicvariable "aiArmW";
+			publicVariable "aiArmW";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiArmW],true];
@@ -349,11 +352,11 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
-		if(coop==0 || coop==2) then
+		if (coop == 0 || coop == 2) then
 		{
 			//is base under attack?
 			_eBW2=true;
@@ -374,7 +377,7 @@ call
 			_vSel = selectRandom (ArmorW1+ArmorW2);
 			_typ="";_tex="";
 			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			aiArmW2 = createVehicle [_typ, posW2, [], 0, "NONE"];
 			[aiArmW2,[_tex,1]] call bis_fnc_initVehicle;
@@ -455,7 +458,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideW] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmW2);
-			publicvariable "aiArmW2";
+			publicVariable "aiArmW2";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiArmW2],true];
@@ -493,11 +496,11 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
-		if(coop==0 || coop==2) then
+		if (coop == 0 || coop == 2) then
 		{
 			//west armed vehicle
 			// Patikriname, ar plHW yra apibrėžtas prieš jį naudojant
@@ -505,7 +508,7 @@ call
 				_vSel = selectRandom (HeliArW+PlaneW+HeliArW);
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-				if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 
 				aiCasW = createVehicle [_typ, plHW, [], 0, "FLY"];
 				[aiCasW,[_tex,1]] call bis_fnc_initVehicle;
@@ -515,7 +518,7 @@ call
 				} forEach (crew aiCasW);
 				pltW = crew aiCasW;
 				(group driver aiCasW) move posCenter;
-				publicvariable "aiCasW";
+				publicVariable "aiCasW";
 			};
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiCasW],true];
@@ -556,9 +559,9 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 
 		if(coop==0 || coop==1) then
 		{
@@ -586,7 +589,7 @@ call
 			
 			_vSel = selectRandom CarArE;
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			_spawnPos = posE1 findEmptyPosition [0, 10, _typ];
 			if(count _spawnPos == 0) then {_spawnPos = posE1;};
@@ -666,7 +669,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiVehE);
-			publicvariable "aiVehE";
+			publicVariable "aiVehE";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiVehE],true];
@@ -706,9 +709,9 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
 		if(coop==0 || coop==1) then
 		{
@@ -730,7 +733,7 @@ call
 			//create new vehicle
 			_vSel = selectRandom (ArmorE1+ArmorE2);
 			_typ="";_tex="";
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			aiArmE = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE,[_tex,1]] call bis_fnc_initVehicle;
@@ -811,7 +814,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE);
-			publicvariable "aiArmE";
+			publicVariable "aiArmE";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiArmE],true];
@@ -851,9 +854,9 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
 		if(coop==0 || coop==1) then
 		{
@@ -876,7 +879,7 @@ call
 			_vSel = selectRandom (ArmorE1+ArmorE2);
 			_typ="";_tex="";
 			// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
+			if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };	
 
 			aiArmE2 = createVehicle [_typ, posE2, [], 0, "NONE"];
 			[aiArmE2,[_tex,1]] call bis_fnc_initVehicle;
@@ -957,7 +960,7 @@ call
 			{ _x addMPEventHandler
 				["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 			} forEach (crew aiArmE2);
-			publicvariable "aiArmE2";
+			publicVariable "aiArmE2";
 			[] call wrm_fnc_V2aiMove;
 			sleep 1;
 			z1 addCuratorEditableObjects [[aiArmE2],true];
@@ -995,9 +998,9 @@ call
 				sleep 1;
 			};
 		};
-		_plw={side _x==sideW} count allplayers;
-		_ple={side _x==sideE} count allplayers;
-		coop=0; publicvariable "coop";
+		_plw = { side _x == sideW } count allPlayers;
+		_ple = { side _x == sideE } count allPlayers;
+		coop = 0; publicVariable "coop";
 			
 		if(coop==0 || coop==1) then
 		{
@@ -1007,7 +1010,7 @@ call
 				_vSel = selectRandom (HeliArE+PlaneE+HeliArE);
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-				if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 
 				aiCasE = createVehicle [_typ, plHE, [], 0, "FLY"];
 				[aiCasE,[_tex,1]] call bis_fnc_initVehicle;
@@ -1015,7 +1018,7 @@ call
 				{ _x addMPEventHandler
 					["MPKilled",{[(_this select 0),sideE] spawn wrm_fnc_killedEH;}];
 				} forEach (crew aiCasE);
-				publicvariable "aiCasE";
+				publicVariable "aiCasE";
 				(group driver aiCasE) move posCenter;
 				pltE = crew aiCasE;
 				sleep 1;
@@ -1041,8 +1044,7 @@ call
 				_vSel = selectRandom aaW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objAAW = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 			}else
@@ -1050,8 +1052,7 @@ call
 				_vSel = selectRandom aaE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objAAW = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAW,[_tex,1]] call bis_fnc_initVehicle;
 			};
@@ -1059,7 +1060,7 @@ call
 			objAAW allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objAAW],true];
 			[objAAW] call wrm_fnc_parachute;	
-			publicvariable "objAAW";
+			publicVariable "objAAW";
 			[17] remoteExec ["wrm_fnc_V2hints", 0, false];
 			if(DBG)then{["AA west respawned"] remoteExec ["systemChat", 0, false];};
 		};
@@ -1124,8 +1125,7 @@ call
 				_vSel = selectRandom aaE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objAAE = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 			}else
@@ -1133,8 +1133,7 @@ call
 				_vSel = selectRandom aaW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objAAE = createVehicle [_typ, [posAA param [0, 0], posAA param [1, 0], 50], [], 0, "NONE"];
 				[objAAE,[_tex,1]] call bis_fnc_initVehicle;
 			};
@@ -1142,7 +1141,7 @@ call
 			objAAE allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objAAE],true];
 			[objAAE] call wrm_fnc_parachute;	
-			publicvariable "objAAE";
+			publicVariable "objAAE";
 			[18] remoteExec ["wrm_fnc_V2hints", 0, false];
 			if(DBG)then{["AA east respawned"] remoteExec ["systemChat", 0, false];};
 		};
@@ -1208,27 +1207,76 @@ call
 				_vSel = selectRandom artiW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-				objArtiW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
+				objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, "NONE"];
 				[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
+
+				// Small delay to ensure vehicle is properly initialized
+				sleep 0.1;
+
+				// Configure artillery
+				objArtiW lockDriver true;
+				objArtiW enableArtillery true;
+				objArtiW setVariable ["BIS_artilleryComputer", true, true];
+				objArtiW allowCrewInImmobile true;
+
+				// Create crew for artillery (Gunner and Commander positions) - pagal dokumentaciją
+				_grpArtiW = createGroup [sideW, true];
+				for "_i" from 1 to (objArtiW emptyPositions "Gunner") step 1 do
+				{
+					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, "NONE"];
+					_unit moveInGunner objArtiW;
+				};
+				for "_i" from 1 to (objArtiW emptyPositions "Commander") step 1 do
+				{
+					_unit = _grpArtiW createUnit [crewW, posArti, [], 0, "NONE"];
+					_unit moveInCommander objArtiW;
+				};
+
+				[objArtiW, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+				z1 addCuratorEditableObjects [[objArtiW],true];
+				[objArtiW] call wrm_fnc_parachute;
+				publicVariable "objArtiW";
+				[19] remoteExec ["wrm_fnc_V2hints", 0, false];
+				if(DBG)then{["Artillery west respawned"] remoteExec ["systemChat", 0, false];};
 			}else
 			{
 				_vSel = selectRandom artiE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-				objArtiW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
-				[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
+				objArtiE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
+				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
+
+				// Small delay to ensure vehicle is properly initialized
+				sleep 0.1;
+
+				// Configure artillery
+				objArtiE lockDriver true;
+				objArtiE enableArtillery true;
+				objArtiE setVariable ["BIS_artilleryComputer", true, true];
+				objArtiE allowCrewInImmobile true;
+
+				// Create crew for artillery (Gunner and Commander positions) - pagal dokumentaciją
+				_grpArtiE = createGroup [sideE, true];
+				for "_i" from 1 to (objArtiE emptyPositions "Gunner") step 1 do
+				{
+					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, "NONE"];
+					_unit moveInGunner objArtiE;
+				};
+				for "_i" from 1 to (objArtiE emptyPositions "Commander") step 1 do
+				{
+					_unit = _grpArtiE createUnit [crewE, posArti, [], 0, "NONE"];
+					_unit moveInCommander objArtiE;
+				};
+
+				[objArtiE, supArtiV2] remoteExec ["BIS_fnc_addSupportLink", 0, true];
+				z1 addCuratorEditableObjects [[objArtiE],true];
+				[objArtiE] call wrm_fnc_parachute;
+				publicVariable "objArtiE";
+				[20] remoteExec ["wrm_fnc_V2hints", 0, false];
+				if(DBG)then{["Artillery east respawned"] remoteExec ["systemChat", 0, false];};
 			};
-			objArtiW lockDriver true;			
-			objArtiW allowCrewInImmobile true;
-			z1 addCuratorEditableObjects [[objArtiW],true];
-			[objArtiW] call wrm_fnc_parachute;	
-			publicvariable "objArtiW";
-			[19] remoteExec ["wrm_fnc_V2hints", 0, false];
-			if(DBG)then{["Artillery west respawned"] remoteExec ["systemChat", 0, false];};
 		};
 		
 		//repair
@@ -1302,27 +1350,40 @@ call
 				_vSel = selectRandom artiE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objArtiE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
+
+				// Configure artillery
+				objArtiE lockDriver true;
+				objArtiE enableArtillery true;
+				objArtiE setVariable ["BIS_artilleryComputer", true, true];
+				objArtiE allowCrewInImmobile true;
+				z1 addCuratorEditableObjects [[objArtiE],true];
+				[objArtiE] call wrm_fnc_parachute;
+				publicVariable "objArtiE";
+				[20] remoteExec ["wrm_fnc_V2hints", 0, false];
+				if(DBG)then{["Artillery east respawned"] remoteExec ["systemChat", 0, false];};
 			}else
 			{
 				_vSel = selectRandom artiW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objArtiE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
+
+				// Configure artillery
+				objArtiE lockDriver true;
+				objArtiE enableArtillery true;
+				objArtiE setVariable ["BIS_artilleryComputer", true, true];
+				objArtiE allowCrewInImmobile true;
+				z1 addCuratorEditableObjects [[objArtiE],true];
+				[objArtiE] call wrm_fnc_parachute;
+				publicVariable "objArtiE";
+				[20] remoteExec ["wrm_fnc_V2hints", 0, false];
+				if(DBG)then{["Artillery east respawned"] remoteExec ["systemChat", 0, false];};
 			};
-			objArtiE lockDriver true;			
-			objArtiE allowCrewInImmobile true;
-			z1 addCuratorEditableObjects [[objArtiE],true];
-			[objArtiE] call wrm_fnc_parachute;	
-			publicvariable "objArtiE";
-			[20] remoteExec ["wrm_fnc_V2hints", 0, false];
-			if(DBG)then{["Artillery east respawned"] remoteExec ["systemChat", 0, false];};
 		};
 		
 		//repair
@@ -1396,8 +1457,7 @@ call
 				_vSel = selectRandom mortW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 			}else
@@ -1405,8 +1465,7 @@ call
 				_vSel = selectRandom mortE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objMortW = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortW,[_tex,1]] call bis_fnc_initVehicle;
 			};
@@ -1414,7 +1473,7 @@ call
 			objMortW allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objMortW],true];
 			[objMortW] call wrm_fnc_parachute;	
-			publicvariable "objMortW";
+			publicVariable "objMortW";
 			[23] remoteExec ["wrm_fnc_V2hints", 0, false];
 			if(DBG)then{["Mortar west respawned"] remoteExec ["systemChat", 0, false];};
 		};
@@ -1490,8 +1549,7 @@ call
 				_vSel = selectRandom mortE;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objMortE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortE,[_tex,1]] call bis_fnc_initVehicle;
 			}else
@@ -1499,8 +1557,7 @@ call
 				_vSel = selectRandom mortW;
 				_typ="";_tex="";
 				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
-			if (_vSel isEqualType [])then{_typ=_vSel param [0, ""];_tex=_vSel param [1, ""];}else{_typ=_vSel;};	
-				// Naudojame param vietoj select saugumui pagal SQF_SYNTAX_BEST_PRACTICES.md
+				if (_vSel isEqualType []) then { _typ = _vSel param [0, ""]; _tex = _vSel param [1, ""]; } else { _typ = _vSel; };
 				objMortE = createVehicle [_typ, [posArti param [0, 0], posArti param [1, 0], 50], [], 0, "NONE"];
 				[objMortE,[_tex,1]] call bis_fnc_initVehicle;
 			};
@@ -1508,7 +1565,7 @@ call
 			objMortE allowCrewInImmobile true;
 			z1 addCuratorEditableObjects [[objMortE],true];
 			[objMortE] call wrm_fnc_parachute;	
-			publicvariable "objMortE";
+			publicVariable "objMortE";
 			[24] remoteExec ["wrm_fnc_V2hints", 0, false];
 			if(DBG)then{["Mortar east respawned"] remoteExec ["systemChat", 0, false];};
 		};

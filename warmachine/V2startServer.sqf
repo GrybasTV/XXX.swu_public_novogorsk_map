@@ -1070,7 +1070,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 } forEach [posArti,posAA,posCas];
 
 //sector Anti Air
-"ModuleSector_F" createUnit [posAA,createGroup sideLogic,format
+private _aaPos = if (posAA isEqualType [] && count posAA >= 2) then {posAA} else {[0,0,0]};
+"ModuleSector_F" createUnit [_aaPos,createGroup sideLogic,format
 ["
 	sectorAA=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
@@ -1082,7 +1083,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resAW!='''')exitWith{};
+				if(getMarkerColor resAW != '') exitWith {};
 				_mrkRbW = createMarker [resAW, posAA];
 				_mrkRbW setMarkerShape ''ICON'';
 				_mrkRbW setMarkerType ''empty'';
@@ -1134,7 +1135,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resAE!='''')exitWith{};
+				if(getMarkerColor resAE != '') exitWith {};
 				_mrkRbE = createMarker [resAE, posAA];
 				_mrkRbE setMarkerShape ''ICON'';
 				_mrkRbE setMarkerType ''empty'';
@@ -1203,7 +1204,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 "]];
 
 //sector Artillery
-"ModuleSector_F" createUnit [posArti,createGroup sideLogic,format
+private _artilleryPos = if (posArti isEqualType [] && count posArti >= 2) then {posArti} else {[0,0,0]};
+"ModuleSector_F" createUnit [_artilleryPos,createGroup sideLogic,format
 ["
 	
 	sectorArti=this;
@@ -1216,7 +1218,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resBW!='''')exitWith{};
+				if(getMarkerColor resBW != '') exitWith {};
 				_mrkRaW = createMarker [resBW, posArti];
 				_mrkRaW setMarkerShape ''ICON'';
 				_mrkRaW setMarkerType ''empty'';
@@ -1237,6 +1239,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
+				objArtiW enableArtillery true;
+				objArtiW setVariable ["BIS_artilleryComputer", true, true];
 				}else
 				{
 					_vSel = selectRandom artiE;
@@ -1244,6 +1248,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiW = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiW,[_tex,1]] call bis_fnc_initVehicle;
+					objArtiW enableArtillery true;
+					objArtiW setVariable ["BIS_artilleryComputer", true, true];
 				};
 				[objArtiW] call wrm_fnc_parachute;
 				objArtiW lockDriver true;
@@ -1273,7 +1279,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 			 
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resBE!='''')exitWith{};
+				if(getMarkerColor resBE != '') exitWith {};
 				_mrkRaE = createMarker [resBE, posArti];
 				_mrkRaE setMarkerShape ''ICON'';
 				_mrkRaE setMarkerType ''empty'';
@@ -1294,6 +1300,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
+				objArtiE enableArtillery true;
+				objArtiE setVariable ["BIS_artilleryComputer", true, true];
 				}else
 				{
 					_vSel = selectRandom artiW;
@@ -1301,6 +1309,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 					if (_vSel isEqualType [])then{_typ=_vSel select 0;_tex=_vSel select 1;}else{_typ=_vSel;};
 					objArtiE = createVehicle [_typ, [posArti select 0, posArti select 1, 50], [], 0, ''NONE''];
 					[objArtiE,[_tex,1]] call bis_fnc_initVehicle;
+					objArtiE enableArtillery true;
+					objArtiE setVariable ["BIS_artilleryComputer", true, true];
 				};
 				[objArtiE] call wrm_fnc_parachute;
 				objArtiE lockDriver true;
@@ -1349,7 +1359,8 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 "]];
 
 //sector CAS Tower
-"ModuleSector_F" createUnit [posCas,createGroup sideLogic,format
+private _casPos = if (posCas isEqualType [] && count posCas >= 2) then {posCas} else {[0,0,0]};
+"ModuleSector_F" createUnit [_casPos,createGroup sideLogic,format
 ["
 	sectorCas=this;
 	this setvariable ['BIS_fnc_initModules_disableAutoActivation',false];
@@ -1361,7 +1372,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 		{
 			 if ((_this select 1) == sideW) exitWith 
 			 {
-				if(getMarkerColor resCW!='''')exitWith{};
+				if(getMarkerColor resCW != '') exitWith {};
 				if(missType>1||count PlaneW==0)then
 				{
 					if(count HeliArW!=0)then
@@ -1395,7 +1406,7 @@ if(isClass(configfile >> "CfgMods" >> "SPE"))then
 			 
 			 if ((_this select 1) == sideE) exitWith  
 			 {
-				if(getMarkerColor resCE!='''')exitWith{};
+				if(getMarkerColor resCE != '') exitWith {};
 				if(missType>1||count PlaneE==0)then
 				{
 					if(count HeliArE!=0)then

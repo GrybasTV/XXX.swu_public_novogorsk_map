@@ -43,6 +43,8 @@ class wrm
 		class V2uavGroupCooldown {}; //Grupės-based UAV cooldown Ukraine/Russia frakcijoms
 		class V2uavGroupAdd {}; //Pridėti grupės UAV į masyvą
 		class V2uavGroupRemove {}; //Pašalinti grupės UAV ir pradėti cooldown
+		class V2aiFPV {}; //AI FPV drone calling system
+		class V2aiFPVLogic {}; //AI FPV drone decision logic
 		class JIPSync {}; //JIP (Join In Progress) sinchronizavimas - sinchronizuoja misijos būseną naujiems žaidėjams
 		
 		// Performance monitoring and debugging

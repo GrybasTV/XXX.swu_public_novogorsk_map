@@ -42,6 +42,28 @@ if(modA=="A3")then
 if(_exit)exitWith{};
 
 _gr="";
+// FIX: Check if unit is a custom mod unit (not vanilla Arma 3)
+_isCustomUnit = false;
+_customClass = typeOf _un;
+
+// Check for custom Russian units (RU2025 mod)
+if (_customClass find "RUS_" == 0) then {
+	_isCustomUnit = true;
+};
+
+// Check for other custom unit types that might cause issues
+if (_customClass find "UA_" == 0) then {
+	_isCustomUnit = true;
+};
+
+if (_isCustomUnit) exitWith {
+	// Skip loadout change for custom units to prevent uniform/inventory errors
+	// These units should already have their proper loadouts from their class definitions
+	if (DBG) then {
+		systemChat format ["[LOADOUT] Skipping custom unit %1", _customClass];
+	};
+};
+
 call
 {
 	if((side _un==sideW))exitWith
@@ -101,7 +123,13 @@ call
 if(
 	(side _un==east && factionE=="CSAT" && env=="woodland")
 	//if custom then add condition here ||()
-)exitWith{_un setUnitLoadout (missionconfigfile >> "CfgRespawnInventory" >>_gr);};
+)exitWith{
+	if (_gr != "") then {
+		_un setUnitLoadout (missionconfigfile >> "CfgRespawnInventory" >>_gr);
+	};
+};
 
 //or change to "typeOf" loadout
-_un setUnitLoadout _gr;
+if (_gr != "") then {
+	_un setUnitLoadout _gr;
+};

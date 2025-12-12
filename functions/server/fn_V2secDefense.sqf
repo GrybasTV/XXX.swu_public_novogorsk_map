@@ -52,7 +52,13 @@ if (_side == sideW) then
 		_grp = [_sec, sideW, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
 		{
-			[_x] call wrm_fnc_V2loadoutChange;
+			// FIX: Only apply loadout changes to vanilla units
+			_unitClass = typeOf _x;
+			_isCustomUnit = (_unitClass find "RUS_" == 0) || (_unitClass find "UA_" == 0);
+
+			if (!_isCustomUnit) then {
+				[_x] call wrm_fnc_V2loadoutChange;
+			};
 			[_x] call wrm_fnc_V2nationChange;
 		}forEach units _grp;
 		defW pushBackUnique _grp;
@@ -117,7 +123,13 @@ if (_side == sideE) then
 		_grp = [_sec, sideE, _toSpawn,[],[],[],[],[6,0.5]] call BIS_fnc_spawnGroup;
 		_grp deleteGroupWhenEmpty true;
 		{
-			[_x] call wrm_fnc_V2loadoutChange;
+			// FIX: Only apply loadout changes to vanilla units
+			_unitClass = typeOf _x;
+			_isCustomUnit = (_unitClass find "RUS_" == 0) || (_unitClass find "UA_" == 0);
+
+			if (!_isCustomUnit) then {
+				[_x] call wrm_fnc_V2loadoutChange;
+			};
 			[_x] call wrm_fnc_V2nationChange;
 		}forEach units _grp;
 		defE pushBackUnique _grp;

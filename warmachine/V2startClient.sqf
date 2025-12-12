@@ -144,21 +144,47 @@ call
 	};
 };
 
-//ARSENAL
+//ARSENAL - laukti kol player side bus nustatytas
 if("Param2" call BIS_fnc_getParamValue == 1)then
 {
-	call
-	{
-		if(side player == sideW)exitWith
-		{
-			[AmmoW1,sideW] call wrm_fnc_arsInit; 
-			[AmmoW2,sideW] call wrm_fnc_arsInit;
+	// Laukti kol player side == sideW arba sideE
+	private _arsenalRetryCount = 0;
+	private _arsenalMaxRetries = 120; // 60 sekundžių
+	private _arsenalInitialized = false;
+
+	while {!_arsenalInitialized && _arsenalRetryCount < _arsenalMaxRetries} do {
+		if ((side player == sideW) || (side player == sideE)) then {
+			call
+			{
+				if(side player == sideW)exitWith
+				{
+					[AmmoW1,sideW] call wrm_fnc_arsInit;
+					[AmmoW2,sideW] call wrm_fnc_arsInit;
+					systemChat "Arsenal initialized for WEST";
+				};
+				if(side player == sideE)exitWith
+				{
+					[AmmoE1,sideE] call wrm_fnc_arsInit;
+					[AmmoE2,sideE] call wrm_fnc_arsInit;
+					systemChat "Arsenal initialized for EAST";
+				};
+			};
+			_arsenalInitialized = true;
+		} else {
+			sleep 0.5;
+			_arsenalRetryCount = _arsenalRetryCount + 1;
+
+			// Loginti kas 10 sekundžių
+			if (_arsenalRetryCount % 20 == 0) then {
+				private _elapsedTime = _arsenalRetryCount * 0.5;
+				systemChat format ["Waiting for arsenal initialization... (%1s elapsed)", _elapsedTime];
+			};
 		};
-		if(side player == sideE)exitWith
-		{
-			[AmmoE1,sideE] call wrm_fnc_arsInit;
-			[AmmoE2,sideE] call wrm_fnc_arsInit;			
-		};
+	};
+
+	if (!_arsenalInitialized) then {
+		systemChat "ERROR: Arsenal initialization failed - player side not determined after 60 seconds";
+		hint parseText "WARNING<br/>Arsenal initialization failed.<br/>Virtual Arsenal may not be available.";
 	};
 };
 
@@ -264,6 +290,13 @@ player createDiaryRecord
 ["Diary",["Mission",_text]];
 
 sleep 10;
+
+// REVIVE SYSTEM SETUP - Enable AI revive when revOn >= 2
+if (revOn >= 2) then {
+    player addEventHandler ["HandleDamage", {_this spawn wrm_fnc_plRevive;}];
+    systemChat "AI revive system enabled";
+};
+
 [[[["Operation ",loc] joinString ""]]] spawn BIS_fnc_typeText;
 
 

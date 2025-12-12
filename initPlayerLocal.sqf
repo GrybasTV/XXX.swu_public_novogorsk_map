@@ -1,5 +1,30 @@
 //Author: IvosH
+
+// Very basic debug message to check if file is loaded at all
+systemChat "[DEBUG] initPlayerLocal.sqf FILE LOADED - BEFORE waitUntil";
+diag_log "[DEBUG] initPlayerLocal.sqf FILE LOADED - BEFORE waitUntil";
+
+// Emergency backup: Try to add items immediately without waiting for player
+if (!isNil "player" && {alive player}) then {
+    systemChat "[DEBUG] EMERGENCY: Player exists, adding items immediately";
+    if !("ItemMap" in assignedItems player) then {
+        player addItem "ItemMap";
+        player assignItem "ItemMap";
+        systemChat "[DEBUG] EMERGENCY: Added ItemMap";
+    };
+    if !("ItemGPS" in assignedItems player) then {
+        player addItem "ItemGPS";
+        player assignItem "ItemGPS";
+        systemChat "[DEBUG] EMERGENCY: Added ItemGPS";
+    };
+} else {
+    systemChat "[DEBUG] EMERGENCY: Player not ready yet";
+};
+
 waitUntil {!isNull player}; //JIP
+
+systemChat "[DEBUG] initPlayerLocal.sqf STARTED - Player initialized";
+systemChat format ["[DEBUG] Player: %1, Side: %2, Time: %3", name player, side player, time];
 
 // JIP (Join In Progress) patikrinimas
 // didJIP yra built-in kintamasis, naudojame kitą kintamojo pavadinimą, kad išvengtume konflikto
@@ -61,6 +86,54 @@ systemChat "Admin menu loaded";
 
 // Enable self-marker on map
 null = [] execVM "warmachine\V2playerMarker.sqf";
+
+// Give players map and GPS items (essential for navigation in this mission)
+systemChat format ["[DEBUG] Checking items - Map assigned: %1, GPS assigned: %2", "ItemMap" in assignedItems player, "ItemGPS" in assignedItems player];
+
+if !("ItemMap" in assignedItems player) then {
+    systemChat "[DEBUG] Adding ItemMap";
+    player addItem "ItemMap";
+    player assignItem "ItemMap";
+};
+
+if !("ItemGPS" in assignedItems player) then {
+    systemChat "[DEBUG] Adding ItemGPS";
+    player addItem "ItemGPS";
+    player assignItem "ItemGPS";
+};
+
+systemChat format ["[DEBUG] After adding - Map assigned: %1, GPS assigned: %2", "ItemMap" in assignedItems player, "ItemGPS" in assignedItems player];
+
+// Handle map and GPS giving on respawn
+player addEventHandler ["Respawn", {
+    params ["_unit", "_corpse"];
+
+    systemChat format ["[DEBUG] Respawn triggered for %1", name _unit];
+
+    private _needsItems = false;
+
+    systemChat format ["[DEBUG] Respawn - Before: Map assigned: %1, GPS assigned: %2", "ItemMap" in assignedItems _unit, "ItemGPS" in assignedItems _unit];
+
+    if !("ItemMap" in assignedItems _unit) then {
+        systemChat "[DEBUG] Respawn - Adding ItemMap";
+        _unit addItem "ItemMap";
+        _unit assignItem "ItemMap";
+        _needsItems = true;
+    };
+
+    if !("ItemGPS" in assignedItems _unit) then {
+        systemChat "[DEBUG] Respawn - Adding ItemGPS";
+        _unit addItem "ItemGPS";
+        _unit assignItem "ItemGPS";
+        _needsItems = true;
+    };
+
+    systemChat format ["[DEBUG] Respawn - After: Map assigned: %1, GPS assigned: %2", "ItemMap" in assignedItems _unit, "ItemGPS" in assignedItems _unit];
+
+    if (_needsItems) then {
+        systemChat "Map and GPS restored after respawn";
+    };
+}];
 
 // Admin Zeus rights check - periodic check for admins
 [] spawn {

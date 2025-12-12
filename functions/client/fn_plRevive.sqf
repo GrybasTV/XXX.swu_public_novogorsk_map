@@ -18,10 +18,20 @@ Dependencies:
 Execution:
 	[_this] spawn wrm_fnc_plRevive;
 */
-params ["_unit","_selection","_damage","_hitIndex","_hitPoint","_shooter","_projectile",["_grp",[]],["_gpl",[]],["_dis",[]],["_min",0],["_inx",0],["_d",0],["_c",0]];
+params ["_unit","_selection","_damage","_hitPoint","_hitIndex","_shooter","_projectile",["_grp",[]],["_gpl",[]],["_dis",[]],["_min",0],["_inx",0],["_d",0],["_c",0]];
 if(_unit in corpses)exitWith{};
 if(!hasInterface)exitWith{};
 if!(_damage>=1 && _hitPoint=="Incapacitated")exitWith{};
+
+// #region agent log - AI Revive System Debug
+diag_log format ["[DEBUG AI REVIVE] Player %1 incapacitated - damage: %2, hitPoint: %3, lifeState: %4, nearbyAI: %5",
+	name _unit,
+	_damage,
+	_hitPoint,
+	lifeState _unit,
+	{alive _x && !isPlayer _x && side _x == side _unit && _x distance _unit <= 300} count allUnits
+];
+// #endregion
 
 _t=
 [
@@ -61,6 +71,17 @@ corpses PushBackUnique _unit;
 publicVariable "corpses";
 healers PushBackUnique _healer;
 publicVariable "healers";
+
+// #region agent log - AI Revive Healer Assigned
+diag_log format ["[DEBUG AI HEALER] Player %1 assigned healer %2 (%3) - distance: %4, group: %5, nearbyAI: %6",
+	name _unit,
+	name _healer,
+	typeOf _healer,
+	_unit distance _healer,
+	groupId group _healer,
+	{alive _x && !isPlayer _x && side _x == side _unit && _x distance _unit <= 75} count allUnits
+];
+// #endregion
 
 //make healer dumb
 [_unit,_healer,0] remoteExec ["wrm_fnc_aiRevive", 0, false];
@@ -174,7 +195,17 @@ if(!alive _healer)exitWith //healer died
 	_this spawn wrm_fnc_plRevive;
 };
 
-if(lifeState _unit == "INCAPACITATED")then{["#rev",1,_unit] call BIS_fnc_reviveOnState;}; //revive player
+if(lifeState _unit == "INCAPACITATED")then{
+// #region agent log - AI Revive Success
+diag_log format ["[DEBUG AI REVIVE SUCCESS] Player %1 revived by AI healer %2 at time %3",
+	name _unit,
+	name _healer,
+	time
+];
+// #endregion
+
+	["#rev",1,_unit] call BIS_fnc_reviveOnState; //revive player
+};
 
 //make healer clever
 [_unit,_healer,3] remoteExec ["wrm_fnc_aiRevive", 0, false];

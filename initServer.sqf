@@ -125,6 +125,31 @@ dBE2=false;
 //dynamic squads - saugo dinamiškai spawnintų grupių ID
 dynamicSquadsGroups=[]; publicVariable "dynamicSquadsGroups";
 
+// SPOTTER GRUPĖS ARTERIJOS SISTEMAI
+// Sistema naudoja tik AI grupes su leader'iais (ne žaidėjais)
+
+// Pagal nutylėjimą: naudojamos visos AI grupės kurios turi leader'ius (bet ne žaidėjus)
+V2_spotterGroupsW = allGroups select {
+    side _x == sideW &&
+    count units _x > 1 &&  // Grupė turi bent 2 narius
+    {alive _x} count units _x > 0 &&  // Turi gyvų narių
+    !isPlayer leader _x &&  // Leader nėra žaidėjas
+    side leader _x == sideW  // Leader yra teisingos pusės
+};
+
+V2_spotterGroupsE = allGroups select {
+    side _x == sideE &&
+    count units _x > 1 &&  // Grupė turi bent 2 narius
+    {alive _x} count units _x > 0 &&  // Turi gyvų narių
+    !isPlayer leader _x &&  // Leader nėra žaidėjas
+    side leader _x == sideE  // Leader yra teisingos pusės
+};
+
+// Variantas 2: Rankinis - specialios spotter grupės (jei norite daugiau kontrolės)
+// Iškomentuokite ir priskirkite grupes iš editoriaus:
+// V2_spotterGroupsW = [grpWestSpotter1, grpWestSpotter2];
+// V2_spotterGroupsE = [grpEastSpotter1, grpEastSpotter2];
+
 ["Server variables loaded"] remoteExec ["systemChat", 0, false];
 //ZEUS 
 z1 addCuratorEditableObjects [allplayers+playableUnits]; //all players and playable units will be editable by Zeus
